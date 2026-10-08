@@ -32,6 +32,7 @@ import static com.google.android.accessibility.braille.common.BrailleImeAction.S
 import static com.google.android.accessibility.braille.common.BrailleImeAction.SELECT_PREVIOUS_WORD;
 import static com.google.android.accessibility.braille.common.BrailleImeAction.SUBMIT_TEXT;
 import static com.google.android.accessibility.braille.common.BrailleImeAction.SWITCH_KEYBOARD;
+import static com.google.android.accessibility.braille.common.BrailleImeAction.TOGGLE_EMOJI_MODE;
 import static com.google.android.accessibility.braille.common.BrailleImeAction.VOICE_INPUT;
 
 import android.content.Context;
@@ -78,6 +79,9 @@ public class BrailleImeActor {
 
     /** Starts or toggles voice input dictation. */
     void startVoiceInput();
+
+    /** Toggles emoji browsing mode. */
+    void toggleEmojiMode();
 
     boolean isConnectionValid();
 
@@ -152,6 +156,7 @@ public class BrailleImeActor {
       case HELP_AND_OTHER_ACTIONS -> performTextAction(imeConnection, callback::showContextMenu);
       case TOGGLE_ORIENTATION_LOCK -> callback.toggleOrientationLock();
       case VOICE_INPUT -> callback.startVoiceInput();
+      case TOGGLE_EMOJI_MODE -> callback.toggleEmojiMode();
       case NEXT_GRANULARITY ->
           performTextAction(imeConnection, ScreenReaderAction.NEXT_READING_CONTROL);
       case PREVIOUS_GRANULARITY ->

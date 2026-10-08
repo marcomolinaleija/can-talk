@@ -543,4 +543,29 @@
   <string name="voice_input_not_available">Voice input is not available</string>
   <!-- Audial announcement when microphone permission is required for voice input. [CHAR_LIMIT=100] -->
   <string name="voice_input_permission_required">Microphone permission required for voice input</string>
+
+  <!-- Emoji categories -->
+  <string name="emoji_category_smileys">Smileys</string>
+  <string name="emoji_category_animals">Animals and nature</string>
+  <string name="emoji_category_food">Food and drinks</string>
+  <string name="emoji_category_activities">Activities</string>
+  <string name="emoji_category_travel">Travel and places</string>
+  <string name="emoji_category_objects">Objects</string>
+  <string name="emoji_category_symbols">Symbols</string>
+  <string name="emoji_category_people_1">People 1</string>
+  <string name="emoji_category_people_2">People 2</string>
+  <string name="emoji_category_other">Other</string>
+  <string name="emoji_category_flags_1">Flags 1</string>
+  <string name="emoji_category_flags_2">Flags 2</string>
+  <string name="emoji_category_favorites">Favorites</string>
+
+  <!-- Emoji announcements -->
+  <string name="emoji_mode_switched_on">Switched to emoji mode. %1$s. Row %2$c: %3$s</string>
+  <string name="emoji_mode_switched_off">Text mode</string>
+  <string name="emoji_category_switched">%1$s. Row %2$c: %3$s</string>
+  <string name="emoji_row_switched">Row %1$c: %2$s</string>
+  <string name="emoji_item_focused">%1$s, row %2$c, position %3$d</string>
+  <string name="emoji_added_to_favorites">%s added to favorites</string>
+  <string name="emoji_removed_from_favorites">%s removed from favorites</string>
+  <string name="emoji_favorites_empty">No favorites saved. Use dots 3 and 6 to add.</string>
 </resources>

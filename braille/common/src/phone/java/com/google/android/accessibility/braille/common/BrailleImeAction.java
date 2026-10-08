@@ -63,7 +63,8 @@ public enum BrailleImeAction implements ImeAction {
   UNDO_SPELLING_SUGGESTION(R.string.bk_gesture_undo_spelling_suggestion, DELETE_WORD),
   NEXT_KEYBOARD(R.string.bk_gesture_switch_to_next_keyboard),
   TOGGLE_ORIENTATION_LOCK(R.string.bk_gesture_toggle_orientation_lock),
-  VOICE_INPUT(R.string.bk_gesture_voice_input);
+  VOICE_INPUT(R.string.bk_gesture_voice_input),
+  TOGGLE_EMOJI_MODE(R.string.bk_gesture_toggle_emoji_mode);
 
   @StringRes private final int descriptionRes;
   private final BrailleImeAction rootAction;

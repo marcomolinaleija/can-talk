@@ -244,4 +244,29 @@
   <string name="voice_input_no_speech">No se detectó voz</string>
   <string name="voice_input_not_available">La entrada por voz no está disponible</string>
   <string name="voice_input_permission_required">Se necesita permiso de micrófono para la entrada por voz</string>
+
+  <!-- Emoji categories -->
+  <string name="emoji_category_smileys">Caras</string>
+  <string name="emoji_category_animals">Animales y naturaleza</string>
+  <string name="emoji_category_food">Comida y bebida</string>
+  <string name="emoji_category_activities">Actividades</string>
+  <string name="emoji_category_travel">Viajes y lugares</string>
+  <string name="emoji_category_objects">Objetos</string>
+  <string name="emoji_category_symbols">Símbolos</string>
+  <string name="emoji_category_people_1">Gente 1</string>
+  <string name="emoji_category_people_2">Gente 2</string>
+  <string name="emoji_category_other">Otros</string>
+  <string name="emoji_category_flags_1">Banderas 1</string>
+  <string name="emoji_category_flags_2">Banderas 2</string>
+  <string name="emoji_category_favorites">Favoritos</string>
+
+  <!-- Emoji announcements -->
+  <string name="emoji_mode_switched_on">Modo emojis activado. %1$s. Fila %2$c: %3$s</string>
+  <string name="emoji_mode_switched_off">Modo texto</string>
+  <string name="emoji_category_switched">%1$s. Fila %2$c: %3$s</string>
+  <string name="emoji_row_switched">Fila %1$c: %2$s</string>
+  <string name="emoji_item_focused">%1$s, fila %2$c, posición %3$d</string>
+  <string name="emoji_added_to_favorites">%s se agregó a favoritos</string>
+  <string name="emoji_removed_from_favorites">%s se eliminó de favoritos</string>
+  <string name="emoji_favorites_empty">Sin contenido en favoritos. Usa los puntos 3 y 6 para añadir el emoji actual.</string>
 </resources>

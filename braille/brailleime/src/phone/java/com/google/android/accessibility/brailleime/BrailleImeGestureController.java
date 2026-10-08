@@ -106,7 +106,8 @@ public class BrailleImeGestureController {
           HELP_AND_OTHER_ACTIONS,
           SUBMIT_TEXT,
           TOGGLE_ORIENTATION_LOCK,
-          VOICE_INPUT ->
+          VOICE_INPUT,
+          TOGGLE_EMOJI_MODE ->
           BrailleImeVibrator.getInstance(context).vibrate(VibrationType.OTHER_GESTURES);
       case NEXT_GRANULARITY,
           PREVIOUS_GRANULARITY,

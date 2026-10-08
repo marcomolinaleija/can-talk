@@ -256,6 +256,7 @@ public class BrailleIme extends InputMethodService {
   private BrailleImeGestureController brailleImeGestureController;
   private BrailleImeActor brailleImeActor;
   private VoiceInputManager voiceInputManager;
+  private EmojiManager emojiManager;
   private final VoiceInputManager.Callback voiceInputCallback =
       new VoiceInputManager.Callback() {
         @Override
@@ -361,6 +362,7 @@ public class BrailleIme extends InputMethodService {
     layoutOrientator = new LayoutOrientator(this, layoutOrientatorCallback);
     tabletHeldUpFacesAway = BrailleUserPreferences.readTabletHeldUpFacesAway(this);
     voiceInputManager = new VoiceInputManager(this, voiceInputCallback);
+    emojiManager = new EmojiManager(this);
 
     if (talkBackForBrailleIme != null) {
       talkBackForBrailleIme.setBrailleImeForTalkBack(brailleImeForTalkBack);
@@ -449,6 +451,9 @@ public class BrailleIme extends InputMethodService {
     if (voiceInputManager != null) {
       voiceInputManager.cancel();
     }
+    if (emojiManager != null) {
+      emojiManager.exitEmojiModeSilently();
+    }
     dismissDialogs();
     if (!keyboardView.isViewContainerCreated()) {
       BrailleImeLog.d(TAG, "already deactivated");
@@ -481,6 +486,10 @@ public class BrailleIme extends InputMethodService {
     if (voiceInputManager != null) {
       voiceInputManager.destroy();
       voiceInputManager = null;
+    }
+    if (emojiManager != null) {
+      emojiManager.exitEmojiModeSilently();
+      emojiManager = null;
     }
     brailleImeAnalytics.sendAllLogs();
   }
@@ -762,6 +771,9 @@ public class BrailleIme extends InputMethodService {
   private void hideSelf() {
     if (voiceInputManager != null) {
       voiceInputManager.cancel();
+    }
+    if (emojiManager != null) {
+      emojiManager.exitEmojiModeSilently();
     }
     requestHideSelf(0);
   }
@@ -1226,6 +1238,13 @@ public class BrailleIme extends InputMethodService {
         }
 
         @Override
+        public void toggleEmojiMode() {
+          if (emojiManager != null) {
+            emojiManager.toggleEmojiMode(getCurrentInputConnection());
+          }
+        }
+
+        @Override
         public void hideBrailleKeyboard() {
           hideSelf();
           escapeReminder.increaseExitKeyboardCounter();
@@ -1516,6 +1535,12 @@ public class BrailleIme extends InputMethodService {
 
         @Override
         public boolean onSwipeProduced(Swipe swipe) {
+          if (emojiManager != null && emojiManager.isEmojiModeActive()) {
+            if (swipe.getDirection() == Swipe.Direction.LEFT && swipe.getTouchCount() == 1) {
+              emojiManager.exitEmojiMode();
+              return true;
+            }
+          }
           if (brailleImeGestureController.performSwipeAction(swipe)) {
             showOnBrailleDisplay();
             if (!brailleDisplayConnectedAndNotSuspended) {
@@ -1553,6 +1578,11 @@ public class BrailleIme extends InputMethodService {
         public String onBrailleProduced(BrailleCharacter brailleChar) {
           if (voiceInputManager != null && voiceInputManager.isListening()) {
             voiceInputManager.cancel();
+          }
+          if (emojiManager != null && emojiManager.isEmojiModeActive()) {
+            emojiManager.onBrailleProduced(brailleChar, getCurrentInputConnection());
+            escapeReminder.restartTimer();
+            return "";
           }
           String result = brailleImeGestureController.performTyping(brailleChar);
           if (!TextUtils.isEmpty(result)) {
@@ -2216,5 +2246,10 @@ public class BrailleIme extends InputMethodService {
   @VisibleForTesting
   public void testing_setTutorialState(State state) {
     tutorialState = state;
+  }
+
+  @VisibleForTesting
+  public EmojiManager testing_getEmojiManager() {
+    return emojiManager;
   }
 }
