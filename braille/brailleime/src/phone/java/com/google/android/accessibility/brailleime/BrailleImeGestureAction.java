@@ -286,6 +286,9 @@ public final class BrailleImeGestureAction {
   /** Returns true if the gesture is valid. */
   public static boolean isValid(Gesture gesture) {
     if (gesture instanceof Swipe swipe && swipe.getTouchCount() <= MAX_SWIPE_TOUCH_POINT) {
+      if (swipe.hasSwipedDot()) {
+        return swipe.getSwipedDot() >= 1 && swipe.getSwipedDot() <= 8;
+      }
       return true;
     }
     return gesture instanceof DotHoldSwipe dotHoldSwipe

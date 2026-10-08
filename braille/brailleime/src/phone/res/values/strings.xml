@@ -224,6 +224,10 @@
   <string name="gesture_swipe_one_finger">Swipe <xliff:g id="direction">%1$s</xliff:g></string>
   <!-- Basic gestures: swipe left/right/up/down with 2/3/4 fingers. [CHAR_LIMIT=100] -->
   <string name="gesture_swipe_multiple_fingers">Swipe <xliff:g id="direction">%1$s</xliff:g> with <xliff:g id="number">%2$s</xliff:g> fingers</string>
+  <!-- Single dot swipe gesture: swipe dot X left/right/up/down. [CHAR_LIMIT=100] -->
+  <string name="gesture_swipe_dot">Swipe dot <xliff:g id="dot">%1$d</xliff:g> <xliff:g id="direction">%2$s</xliff:g></string>
+  <!-- Single dot swipe gesture with multiple fingers. [CHAR_LIMIT=100] -->
+  <string name="gesture_swipe_dot_multiple_fingers">Swipe dot <xliff:g id="dot">%1$d</xliff:g> <xliff:g id="direction">%2$s</xliff:g> with <xliff:g id="number">%3$s</xliff:g> fingers</string>
   <!-- Hold and swipe gestures: hold dot combination and swipe left/right/up/down with one finger. [CHAR_LIMIT=100] -->
   <string name="gesture_hold_and_swipe_one_finger">Hold <xliff:g id="dot_combo">%1$s</xliff:g>, then swipe <xliff:g id="direction">%2$s</xliff:g> anywhere with another finger</string>
   <!-- Hold and swipe gestures: hold dot combination and swipe left/right/up/down with 2/3/4 fingers. [CHAR_LIMIT=100] -->

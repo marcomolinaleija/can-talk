@@ -69,6 +69,8 @@
   <string name="gesture_direction_down">abajo</string>
   <string name="gesture_swipe_one_finger">Deslizar hacia %1$s</string>
   <string name="gesture_swipe_multiple_fingers">Deslizar hacia %1$s con %2$s dedos</string>
+  <string name="gesture_swipe_dot">Deslizar punto %1$d hacia %2$s</string>
+  <string name="gesture_swipe_dot_multiple_fingers">Deslizar punto %1$d hacia %2$s con %3$s dedos</string>
   <string name="gesture_hold_and_swipe_one_finger">Mantener presionado %1$s y deslizar hacia %2$s en cualquier parte con otro dedo</string>
   <string name="gesture_hold_and_swipe_multiple_finger">Mantener presionado %1$s y deslizar hacia %2$s en cualquier parte con %3$s dedos</string>
   <string name="gesture1_or_gesture2">%1$s o %2$s</string>

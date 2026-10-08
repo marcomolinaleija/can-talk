@@ -79,6 +79,9 @@ public class BrailleImeGestureController {
     Optional<BrailleImeAction> optionalBrailleImeAction =
         currentActions.stream().filter(action -> action.equals(action.getRootAction())).findFirst();
     if (optionalBrailleImeAction.isEmpty()) {
+      if (gesture instanceof Swipe swipe && swipe.hasSwipedDot()) {
+        return performAction(swipe.withoutDot());
+      }
       BrailleImeLog.d(TAG, "No BrailleImeAction");
       return false;
     }
