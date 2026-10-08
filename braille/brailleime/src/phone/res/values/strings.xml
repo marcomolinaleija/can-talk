@@ -535,4 +535,12 @@
   <string name="custom_gesture_no_match">Gestures didn\'t match</string>
   <!-- Announced to perform the gesture again. [CHAR_LIMIT=100] -->
   <string name="custom_gesture_perform_again">Perform the gesture you want to use again. <xliff:g id="cancel">%s</xliff:g></string>
+  <!-- Audial announcement when voice input is listening. [CHAR_LIMIT=100] -->
+  <string name="voice_input_listening">Listening…</string>
+  <!-- Audial announcement when no speech was detected in voice input. [CHAR_LIMIT=100] -->
+  <string name="voice_input_no_speech">No speech heard</string>
+  <!-- Audial announcement when voice input is not available. [CHAR_LIMIT=100] -->
+  <string name="voice_input_not_available">Voice input is not available</string>
+  <!-- Audial announcement when microphone permission is required for voice input. [CHAR_LIMIT=100] -->
+  <string name="voice_input_permission_required">Microphone permission required for voice input</string>
 </resources>

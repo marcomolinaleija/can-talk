@@ -206,4 +206,8 @@
   <string name="custom_gesture_try_another">Prueba con otro gesto. Para ver una lista de todos los gestos disponibles, ve al Centro de Ayuda del teclado braille de can-talk. %s</string>
   <string name="custom_gesture_no_match">Los gestos no coinciden</string>
   <string name="custom_gesture_perform_again">Vuelve a hacer el gesto que quieres usar. %s</string>
+  <string name="voice_input_listening">Escuchando…</string>
+  <string name="voice_input_no_speech">No se detectó voz</string>
+  <string name="voice_input_not_available">La entrada por voz no está disponible</string>
+  <string name="voice_input_permission_required">Se necesita permiso de micrófono para la entrada por voz</string>
 </resources>
