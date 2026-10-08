@@ -22,6 +22,14 @@
       android:key="@string/pref_audio_output_device_key"
       android:summary="%s"
       android:title="@string/title_pref_audio_output_device" />
+  <PreferenceCategory
+      android:key="pref_bluetooth_audio_devices"
+      android:title="@string/title_bluetooth_audio_devices">
+    <Preference
+        android:key="pref_bluetooth_audio_devices_description"
+        android:title="@string/summary_bluetooth_audio_devices"
+        android:selectable="false" />
+  </PreferenceCategory>
   <com.google.android.accessibility.material.preference.AccessibilitySuiteSwitchPreference
       android:defaultValue="@bool/pref_use_audio_focus_default"
       android:key="@string/pref_use_audio_focus_key"

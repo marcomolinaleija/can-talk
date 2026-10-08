@@ -87,6 +87,7 @@ class AudioDeviceRouter @JvmOverloads constructor(
   }
 
   private var currentTarget: AudioTarget = AudioTarget.SystemDefault
+  private var effectiveTarget: AudioTarget = AudioTarget.SystemDefault
   private var isMonitoring: Boolean = false
   private var audioDeviceCallback: AudioDeviceCallback? = null
   private var communicationDeviceListener: Any? = null
@@ -121,8 +122,8 @@ class AudioDeviceRouter @JvmOverloads constructor(
   private val reassertionRunnable =
     object : Runnable {
       override fun run() {
-        if (currentTarget == AudioTarget.SystemDefault) return
         ensureRoutingInternal(force = false)
+        if (effectiveTarget == AudioTarget.SystemDefault) return
         if (reassertionStep < REASSERTION_DELAYS_MS.size) {
           mainHandler.postDelayed(this, REASSERTION_DELAYS_MS[reassertionStep++])
         }
@@ -141,6 +142,9 @@ class AudioDeviceRouter @JvmOverloads constructor(
           )
         Log.i(TAG, "SharedPreference changed for audio output device: $newPref")
         setPreferredDevice(newPref)
+      } else if (key == BluetoothAudioDeviceRules.PREF_KEY) {
+        applyRouting()
+        scheduleReassertion()
       }
     }
 
@@ -156,6 +160,7 @@ class AudioDeviceRouter @JvmOverloads constructor(
           R.string.pref_audio_output_device_default,
         )
       currentTarget = AudioTarget.parse(savedPref)
+      effectiveTarget = currentTarget
       Log.i(TAG, "AudioDeviceRouter initialized with target: $currentTarget (raw pref: '$savedPref')")
       prefs.registerOnSharedPreferenceChangeListener(prefChangeListener)
     } catch (e: Exception) {
@@ -211,15 +216,16 @@ class AudioDeviceRouter @JvmOverloads constructor(
   /** Re-evaluates and applies audio routing according to the selected target. */
   fun applyRouting() {
     val am = audioManager ?: return
+    effectiveTarget = resolveEffectiveTarget(am)
     if (isPhoneCallActive) {
       stopKeepAlive()
       clearDeviceRouting(am)
       return
     }
 
-    Log.i(TAG, "Applying audio routing for target: $currentTarget")
-    LogUtils.d(TAG, "Applying audio routing for target: %s", currentTarget)
-    when (val target = currentTarget) {
+    Log.i(TAG, "Applying audio routing for target: $effectiveTarget (preference: $currentTarget)")
+    LogUtils.d(TAG, "Applying audio routing for target: %s", effectiveTarget)
+    when (val target = effectiveTarget) {
       is AudioTarget.SystemDefault -> {
         stopKeepAlive()
         clearDeviceRouting(am)
@@ -262,7 +268,6 @@ class AudioDeviceRouter @JvmOverloads constructor(
    * active and has not been cleared by Android or Bluetooth connection handshakes.
    */
   fun ensureRouting() {
-    if (currentTarget == AudioTarget.SystemDefault) return
     if (isPhoneCallActive) return
     val now = SystemClock.uptimeMillis()
     // If routing is actively verified, throttle to avoid redundant queries.
@@ -273,9 +278,14 @@ class AudioDeviceRouter @JvmOverloads constructor(
   }
 
   private fun ensureRoutingInternal(force: Boolean) {
-    if (currentTarget == AudioTarget.SystemDefault) return
     if (isPhoneCallActive) return
     val am = audioManager ?: return
+    if (resolveEffectiveTarget(am) != effectiveTarget) {
+      applyRouting()
+      scheduleReassertion()
+      return
+    }
+    if (effectiveTarget == AudioTarget.SystemDefault) return
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       val targetDevice = getTargetAudioDevice()
@@ -300,12 +310,12 @@ class AudioDeviceRouter @JvmOverloads constructor(
           TAG,
           "ensureRoutingInternal: resetting communication device to ${targetDevice.productName} (was: ${currentComm?.productName})",
         )
-        setDeviceRouting(am, targetDevice, currentTarget is AudioTarget.PhoneSpeaker)
+        setDeviceRouting(am, targetDevice, effectiveTarget is AudioTarget.PhoneSpeaker)
       } else {
         isRoutingActive = true
       }
     } else {
-      if (currentTarget is AudioTarget.PhoneSpeaker) {
+      if (effectiveTarget is AudioTarget.PhoneSpeaker) {
         setLegacySpeakerphone(am, true)
       }
     }
@@ -427,7 +437,6 @@ class AudioDeviceRouter @JvmOverloads constructor(
    * profile negotiations (which can take 1-2 seconds) or screen on/off transitions.
    */
   fun scheduleReassertion() {
-    if (currentTarget == AudioTarget.SystemDefault) return
     mainHandler.removeCallbacks(reassertionRunnable)
     mainHandler.post(reassertionRunnable.also { reassertionStep = 0 })
   }
@@ -459,7 +468,7 @@ class AudioDeviceRouter @JvmOverloads constructor(
   }
 
   private fun handleCommunicationDeviceChanged(device: AudioDeviceInfo?) {
-    if (currentTarget == AudioTarget.SystemDefault) return
+    if (effectiveTarget == AudioTarget.SystemDefault) return
     if (isPhoneCallActive) return
     val am = audioManager ?: return
     val targetDevice = getTargetAudioDevice()
@@ -469,7 +478,7 @@ class AudioDeviceRouter @JvmOverloads constructor(
         "System altered communication device to ${device?.productName}, immediately re-asserting ${targetDevice.productName}",
       )
       isRoutingActive = false
-      setDeviceRouting(am, targetDevice, currentTarget is AudioTarget.PhoneSpeaker)
+      setDeviceRouting(am, targetDevice, effectiveTarget is AudioTarget.PhoneSpeaker)
       scheduleReassertion()
     } else {
       isRoutingActive = true
@@ -565,12 +574,45 @@ class AudioDeviceRouter @JvmOverloads constructor(
   /** Returns the active target [AudioDeviceInfo], or null if using system default. */
   fun getTargetAudioDevice(): AudioDeviceInfo? {
     val am = audioManager ?: return null
-    return when (val target = currentTarget) {
+    return when (val target = effectiveTarget) {
       is AudioTarget.SystemDefault -> null
       is AudioTarget.PhoneSpeaker -> findSpeakerDevice(am)
       is AudioTarget.AnyExternal -> findExternalDevice(am)
       is AudioTarget.SpecificDevice -> findSpecificDevice(am, target) ?: findExternalDevice(am)
     }
+  }
+
+  /** Apply saved roles to the media output, independently of our forced accessibility route. */
+  private fun resolveEffectiveTarget(am: AudioManager): AudioTarget {
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+    val rules = BluetoothAudioDeviceRules.decode(
+      prefs.getString(BluetoothAudioDeviceRules.PREF_KEY, null))
+    if (rules.none { it.role != BluetoothAudioDeviceRules.Role.UNCHANGED }) return currentTarget
+    val outputs = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS).filter { it.isSink }
+    val bluetooth = outputs.filter { BluetoothAudioDeviceRules.isBluetooth(it) }
+    if (bluetooth.isEmpty()) return currentTarget
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      try {
+        val media = am.getAudioDevicesForAttributes(AudioAttributes.Builder()
+          .setUsage(AudioAttributes.USAGE_MEDIA).build())
+        if (media.isNotEmpty()) {
+          // A wired/phone route or simultaneous outputs must not inherit an idle Bluetooth rule.
+          if (media.any { !BluetoothAudioDeviceRules.isBluetooth(it) }) return currentTarget
+          val active = media.mapNotNull { BluetoothAudioDeviceRules.describe(it)?.identity }
+          if (active.size != media.size) return currentTarget
+          return BluetoothAudioDeviceRules.resolveTarget(currentTarget, active, rules)
+        }
+      } catch (e: Exception) {
+        Log.w(TAG, "Cannot determine the media output for saved Bluetooth roles", e)
+      }
+    }
+    // Older systems do not expose the media route. Only use an unambiguous external device.
+    if (outputs.any { isExternalDevice(it) && !BluetoothAudioDeviceRules.isBluetooth(it) }) {
+      return currentTarget
+    }
+    val connected = bluetooth.mapNotNull { BluetoothAudioDeviceRules.describe(it)?.identity }
+    if (connected.size != bluetooth.size) return currentTarget
+    return BluetoothAudioDeviceRules.resolveTarget(currentTarget, connected, rules)
   }
 
   private fun setDeviceRouting(am: AudioManager, device: AudioDeviceInfo, forceSpeakerOn: Boolean) {

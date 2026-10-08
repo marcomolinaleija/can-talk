@@ -19,6 +19,7 @@ dependencies {
     implementation libs.litertlm
     testImplementation libs.junit
     testImplementation libs.json
+    testImplementation libs.robolectric
 }
 
 // Gemini settings come from local.properties, which is not committed, so each builder uses their own key.
@@ -32,6 +33,7 @@ def geminiModel = localProperties.getProperty('gemini.model', 'gemini-flash-late
 
 android {
     namespace = "com.google.android.accessibility.talkback"
+    testOptions.unitTests.includeAndroidResources = true
     defaultConfig {
         buildConfigField("String", "APPLICATION_ID", '"' + talkbackApplicationId + '"')
         buildConfigField("String", "GEMINI_API_KEY", '"' + geminiApiKey + '"')

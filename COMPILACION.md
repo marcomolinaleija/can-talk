@@ -161,6 +161,29 @@ La opción se aplica cuando la aplicación declara `IME_ACTION_SEND`. Las demás
 
 Las pruebas de teléfono incluyen los módulos `talkback`, `utils` y `brailleime`. Cada módulo genera su informe en `build/reports/tests/testPhoneDebugUnitTest/index.html` dentro de su carpeta; por ejemplo, `braille/brailleime/build/reports/tests/testPhoneDebugUnitTest/index.html`. El informe de lint está en `build/reports/lint-results-phoneDebug.html`. Los APKs, `local.properties`, las claves y los registros locales no deben añadirse a Git.
 
+## Comprobar las reglas de audio Bluetooth
+
+En los ajustes de can-talk, entra en **Sonido y vibración → Dispositivos Bluetooth**. Conecta cada accesorio una vez para que aparezca y selecciona su tipo:
+
+- **Mantener configuración actual:** usa el ajuste general «Dispositivo de salida de audio».
+- **Auriculares: can-talk en Bluetooth:** libera la salida forzada del lector y deja que Android lo dirija al dispositivo Bluetooth activo.
+- **Altavoz: can-talk en el teléfono:** usa el mecanismo existente para mantener la voz y los sonidos del lector en el teléfono.
+
+La elección se conserva al reiniciar can-talk. Los dispositivos configurados siguen apareciendo como desconectados y permiten cambiar o desactivar su regla. No se lee ni se deduce el tipo configurado en Samsung. Cuando no hay una regla aplicable, se recupera el ajuste general anterior.
+
+Para validar en el teléfono:
+
+1. Comprueba primero que un accesorio sin configurar conserva el comportamiento anterior.
+2. Marca el altavoz como «Altavoz», reproduce música por Bluetooth y comprueba que voz y sonidos del lector salgan por el teléfono.
+3. Marca los auriculares como «Auriculares» y comprueba que música, voz y sonidos del lector salgan por ellos.
+4. Desconecta y vuelve a conectar cada accesorio; comprueba que se recupere su regla sin elegir de nuevo.
+5. Cambia un dispositivo a «Mantener configuración actual» y comprueba que vuelva a obedecer el ajuste general.
+6. Comprueba que las llamadas conserven su propia salida: el lector suspende su salida forzada durante una llamada.
+
+Las reglas se asocian a la dirección del dispositivo cuando Android la expone. En sistemas que solo ofrecen el nombre, ese nombre identifica la regla; dos accesorios con el mismo nombre compartirían esa identificación. En Android 13 o posterior se consulta la salida multimedia para evitar aplicar la regla de un accesorio conectado pero inactivo. Si hay varias salidas o dispositivos y no se puede elegir uno con certeza, se conserva el ajuste general.
+
+La separación efectiva depende del enrutamiento de accesibilidad del teléfono y del motor de voz. Estas pruebas de escucha complementan las pruebas unitarias de persistencia y selección; no deben darse por superadas solo porque el APK compile.
+
 ## Automatización en GitHub
 
 El workflow `.github/workflows/build.yml` compila teléfono y reloj, ejecuta las pruebas de teléfono y lint. En un push a `master`, también publica el prerelease `dev` de este repositorio si las verificaciones terminan correctamente. Para que los APKs de ese workflow conserven una firma estable, configura su secreto `DEBUG_KEYSTORE_BASE64` con una clave de firma controlada por el proyecto. Sin ese secreto, el runner genera una clave nueva.
