@@ -170,33 +170,33 @@ public class BrailleImeGestureCommandActivity extends PreferencesActivity {
             getPreferenceScreen().addPreference(preference);
           }
         }
-        handler =
-            new Handler(
-                msg -> {
-                  return switch (msg.what) {
-                    case MSG_GESTURE_TIMEOUT -> {
-                      showNoGesturePerformedHint();
-                      yield true;
-                    }
-                    case MSG_PERFORM_GESTURE_REPLAY -> {
-                      BrailleCommonTalkBackSpeaker.getInstance().speak(getPerformGestureHint());
-                      yield true;
-                    }
-                    default -> false;
-                  };
-                });
-        orientation = getResources().getConfiguration().orientation;
-        keyboardView = new AccessibilityOverlayKeyboardView(getContext(), keyboardViewCallback);
-        customGesturedialog = new CustomGestureDialog(getContext(), customGestureDialogCallback);
-        changeGestureDialog = new ChangeGestureDialog(getContext(), changeGestureDialogCallback);
-        customGestureTalkBackOffDialog =
-            new CustomGestureTalkBackOffDialog(getContext(), talkbackOffDialogCallback);
-        customGestureTooFewTouchPointsDialog =
-            new CustomGestureTooFewTouchPointsDialog(getContext());
-        resetToDefaultDialog = new ResetToDefaultDialog(getContext(), resetToDefaultDialogCallback);
-        mirroredGestureDialog =
-            new MirroredGestureDialog(getContext(), mirroredGestureDialogCallback);
       }
+      handler =
+          new Handler(
+              msg -> {
+                return switch (msg.what) {
+                  case MSG_GESTURE_TIMEOUT -> {
+                    showNoGesturePerformedHint();
+                    yield true;
+                  }
+                  case MSG_PERFORM_GESTURE_REPLAY -> {
+                    BrailleCommonTalkBackSpeaker.getInstance().speak(getPerformGestureHint());
+                    yield true;
+                  }
+                  default -> false;
+                };
+              });
+      orientation = getResources().getConfiguration().orientation;
+      keyboardView = new AccessibilityOverlayKeyboardView(getContext(), keyboardViewCallback);
+      customGesturedialog = new CustomGestureDialog(getContext(), customGestureDialogCallback);
+      changeGestureDialog = new ChangeGestureDialog(getContext(), changeGestureDialogCallback);
+      customGestureTalkBackOffDialog =
+          new CustomGestureTalkBackOffDialog(getContext(), talkbackOffDialogCallback);
+      customGestureTooFewTouchPointsDialog =
+          new CustomGestureTooFewTouchPointsDialog(getContext());
+      resetToDefaultDialog = new ResetToDefaultDialog(getContext(), resetToDefaultDialogCallback);
+      mirroredGestureDialog =
+          new MirroredGestureDialog(getContext(), mirroredGestureDialogCallback);
     }
 
     @Override
