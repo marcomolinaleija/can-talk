@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <string name="title_pref_keep_open_after_send">Keep the keyboard open when sending messages</string>
-  <string name="summary_pref_keep_open_after_send">After sending a message, continue typing without reopening the braille keyboard.</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+  <!-- These Can Talk additions provide English and Spanish; other locales use the English fallback. -->
+  <string name="title_pref_keep_open_after_send" tools:ignore="MissingTranslation">Keep the keyboard open when sending messages</string>
+  <string name="summary_pref_keep_open_after_send" tools:ignore="MissingTranslation">After sending a message, continue typing without reopening the braille keyboard.</string>
 </resources>

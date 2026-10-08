@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <string name="cantalk_active">can-talk is active</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+  <!-- These Can Talk additions provide English and Spanish; other locales use the English fallback. -->
+  <string name="cantalk_active" tools:ignore="MissingTranslation">can-talk is active</string>
 </resources>

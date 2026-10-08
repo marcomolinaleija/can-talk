@@ -59,6 +59,14 @@ Con las Command-line Tools en `cmdline-tools/latest`, instala los componentes y 
 
 Si tu instalación tiene las Command-line Tools en otra carpeta, adapta esa ruta. El nombre de la plataforma es `platforms;android-37.0`, no `platforms;android-37`.
 
+Si prefieres indicar el SDK en `local.properties`, usa barras `/` y escapa los dos puntos de la unidad para que lint acepte la ruta. Por ejemplo:
+
+```properties
+sdk.dir=C\:/Android/Sdk
+```
+
+Conserva las demás propiedades que ya tenga ese archivo. No se añade a Git.
+
 ## Compilar en Windows
 
 Desde la raíz del repositorio:
