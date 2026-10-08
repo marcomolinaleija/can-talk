@@ -240,5 +240,8 @@
   <string name="value_braille_keyboard_echo_characters_and_words">Caracteres y palabras</string>
   <string name="value_braille_keyboard_echo_none">Ninguno</string>
   <string name="value_braille_keyboard_echo_words">Palabras</string>
-
+  <string name="voice_input_listening">Escuchando…</string>
+  <string name="voice_input_no_speech">No se detectó voz</string>
+  <string name="voice_input_not_available">La entrada por voz no está disponible</string>
+  <string name="voice_input_permission_required">Se necesita permiso de micrófono para la entrada por voz</string>
 </resources>

@@ -168,6 +168,9 @@ public class BrailleImeSubmitTest {
 
     @Override
     public void toggleOrientationLock() {}
+
+    @Override
+    public void startVoiceInput() {}
   }
 
   /** Deterministic letters keep the test independent of the native translation library. */
