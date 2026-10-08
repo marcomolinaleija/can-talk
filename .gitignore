@@ -4,7 +4,10 @@ braille/brltty/src/phone/res/raw/keytables.zip
 
 ## special build files
 local.properties
+entorno.local.json
 .gradle/
+.kotlin/
+.atl/
 
 ## generated intermediates
 braille/brailledisplay/build/

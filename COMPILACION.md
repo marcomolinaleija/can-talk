@@ -28,14 +28,18 @@ git fetch upstream
 `origin` es el repositorio de can-talk y `upstream` es BackTalk. `codex/desarrollo` reúne los cambios en desarrollo y `master` contiene los cambios aprobados. Crea cada rama nueva desde `codex/desarrollo`:
 
 ```powershell
+git fetch origin
+# La primera vez: git switch --track origin/codex/desarrollo
 git switch codex/desarrollo
 git pull --ff-only origin codex/desarrollo
 git switch -c codex/nombre-del-cambio
 ```
 
-Después de compilar y probar, integra la rama en `codex/desarrollo`. Cuando los cambios estén aprobados, integra `codex/desarrollo` en `master`.
+Después de compilar y probar, integra la rama en `codex/desarrollo` y resuelve allí los conflictos. Cuando los cambios estén aprobados, decide si fusionar `codex/desarrollo` en `master`. No publiques en `master` como parte de la preparación del entorno: un push a esa rama activa la publicación automática descrita al final de esta guía.
 
 ## Preparar Windows
+
+Si ya tienes un entorno para otro proyecto, como RayoAI, usa [Entorno local sin afectar otros proyectos](#entorno-local-sin-afectar-otros-proyectos) en lugar de cambiar sus variables persistentes o actualizar su SDK. Un JDK portátil también puede coexistir con el Java instalado; consulta la [instalación desde archivos de Temurin](https://adoptium.net/installation/archives).
 
 Instala un JDK y el Android SDK mediante Android Studio o sus Command-line Tools. Configura `JAVA_HOME` con la carpeta del JDK y `ANDROID_HOME` con la raíz del SDK. Por ejemplo, para esta sesión, sustituyendo la ruta del JDK por la tuya:
 
@@ -70,6 +74,36 @@ sdk.dir=C\:/Android/Sdk
 Conserva las demás propiedades que ya tenga ese archivo. No se añade a Git.
 
 ## Compilar en Windows
+
+### Entorno local sin afectar otros proyectos
+
+Para usar un SDK y una caché de Gradle propios de Can Talk, crea `entorno.local.json` en la raíz del repositorio (Git lo ignora). Sustituye las rutas por las de tu equipo:
+
+```json
+{
+  "JAVA_HOME": "C:/ruta/al/jdk",
+  "ANDROID_HOME": "C:/ruta/can-talk/android-sdk",
+  "GRADLE_USER_HOME": "C:/ruta/can-talk/gradle-user-home"
+}
+```
+
+Instala los componentes de la sección Requisitos en ese SDK, usando `sdkmanager --sdk_root="C:/ruta/can-talk/android-sdk"` seguido de los nombres de los paquetes. No ejecutes `--update` sobre el SDK de otro proyecto. Consulta las [opciones oficiales de sdkmanager](https://developer.android.com/tools/sdkmanager).
+
+`compilar.ps1` carga estas rutas sólo durante su ejecución y restaura las variables del proceso al terminar, incluso si falla. No modifica variables de usuario/sistema ni el Gradle global. Sin este archivo, usa la configuración de Java y Android existente. Conserva el wrapper del repositorio: no hace falta instalar Gradle por separado.
+
+Si usas `local.properties`, su `sdk.dir` debe apuntar al mismo SDK local. No pongas claves de API ni contraseñas en `entorno.local.json`.
+
+Si Java falla antes de compilar con `Unable to establish loopback connection` y `UnixDomainSockets.connect0`, también se verificó esta opción local en Windows con JDK 21:
+
+```json
+"JAVA_TOOL_OPTIONS": "-Djdk.net.unixdomain.tmpdir=C:/ruta/can-talk/afunix-disabled/missing"
+```
+
+Añade esa propiedad al objeto JSON sólo si encuentras el fallo. La ruta debe permanecer **inexistente**: provoca que los pipes internos de Java usen TCP local como alternativa a los sockets Unix. No afecta al directorio temporal normal ni cambia firewall, servicios o configuración global. El comportamiento de fallback está en [PipeImpl de OpenJDK](https://github.com/openjdk/jdk21u/blob/master/src/java.base/windows/classes/sun/nio/ch/PipeImpl.java). El script restaura también `JAVA_TOOL_OPTIONS`; si ya usas opciones propias, inclúyelas en el valor local.
+
+### Comandos
+
+También puedes ejecutar `.\compilar.cmd -Prueba` desde CMD o Windows PowerShell 5.1. El lanzador busca primero PowerShell 7 portátil en `%LOCALAPPDATA%\can-talk\powershell\pwsh.exe` y después `pwsh.exe` en el `PATH`. Para preparar esa copia portátil, extrae el ZIP de Windows x64 de las [versiones oficiales de PowerShell](https://github.com/PowerShell/PowerShell/releases) en esa carpeta. No hace falta cambiar el `PATH` global. La política de ejecución se omite sólo en el proceso hijo, no de forma persistente. Para pasar arrays de tareas, usa los comandos de PowerShell 7 que siguen.
 
 Desde la raíz del repositorio:
 
