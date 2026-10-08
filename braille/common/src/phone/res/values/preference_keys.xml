@@ -13,6 +13,7 @@
   <!-- Braille keyboard shared preference keys. -->
   <string name="pref_show_switch_input_code_gesture_tip" translatable="false">pref_show_switch_input_code_gesture_tip</string>
   <string name="pref_brailleime_accumulate_mode" translatable="false">pref_brailleime_accumulate_mode</string>
+  <string name="pref_brailleime_keep_open_after_send" translatable="false">pref_brailleime_keep_open_after_send</string>
   <string name="pref_brailleime_reverse_dots_mode" translatable="false">pref_brailleime_reverse_dots_mode</string>
   <string name="pref_brailleime_flip_dots_vertically" translatable="false">pref_brailleime_flip_dots_vertically</string>
   <string name="pref_brailleime_tablet_held_up_faces_away" translatable="false">pref_brailleime_tablet_held_up_faces_away</string>

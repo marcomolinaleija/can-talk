@@ -71,6 +71,7 @@ public class BrailleUserPreferences {
   // Braille keyboard constants.
   private static final boolean SHOW_SWITCH_INPUT_CODE_GESTURE_TIP = true;
   private static final boolean ACCUMULATE_MODE_DEFAULT = true;
+  private static final boolean KEEP_OPEN_AFTER_SEND_DEFAULT = true;
   private static final boolean REVERSE_DOTS_MODE_DEFAULT = false;
   private static final boolean FLIP_DOTS_VERTICALLY_DEFAULT = false;
   private static final boolean TABLET_HELD_UP_FACES_AWAY_DEFAULT = true;
@@ -292,6 +293,14 @@ public class BrailleUserPreferences {
         .edit()
         .putBoolean(context.getString(R.string.pref_brailleime_accumulate_mode), accumulateMode)
         .apply();
+  }
+
+  /** Reads whether sending a message should leave the braille keyboard open. */
+  public static boolean readKeepKeyboardOpenAfterSend(Context context) {
+    return getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
+        .getBoolean(
+            context.getString(R.string.pref_brailleime_keep_open_after_send),
+            KEEP_OPEN_AFTER_SEND_DEFAULT);
   }
 
   /** Reads reverse dots mode status. */

@@ -33,6 +33,12 @@
         android:summary="%s" />
 
     <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:key="@string/pref_brailleime_keep_open_after_send"
+        android:summary="@string/summary_pref_keep_open_after_send"
+        android:title="@string/title_pref_keep_open_after_send" />
+
+    <SwitchPreferenceCompat
         android:key="@string/pref_brailleime_accumulate_mode"
         android:summary="@string/summary_pref_accumulate_presses"
         android:title="@string/title_pref_accumulate_presses" />

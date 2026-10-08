@@ -743,12 +743,21 @@ public class BrailleIme extends InputMethodService {
    * <p>By far the most common case is for an application to specify a single action (as opposed to
    * multiple). We don't currently support the distinguishment of multiple actions in that case.
    *
-   * <p>Return {@code true} if the keyboard should remain showing.
+   * <p>Optionally keep the keyboard open for 'Send' so another message can be typed immediately.
+   * Other actions dismiss it to restore touch exploration, allowing accessibility focus to move to
+   * the next field.
    */
   private void performEditorAction(InputConnection inputConnection) {
     EditorInfo editorInfo = getCurrentInputEditorInfo();
+    if (inputConnection == null || editorInfo == null) {
+      return;
+    }
     int editorAction = editorInfo.imeOptions & EditorInfo.IME_MASK_ACTION;
     BrailleImeLog.d(TAG, "performEnterAction editorAction = " + editorAction);
+    if (editorAction != EditorInfo.IME_ACTION_SEND
+        || !BrailleUserPreferences.readKeepKeyboardOpenAfterSend(this)) {
+      brailleImeActorCallback.hideBrailleKeyboard();
+    }
     if (editorAction != EditorInfo.IME_ACTION_UNSPECIFIED
         && editorAction != EditorInfo.IME_ACTION_NONE) {
       if (TextUtils.equals(editorInfo.packageName, Constants.ANDROID_MESSAGES_PACKAGE_NAME)) {

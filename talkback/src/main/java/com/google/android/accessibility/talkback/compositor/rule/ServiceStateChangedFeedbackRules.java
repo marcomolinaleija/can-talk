@@ -59,7 +59,7 @@ public final class ServiceStateChangedFeedbackRules {
         EVENT_SPOKEN_FEEDBACK_ON,
         (eventOptions) ->
             EventFeedback.builder()
-                .setTtsOutput(Optional.of(context.getString(R.string.talkback_on)))
+                .setTtsOutput(Optional.of(context.getString(R.string.cantalk_active)))
                 .setQueueMode(QUEUE_MODE_UNINTERRUPTIBLE_BY_NEW_SPEECH)
                 .setForceFeedbackEvenIfAudioPlaybackActive(true)
                 .setForceFeedbackEvenIfMicrophoneActive(true)

@@ -20,6 +20,9 @@ android {
     namespace = "com.android.talkback"
     defaultConfig {
         applicationId = talkbackApplicationId
+        if (canTalkTestBuild) {
+            resValue "string", "talkback_title", "Can Talk — prueba"
+        }
         versionCode = backtalkVersionCodeBase + gitCommitCount
         versionName = talkbackVersionName + "-" + BUILD_TIMESTAMP
         minSdk = 26

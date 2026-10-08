@@ -16,7 +16,7 @@
   <application>
     <service
         android:name="com.google.android.accessibility.brailleime.BrailleIme"
-        android:label="@string/braille_ime_service_name"
+        android:label="${brailleImeLabel}"
         android:enabled="false"
         android:exported="true"
         android:directBootAware="true"

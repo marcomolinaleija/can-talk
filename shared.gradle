@@ -4,7 +4,8 @@
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 ext {
-    talkbackApplicationId = "fyi.quin.backtalk"
+    canTalkTestBuild = providers.gradleProperty('canTalkTestBuild').map { it.toBoolean() }.getOrElse(false)
+    talkbackApplicationId = canTalkTestBuild ? "fyi.quin.backtalk.cantalktest" : "fyi.quin.backtalk"
 }
 
 android {
@@ -14,6 +15,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     defaultConfig {
+        // A separate package and signature permission let local tests coexist with Backtalk.
+        manifestPlaceholders = [
+            migrationPermission: canTalkTestBuild ? talkbackApplicationId + ".permission.MIGRATE" : "fyi.quin.backtalk.permission.MIGRATE",
+            brailleImeLabel: canTalkTestBuild ? "Teclado braille de Can Talk — prueba" : "@string/braille_ime_service_name"
+        ]
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled = true
         minSdk = 26

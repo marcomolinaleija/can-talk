@@ -90,9 +90,9 @@
          com.android.talkback to fyi.quin.backtalk. Both apps declare and hold it, and are signed
          with the same key. -->
     <permission
-        android:name="fyi.quin.backtalk.permission.MIGRATE"
+        android:name="${migrationPermission}"
         android:protectionLevel="signature" />
-    <uses-permission android:name="fyi.quin.backtalk.permission.MIGRATE" />
+    <uses-permission android:name="${migrationPermission}" />
 
     <!-- Granted by the user with adb, to move the accessibility shortcut and the braille keyboard
          from the old app ID and turn the old screen reader off. -->
@@ -391,14 +391,14 @@
             android:name="com.google.android.accessibility.talkback.migration.SettingsExportProvider"
             android:authorities="${applicationId}.migration"
             android:exported="true"
-            android:permission="fyi.quin.backtalk.permission.MIGRATE"
+            android:permission="${migrationPermission}"
             android:directBootAware="true" />
 
         <!-- Turns this screen reader off when Backtalk under its new app ID is on. -->
         <receiver
             android:name="com.google.android.accessibility.talkback.migration.HandOverReceiver"
             android:exported="true"
-            android:permission="fyi.quin.backtalk.permission.MIGRATE">
+            android:permission="${migrationPermission}">
             <intent-filter>
                 <action android:name="fyi.quin.backtalk.action.HAND_OVER" />
             </intent-filter>

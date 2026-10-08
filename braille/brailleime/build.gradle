@@ -6,6 +6,7 @@ apply from: "../../shared.gradle"
 
 android {
     namespace = "com.google.android.accessibility.brailleime"
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
@@ -15,4 +16,5 @@ dependencies {
     implementation project(':brailleimeanalytics')
     implementation project(':brailletranslate')
     testImplementation libs.junit
+    testImplementation libs.robolectric
 }

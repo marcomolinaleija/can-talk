@@ -20,6 +20,8 @@ The emoji names are from the [Unicode CLDR](https://cldr.unicode.org/) and the U
 
 ## Build
 
+Para Can Talk, consulta la [guía de compilación en español](COMPILACION.md): requisitos, Windows, Linux/macOS, APK independiente de prueba e instalación por ADB.
+
 You need JDK 17 or newer, the Android SDK with platform 37, and NDK 27.3.13750724. The Gradle wrapper downloads the correct Gradle version, so you do not need to install Gradle.
 
 ### Linux or macOS

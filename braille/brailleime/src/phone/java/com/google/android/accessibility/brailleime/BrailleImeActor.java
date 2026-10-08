@@ -154,14 +154,7 @@ public class BrailleImeActor {
       case PASTE -> performTextAction(imeConnection, ScreenReaderAction.PASTE);
       case CUT -> performTextAction(imeConnection, ScreenReaderAction.CUT);
       case COPY -> performTextAction(imeConnection, ScreenReaderAction.COPY);
-      case SUBMIT_TEXT ->
-          performTextAction(
-              imeConnection,
-              () -> {
-                callback
-                    .hideBrailleKeyboard(); // Restore EBT so a11y focus could jump to next field.
-                callback.performEditorAction();
-              });
+      case SUBMIT_TEXT -> submitText(imeConnection);
       case ADD_SPACE_OR_NEXT_ITEM -> {
         if (talkBackForBrailleIme.isCurrentGranularityTypoCorrection()) {
           if (!typoHandler.nextSuggestion()) {
@@ -325,6 +318,19 @@ public class BrailleImeActor {
   private void performTextAction(
       ImeConnection imeConnection, ScreenReaderAction screenReaderAction) {
     performTextAction(imeConnection, () -> talkBackForBrailleIme.performAction(screenReaderAction));
+  }
+
+  private void submitText(ImeConnection imeConnection) {
+    EditBuffer editBuffer = callback.getEditBuffer();
+    // Uncontracted braille can report no pending holdings while retaining the composing word.
+    // Always commit to clear that word before the app sends and clears its editor.
+    if (editBuffer != null) {
+      editBuffer.commit(imeConnection);
+    } else {
+      imeConnection.inputConnection.finishComposingText();
+    }
+    // Give the editor a chance to apply the committed text before handling the action.
+    handler.post(callback::performEditorAction);
   }
 
   private void performTextAction(ImeConnection imeConnection, Runnable runnable) {
