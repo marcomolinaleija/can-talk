@@ -150,4 +150,6 @@
   <string name="bk_gesture_next_suggestion">Escuchar la sugerencia siguiente</string>
   <string name="bk_gesture_confirm_spelling_suggestion">Confirmar sugerencia</string>
   <string name="bk_gesture_undo_spelling_suggestion">Deshacer sugerencia</string>
+  <string name="bk_gesture_toggle_orientation_lock">Bloquear o desbloquear la orientación</string>
+
 </resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+  <string name="hint_radial_menu">Toca el centro de la pantalla y desliza hacia un elemento. Levanta el dedo para seleccionarlo. Levántalo en el centro para cerrar el menú.</string>
+  <string name="radial_menu_cancel">Cancelar</string>
+  <string name="radial_menu_closed">Menú cerrado</string>
+  <string name="summary_pref_radial_menu">Mostrar el menú de can-talk como un círculo en el centro de la pantalla. Desliza hacia un elemento y levanta el dedo para seleccionarlo.</string>
+  <string name="template_radial_menu_submenu">Menú <xliff:g id="title" example="Navigation">%1$s</xliff:g></string>
+  <string name="title_pref_radial_menu">Menú circular</string>
+
+</resources>

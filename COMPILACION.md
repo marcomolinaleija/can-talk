@@ -1,4 +1,4 @@
-# Compilar Can Talk
+# Compilar can-talk
 
 Esta guía permite compilar el lector y su teclado braille desde una copia del repositorio. Los comandos de Windows se verificaron con PowerShell 7, Temurin JDK 21 y un Android SDK local. Para empezar a probar en un teléfono que ya tenga BackTalk instalado, usa la compilación independiente.
 
@@ -25,13 +25,15 @@ git remote add upstream git@github.com:trypsynth/backtalk.git
 git fetch upstream
 ```
 
-`origin` es el repositorio de Can Talk y `upstream` es BackTalk. La rama principal es `master`. Para comenzar otro cambio:
+`origin` es el repositorio de can-talk y `upstream` es BackTalk. `codex/desarrollo` reúne los cambios en desarrollo y `master` contiene los cambios aprobados. Crea cada rama nueva desde `codex/desarrollo`:
 
 ```powershell
-git switch master
-git pull --ff-only origin master
+git switch codex/desarrollo
+git pull --ff-only origin codex/desarrollo
 git switch -c codex/nombre-del-cambio
 ```
+
+Después de compilar y probar, integra la rama en `codex/desarrollo`. Cuando los cambios estén aprobados, integra `codex/desarrollo` en `master`.
 
 ## Preparar Windows
 
@@ -79,7 +81,7 @@ Desde la raíz del repositorio:
 .\compilar.ps1 -Prueba
 
 # Pruebas del teclado, compilación de teléfono y análisis estático.
-.\compilar.ps1 -Prueba -Tareas @(':brailleime:testPhoneDebugUnitTest', ':assemblePhoneDebug', ':lintPhoneDebug')
+.\compilar.ps1 -Prueba -Tareas @('testPhoneDebugUnitTest', ':assemblePhoneDebug', ':lintPhoneDebug')
 
 # Compilación para Wear OS.
 .\compilar.ps1 -Tareas @(':assembleWearDebug')
@@ -104,7 +106,7 @@ export JAVA_HOME=/ruta/al/jdk
 export ANDROID_HOME=/ruta/al/Android/Sdk
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
 ./gradlew :assemblePhoneDebug -PcanTalkTestBuild=true --console=plain --max-workers=1 --no-daemon '-Dorg.gradle.jvmargs=-Xms256m -Xmx2g' -Pkotlin.compiler.execution.strategy=in-process
-./gradlew :brailleime:testPhoneDebugUnitTest :lintPhoneDebug -PcanTalkTestBuild=true --console=plain --max-workers=1 '-Dorg.gradle.jvmargs=-Xms256m -Xmx2g'
+./gradlew testPhoneDebugUnitTest :lintPhoneDebug -PcanTalkTestBuild=true --console=plain --max-workers=1 '-Dorg.gradle.jvmargs=-Xms256m -Xmx2g'
 ```
 
 Omite `-PcanTalkTestBuild=true` para compilar el paquete habitual. `build.sh` es otra opción para compilar teléfono y reloj juntos: requiere `ANDROID_SDK` y añade la ruta del SDK a `local.properties` si falta.
@@ -113,8 +115,8 @@ Omite `-PcanTalkTestBuild=true` para compilar el paquete habitual. `build.sh` es
 
 | Compilación | Identificador | Nombre visible |
 | --- | --- | --- |
-| Habitual | `fyi.quin.backtalk` | Backtalk |
-| Con `-Prueba` | `fyi.quin.backtalk.cantalktest` | Can Talk — prueba |
+| Habitual | `fyi.quin.backtalk` | can-talk |
+| Con `-Prueba` | `fyi.quin.backtalk.cantalktest` | can-talk — prueba |
 
 Ambas compilaciones escriben el APK de teléfono en `build/outputs/apk/phone/debug/backtalk-phone-debug.apk`: una sustituye el archivo generado por la otra. El de reloj queda en `build/outputs/apk/wear/debug/backtalk-wear-debug.apk`. Comprueba qué variante compilaste antes de instalar.
 
@@ -150,14 +152,14 @@ Instala el APK, sustituyendo `SERIAL` por el identificador mostrado:
 ## Comprobar el teclado braille
 
 1. Activa el lector de prueba en Accesibilidad y deja solo ese lector activo durante la prueba.
-2. Configura y selecciona «Teclado braille de Can Talk — prueba».
+2. Configura y selecciona «Teclado braille de can-talk — prueba».
 3. En los ajustes del teclado braille, activa «Mantener el teclado abierto al enviar mensajes». Está activada por defecto.
 4. En WhatsApp, escribe y envía varios mensajes seguidos, sin añadir un espacio final. El teclado debe permanecer abierto y el texto del mensaje anterior no debe reaparecer.
 5. Desactiva la opción y comprueba que el teclado se cierre al enviar. El gesto de ocultarlo debe funcionar en ambos modos.
 
 La opción se aplica cuando la aplicación declara `IME_ACTION_SEND`. Las demás acciones conservan el cierre habitual. La memoria braille se confirma y limpia antes de enviar en ambos modos; la aplicación receptora vacía su campo. El anuncio de activación en español es «can-talk está activo».
 
-Las pruebas del módulo braille están en `braille/brailleime/build/reports/tests/testPhoneDebugUnitTest/index.html`; el informe de lint está en `build/reports/lint-results-phoneDebug.html`. Los APKs, `local.properties`, las claves y los registros locales no deben añadirse a Git.
+Las pruebas de teléfono incluyen los módulos `talkback`, `utils` y `brailleime`. Cada módulo genera su informe en `build/reports/tests/testPhoneDebugUnitTest/index.html` dentro de su carpeta; por ejemplo, `braille/brailleime/build/reports/tests/testPhoneDebugUnitTest/index.html`. El informe de lint está en `build/reports/lint-results-phoneDebug.html`. Los APKs, `local.properties`, las claves y los registros locales no deben añadirse a Git.
 
 ## Automatización en GitHub
 

@@ -21,7 +21,7 @@ android {
     defaultConfig {
         applicationId = talkbackApplicationId
         if (canTalkTestBuild) {
-            resValue "string", "talkback_title", "Can Talk — prueba"
+            resValue "string", "talkback_title", "can-talk — prueba"
         }
         versionCode = backtalkVersionCodeBase + gitCommitCount
         versionName = talkbackVersionName + "-" + BUILD_TIMESTAMP
