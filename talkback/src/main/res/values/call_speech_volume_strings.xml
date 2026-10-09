@@ -6,6 +6,6 @@
   <string name="title_call_speech_volume_enabled">Stabilize voice during calls (experimental)</string>
   <string name="summary_call_speech_volume_enabled">Tries to keep can-talk at a steady level when you change call volume. Voice starts quieter to leave room for compensation. Results depend on your phone and voice engine.</string>
   <string name="title_call_speech_volume_percent">Voice volume during calls (%)</string>
-  <string name="summary_call_speech_volume_percent">Percentage of your usual voice volume during calls. A lower value leaves more room to compensate. During a call, hold a finger on the screen and press the volume buttons to change this value. Updates apply to the next spoken phrase.</string>
+  <string name="summary_call_speech_volume_percent">Voice level during calls, from 5 to 100 %. Each 5-point step reduces voice more noticeably. During a call, hold a finger on the screen and press the volume buttons to adjust it. Changes apply to the next spoken phrase.</string>
   <string name="call_speech_volume_announcement">Voice volume during the call: %1$d percent</string>
 </resources>

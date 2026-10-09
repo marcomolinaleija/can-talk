@@ -52,7 +52,8 @@ class CallSpeechVolumePreferencesTest {
     assertEquals("Estabilizar voz durante llamadas (experimental)", switch.title)
     assertFalse(switch.isChecked)
     assertFalse(slider.isEnabled)
-    assertEquals(25, slider.min)
+    assertEquals(5, slider.min)
+    assertEquals(CallSpeechVolumeController.MIN_PERCENT, slider.min)
     assertEquals(100, slider.max)
     assertEquals(50, slider.value)
     screen.onDetached()
@@ -64,14 +65,14 @@ class CallSpeechVolumePreferencesTest {
     val slider = screen.findPreference<SeekBarPreference>(CallSpeechVolumeController.PERCENT_KEY)!!
     switch.isChecked = true
     assertTrue(slider.isEnabled)
-    slider.value = 75
+    slider.value = 5
     val prefs = SharedPreferencesUtils.getSharedPreferences(context)
     assertTrue(prefs.getBoolean(CallSpeechVolumeController.ENABLED_KEY, false))
-    assertEquals(75, prefs.getInt(CallSpeechVolumeController.PERCENT_KEY, 0))
+    assertEquals(5, prefs.getInt(CallSpeechVolumeController.PERCENT_KEY, 0))
     screen.onDetached()
     val recreated = screen()
     assertTrue(recreated.findPreference<SwitchPreferenceCompat>(CallSpeechVolumeController.ENABLED_KEY)!!.isChecked)
-    assertEquals(75, recreated.findPreference<SeekBarPreference>(CallSpeechVolumeController.PERCENT_KEY)!!.value)
+    assertEquals(5, recreated.findPreference<SeekBarPreference>(CallSpeechVolumeController.PERCENT_KEY)!!.value)
     recreated.onDetached()
   }
 }

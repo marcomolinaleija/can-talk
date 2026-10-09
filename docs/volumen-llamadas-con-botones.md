@@ -1,12 +1,17 @@
 # Ajustar la voz durante una llamada con los botones de volumen
 
-**Estado: fase de prueba.** Las comprobaciones automatizadas han pasado y la versión
-se ha instalado en el teléfono. Sigue pendiente validar el gesto en una llamada real
-antes de darlo por estable e integrarlo en desarrollo.
+**Estado: probado en el teléfono de desarrollo.** Han pasado las 43 comprobaciones
+automatizadas de volumen, botones y ajustes. El usuario ha confirmado el funcionamiento
+de la versión instalada con el mínimo de 5 % y la nueva curva. La estabilización conserva
+la etiqueta experimental porque el resultado depende del teléfono y del motor de voz.
 
 Activa **Estabilizar voz durante llamadas (experimental)** en la configuración de voz.
 Durante una llamada, mantén un dedo apoyado en la pantalla y pulsa subir o bajar volumen.
-Cada pulsación cambia **Volumen de voz durante llamadas (%)** en 5 puntos, entre 25 y 100.
+Cada pulsación cambia **Volumen de voz durante llamadas (%)** en 5 puntos, entre 5 y 100.
+El porcentaje es la posición del control, con una curva cuadrática para hacer mayor
+el efecto de los pasos de 5 puntos: 100 % aplica la ganancia habitual, 50 % aplica
+un cuarto y 25 % aplica un dieciseisavo, antes de compensar el volumen de la llamada.
+El cambio de curva también se aplica desde los ajustes y al porcentaje ya guardado.
 Mantener pulsado el botón repite el ajuste mientras el dedo siga en la pantalla.
 can-talk anuncia el porcentaje y aplica el cambio a partir de esa frase.
 El valor queda guardado para las siguientes llamadas.

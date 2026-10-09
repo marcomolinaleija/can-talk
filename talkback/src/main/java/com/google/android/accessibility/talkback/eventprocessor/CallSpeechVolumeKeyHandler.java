@@ -51,10 +51,10 @@ public final class CallSpeechVolumeKeyHandler {
       return false;
     }
     if (eligible && !event.isCanceled()) {
-      int oldPercent = Math.max(25, Math.min(100,
+      int oldPercent = CallSpeechVolumeController.clampPercent(
           prefs.getInt(CallSpeechVolumeController.PERCENT_KEY,
-              CallSpeechVolumeController.DEFAULT_PERCENT)));
-      int percent = Math.max(25, Math.min(100, oldPercent + (index == 0 ? -STEP : STEP)));
+              CallSpeechVolumeController.DEFAULT_PERCENT));
+      int percent = CallSpeechVolumeController.clampPercent(oldPercent + (index == 0 ? -STEP : STEP));
       prefs.edit().putInt(CallSpeechVolumeController.PERCENT_KEY, percent).apply();
       if (percent != oldPercent || event.getRepeatCount() == 0) {
         announcePercent.accept(percent);

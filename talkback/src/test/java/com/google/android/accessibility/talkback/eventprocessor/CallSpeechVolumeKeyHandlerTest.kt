@@ -101,13 +101,13 @@ class CallSpeechVolumeKeyHandlerTest {
   @Test fun keyChange_reachesExistingSpeechController_beforeAnnouncement() {
     val controller = CallSpeechVolumeController(RuntimeEnvironment.getApplication())
     try {
-      assertEquals(0.5f, controller.adjust(1f, AudioManager.STREAM_ACCESSIBILITY), 0.001f)
+      assertEquals(0.25f, controller.adjust(1f, AudioManager.STREAM_ACCESSIBILITY), 0.001f)
       var announcedGain = 0f
       val liveHandler = CallSpeechVolumeKeyHandler(RuntimeEnvironment.getApplication()) {
         announcedGain = controller.adjust(1f, AudioManager.STREAM_ACCESSIBILITY)
       }
       assertTrue(liveHandler.onKeyEvent(key(), true, true))
-      assertEquals(0.45f, announcedGain, 0.001f)
+      assertEquals(0.2025f, announcedGain, 0.001f)
     } finally {
       controller.shutdown()
     }
@@ -116,12 +116,33 @@ class CallSpeechVolumeKeyHandlerTest {
   @Test fun holdingButton_repeatsUntilLowerLimit_withoutRepeatedLimitAnnouncements() {
     prefs.edit().putInt(CallSpeechVolumeController.PERCENT_KEY, 30).commit()
     assertTrue(handler.onKeyEvent(key(), true, true))
-    assertTrue(handler.onKeyEvent(key(repeat = 1), true, true))
-    assertEquals(25, percent())
-    assertEquals(listOf(25), announcements)
+    for (repeat in 1..6) assertTrue(handler.onKeyEvent(key(repeat = repeat), true, true))
+    assertEquals(5, percent())
+    assertEquals(listOf(25, 20, 15, 10, 5), announcements)
     assertTrue(handler.onKeyEvent(key(up = true), true, true))
     assertTrue(handler.onKeyEvent(key(), true, true))
-    assertEquals(listOf(25, 25), announcements)
+    assertEquals(listOf(25, 20, 15, 10, 5, 5), announcements)
+  }
+
+  @Test fun reducingBelowTwentyFive_reachesLiveVoiceGain_withoutChangingCallVolume() {
+    prefs.edit().putInt(CallSpeechVolumeController.PERCENT_KEY, 25).commit()
+    val controller = CallSpeechVolumeController(RuntimeEnvironment.getApplication())
+    val callVolume = audio.getStreamVolume(AudioManager.STREAM_VOICE_CALL)
+    try {
+      assertEquals(0.0625f, controller.adjust(1f, AudioManager.STREAM_ACCESSIBILITY), 0.00001f)
+      val gains = mutableListOf<Float>()
+      val liveHandler = CallSpeechVolumeKeyHandler(RuntimeEnvironment.getApplication()) {
+        gains.add(controller.adjust(1f, AudioManager.STREAM_ACCESSIBILITY))
+      }
+      assertTrue(liveHandler.onKeyEvent(key(), true, true))
+      for (repeat in 1..3) assertTrue(liveHandler.onKeyEvent(key(repeat = repeat), true, true))
+      val expected = listOf(0.04f, 0.0225f, 0.01f, 0.0025f)
+      assertEquals(expected.size, gains.size)
+      expected.zip(gains).forEach { (wanted, actual) -> assertEquals(wanted, actual, 0.00001f) }
+      assertEquals(callVolume, audio.getStreamVolume(AudioManager.STREAM_VOICE_CALL))
+    } finally {
+      controller.shutdown()
+    }
   }
 
   @Test fun upperLimit_andIndependentKeyReleases() {

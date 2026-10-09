@@ -20,6 +20,12 @@ public final class CallSpeechVolumeController {
   public static final String ENABLED_KEY = "pref_call_speech_volume_enabled";
   public static final String PERCENT_KEY = "pref_call_speech_volume_percent";
   public static final int DEFAULT_PERCENT = 50;
+  public static final int MIN_PERCENT = 5;
+  public static final int MAX_PERCENT = 100;
+
+  public static int clampPercent(int value) {
+    return Math.max(MIN_PERCENT, Math.min(MAX_PERCENT, value));
+  }
 
   private static final String TAG = "CallSpeechVolume";
   private final Context context;
@@ -68,7 +74,7 @@ public final class CallSpeechVolumeController {
       compensation.reset();
     }
     enabled = newEnabled;
-    percent = Math.max(25, Math.min(100, prefs.getInt(PERCENT_KEY, DEFAULT_PERCENT)));
+    percent = clampPercent(prefs.getInt(PERCENT_KEY, DEFAULT_PERCENT));
   }
 
   @RequiresApi(Build.VERSION_CODES.S)
