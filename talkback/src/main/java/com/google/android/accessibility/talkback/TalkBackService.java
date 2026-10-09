@@ -160,6 +160,7 @@ import com.google.android.accessibility.talkback.directtouch.DirectTouchControll
 import com.google.android.accessibility.talkback.eventprocessor.AccessibilityEventProcessor;
 import com.google.android.accessibility.talkback.eventprocessor.AccessibilityEventProcessor.TalkBackListener;
 import com.google.android.accessibility.talkback.eventprocessor.CallSpeechVolumeKeyHandler;
+import com.google.android.accessibility.talkback.eventprocessor.LocalMediaVolumeKeyHandler;
 import com.google.android.accessibility.talkback.clipboard.ClipboardHistoryController;
 import com.google.android.accessibility.talkback.appsearch.BrailleAppSearchController;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorEmojiTraversal;
@@ -673,6 +674,7 @@ public class TalkBackService extends AccessibilityServiceCompat
   private VolumeMonitor volumeMonitor;
 
   private CallSpeechVolumeKeyHandler callSpeechVolumeKeyHandler;
+  private LocalMediaVolumeKeyHandler localMediaVolumeKeyHandler;
   private ClipboardHistoryController clipboardHistoryController;
   private BrailleAppSearchController brailleAppSearchController;
 
@@ -1216,6 +1218,12 @@ public class TalkBackService extends AccessibilityServiceCompat
         && callSpeechVolumeKeyHandler.onKeyEvent(keyEvent, readerActive, touchingScreen)) {
       return true;
     }
+    if (localMediaVolumeKeyHandler != null
+        && localMediaVolumeKeyHandler.hasCapturedKey(keyEvent)
+        && localMediaVolumeKeyHandler.onKeyEvent(keyEvent,
+            readerActive && !pipeline.getActorState().getContinuousRead().isActive(), touchingScreen)) {
+      return true;
+    }
     if (pauseController != null) {
       // While paused, keys pass to apps except the ones that resume Backtalk.
       Boolean handled = pauseController.onKeyEvent(keyEvent);
@@ -1247,6 +1255,12 @@ public class TalkBackService extends AccessibilityServiceCompat
         FeatureFlagReader.enableSpeechVolumeKeyboard(this)
             && (keyEvent.getModifiers() & keyComboManager.getKeyComboModel().getTriggerModifier())
                 != 0;
+    if (localMediaVolumeKeyHandler != null
+        && localMediaVolumeKeyHandler.onKeyEvent(keyEvent,
+            readerActive && !triggerModifierPressed
+                && !pipeline.getActorState().getContinuousRead().isActive(), touchingScreen)) {
+      return true;
+    }
     if (keyAction == KeyEvent.ACTION_DOWN) {
       boolean handleVolumeKeyInTalkBack =
           isTouchInteracting
@@ -2367,6 +2381,8 @@ public class TalkBackService extends AccessibilityServiceCompat
                         | FeedbackItem.FLAG_FORCE_FEEDBACK_EVEN_IF_AUDIO_PLAYBACK_ACTIVE
                         | FeedbackItem.FLAG_FORCE_FEEDBACK_EVEN_IF_MICROPHONE_ACTIVE
                         | FeedbackItem.FLAG_FORCE_FEEDBACK_EVEN_IF_PHONE_CALL_ACTIVE))));
+
+    localMediaVolumeKeyHandler = new LocalMediaVolumeKeyHandler(this);
 
     ProcessorVolumeStream processorVolumeStream =
         new ProcessorVolumeStream(pipeline.getActorState(), this, touchInteractingIndicator);
