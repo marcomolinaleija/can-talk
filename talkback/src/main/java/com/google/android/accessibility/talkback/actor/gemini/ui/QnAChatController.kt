@@ -19,6 +19,7 @@ package com.google.android.accessibility.talkback.actor.gemini.ui
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import com.google.android.accessibility.gemineye.screenoverview.json.UiElement
 import com.google.android.accessibility.talkback.actor.gemini.ui.ImageQnaChatAdapter.ImageQnaMessage
+import com.google.android.accessibility.utils.Consumer
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -39,6 +40,9 @@ interface QnAChatController {
 
   /** The user tried to issue a voice command, but the speech-to-text failed */
   fun onVoiceError(error: Int)
+
+  /** Sets a direct listener for UI state changes. */
+  var uiStateListener: Consumer<UiState>?
 }
 
 /** UI state of the chat dialog */

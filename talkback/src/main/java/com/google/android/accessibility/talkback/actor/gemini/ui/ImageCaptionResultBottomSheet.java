@@ -240,6 +240,9 @@ public class ImageCaptionResultBottomSheet {
               chatMetrics.sendLog(isScreenDescription, collectionList);
             }
           }
+          if (currentAdapter != null) {
+            currentAdapter.cleanup();
+          }
           imageBytesForQna = null;
           currentAdapter = null;
           service.unregisterDialog(dialog);
@@ -295,6 +298,8 @@ public class ImageCaptionResultBottomSheet {
     final boolean isDimScreenEnabled;
     BottomSheetDialog mainDialog;
     ViewHolder viewHolderAttachedToWindow;
+    @Nullable ImageQnAVoiceInputChatViewHolder voiceInputChatViewHolder;
+    @Nullable ImageQnATypingChatViewHolder typingChatViewHolder;
 
     // Skip voice input result when interrupting the voice input and switching to tying.
     boolean skipVoiceInputResult;
@@ -332,18 +337,11 @@ public class ImageCaptionResultBottomSheet {
           new ImageQnaChatAdapter(context, mainHandler, pipeline, isDimScreenEnabled);
 
       // Listen for changes to the messages and UiState from the controller.
+      controller.setUiStateListener(uiState -> mainHandler.post(() -> handleUiState(uiState)));
       CoroutineHelper.INSTANCE.collect(
           lifecycle,
           controller.getUiState(),
-          uiState -> {
-            if (uiState instanceof UiState.Chatting chat) {
-              imageQnaChatAdapter.setMessages(chat.getMessages(), chat.isLoading());
-
-              notifyMessageRangeChanged(viewHolderAttachedToWindow);
-            } else if (uiState instanceof UiState.FinishedAndExit) {
-              mainDialog.dismiss();
-            }
-          });
+          uiState -> mainHandler.post(() -> handleUiState(uiState)));
     }
 
     @NonNull
@@ -499,6 +497,7 @@ public class ImageCaptionResultBottomSheet {
                 pipeline.returnFeedback(EVENT_ID_UNTRACKED, Feedback.focus(MUTE_NEXT_FOCUS));
 
                 controller.onVoiceError(error);
+                syncUiStateWithAdapter();
 
                 viewPager.setCurrentItem(IMAGE_QA_CHAT_VOICE_INPUT, false);
               }
@@ -517,6 +516,7 @@ public class ImageCaptionResultBottomSheet {
         }
       } else if (viewHolder
           instanceof ImageQnAVoiceInputChatViewHolder imageQnAVoiceInputChatViewHolder) {
+        voiceInputChatViewHolder = imageQnAVoiceInputChatViewHolder;
         // The page of the screen Q&A UI with voice input.
         imageQnAVoiceInputChatViewHolder.setChatAdapter(context, imageQnaChatAdapter);
         imageQnAVoiceInputChatViewHolder.setAskGeminiButtonOnClickListener(
@@ -535,18 +535,18 @@ public class ImageCaptionResultBottomSheet {
           imageQnAVoiceInputChatViewHolder.setDimScreenEnabled();
         }
       } else if (viewHolder instanceof ImageQnATypingChatViewHolder imageQnATypingChatViewHolder) {
+        typingChatViewHolder = imageQnATypingChatViewHolder;
         // The page of the screen Q&A UI with typing.
         imageQnATypingChatViewHolder.setChatAdapter(context, imageQnaChatAdapter);
         imageQnATypingChatViewHolder.setEditTextOnEditorActionListener(
             (textView, actionId, keyEvent) -> {
               if (actionId == EditorInfo.IME_ACTION_DONE) {
                 pipeline.returnFeedback(EVENT_ID_UNTRACKED, Feedback.focus(MUTE_NEXT_FOCUS));
-                imageQnATypingChatViewHolder.setEditingMode(/* enableEditing= */ false);
                 String enteredText = textView.getText().toString();
+                imageQnATypingChatViewHolder.setEditingMode(/* enableEditing= */ false);
                 LogUtils.d(TAG, "Enter text : %s", enteredText);
                 if (!TextUtils.isEmpty(enteredText)) {
                   requestImageQna(enteredText, /* isVoiceInput= */ false);
-                  notifyMessageRangeChanged(imageQnATypingChatViewHolder);
                   return true;
                 }
               }
@@ -555,12 +555,11 @@ public class ImageCaptionResultBottomSheet {
         imageQnATypingChatViewHolder.setSendTextButtonOnClickListener(
             view -> {
               pipeline.returnFeedback(EVENT_ID_UNTRACKED, Feedback.focus(MUTE_NEXT_FOCUS));
-              imageQnATypingChatViewHolder.setEditingMode(/* enableEditing= */ false);
               String question = imageQnATypingChatViewHolder.getEditText();
+              imageQnATypingChatViewHolder.setEditingMode(/* enableEditing= */ false);
               LogUtils.d(TAG, "Send text : %s", question);
               if (!TextUtils.isEmpty(question)) {
                 requestImageQna(question, /* isVoiceInput= */ false);
-                notifyMessageRangeChanged(imageQnATypingChatViewHolder);
               }
             });
         imageQnATypingChatViewHolder.setAskGeminiTypingButtonOnClickListener(
@@ -588,13 +587,15 @@ public class ImageCaptionResultBottomSheet {
     @Override
     public void onViewAttachedToWindow(@NonNull ViewHolder viewHolder) {
       viewHolderAttachedToWindow = viewHolder;
-      // For long conversations, scroll the chatting UI to the latest user message position.
+      // For conversations, scroll the chatting UI to the latest message position.
       if (viewHolder instanceof ImageQnAVoiceInputChatViewHolder imageQnAVoiceInputChatViewHolder) {
-        if (imageQnaChatAdapter.getItemCount() > 2) {
+        voiceInputChatViewHolder = imageQnAVoiceInputChatViewHolder;
+        if (imageQnaChatAdapter.getItemCount() > 1) {
           imageQnAVoiceInputChatViewHolder.scrollToPosition(imageQnaChatAdapter.getItemCount() - 1);
         }
       } else if (viewHolder instanceof ImageQnATypingChatViewHolder imageQnATypingChatViewHolder) {
-        if (imageQnaChatAdapter.getItemCount() > 2) {
+        typingChatViewHolder = imageQnATypingChatViewHolder;
+        if (imageQnaChatAdapter.getItemCount() > 1) {
           imageQnATypingChatViewHolder.scrollToPosition(imageQnaChatAdapter.getItemCount() - 1);
         }
 
@@ -619,29 +620,54 @@ public class ImageCaptionResultBottomSheet {
 
     void requestImageQna(String question, boolean isVoiceInput) {
       controller.onNewCommand(question, imageBytesForQna, isVoiceInput);
+      syncUiStateWithAdapter();
     }
 
     void onImageQnaResponse(String message) {
       controller.onImageQnaResponse(message);
+      syncUiStateWithAdapter();
     }
 
     void notifyMessageRangeChanged(ViewHolder viewHolder) {
+      scrollToBottom();
+    }
+
+    void handleUiState(UiState uiState) {
+      if (uiState instanceof UiState.Chatting chat) {
+        imageQnaChatAdapter.setMessages(chat.getMessages(), chat.isLoading());
+        scrollToBottom();
+      } else if (uiState instanceof UiState.FinishedAndExit) {
+        mainDialog.dismiss();
+      }
+    }
+
+    void syncUiStateWithAdapter() {
+      mainHandler.post(
+          () -> {
+            UiState state = controller.getUiState().getValue();
+            handleUiState(state);
+          });
+    }
+
+    void scrollToBottom() {
       mainHandler.post(
           () -> {
             var position = imageQnaChatAdapter.getItemCount() - 1;
-            // Scroll the Q&A UI
-            if (viewHolder
-                instanceof ImageQnAVoiceInputChatViewHolder imageQnAVoiceInputChatViewHolder) {
-              if (position > 0) {
-                imageQnAVoiceInputChatViewHolder.scrollToPosition(position);
+            if (position > 0) {
+              if (voiceInputChatViewHolder != null) {
+                voiceInputChatViewHolder.scrollToPosition(position);
               }
-            } else if (viewHolder
-                instanceof ImageQnATypingChatViewHolder imageQnATypingChatViewHolder) {
-              if (position > 0) {
-                imageQnATypingChatViewHolder.scrollToPosition(position);
+              if (typingChatViewHolder != null) {
+                typingChatViewHolder.scrollToPosition(position);
               }
             }
           });
+    }
+
+    void cleanup() {
+      controller.setUiStateListener(null);
+      voiceInputChatViewHolder = null;
+      typingChatViewHolder = null;
     }
 
     void startVoiceInput() {
@@ -860,12 +886,16 @@ public class ImageCaptionResultBottomSheet {
     }
 
     void setChatAdapter(Context context, ImageQnaChatAdapter imageQnaChatAdapter) {
-      chatRecyclerView.setLayoutManager(new LinearLayoutManager(context));
-      chatRecyclerView.setAdapter(imageQnaChatAdapter);
+      if (chatRecyclerView.getLayoutManager() == null) {
+        chatRecyclerView.setLayoutManager(new LinearLayoutManager(context));
+      }
+      if (chatRecyclerView.getAdapter() != imageQnaChatAdapter) {
+        chatRecyclerView.setAdapter(imageQnaChatAdapter);
+      }
     }
 
     void scrollToPosition(int position) {
-      chatRecyclerView.scrollToPosition(position);
+      chatRecyclerView.post(() -> chatRecyclerView.scrollToPosition(position));
     }
 
     void setAskGeminiButtonOnClickListener(OnClickListener listener) {
@@ -927,12 +957,16 @@ public class ImageCaptionResultBottomSheet {
     }
 
     void setChatAdapter(Context context, ImageQnaChatAdapter imageQnaChatAdapter) {
-      chatRecyclerView.setLayoutManager(new LinearLayoutManager(context));
-      chatRecyclerView.setAdapter(imageQnaChatAdapter);
+      if (chatRecyclerView.getLayoutManager() == null) {
+        chatRecyclerView.setLayoutManager(new LinearLayoutManager(context));
+      }
+      if (chatRecyclerView.getAdapter() != imageQnaChatAdapter) {
+        chatRecyclerView.setAdapter(imageQnaChatAdapter);
+      }
     }
 
     void scrollToPosition(int position) {
-      chatRecyclerView.scrollToPosition(position);
+      chatRecyclerView.post(() -> chatRecyclerView.scrollToPosition(position));
     }
 
     void setAskGeminiTypingButtonOnClickListener(OnClickListener listener) {

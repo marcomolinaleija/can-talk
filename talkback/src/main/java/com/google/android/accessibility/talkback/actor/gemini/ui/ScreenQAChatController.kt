@@ -134,11 +134,11 @@ constructor(
         // TODO: this should go through the pipeline
         node.performAction(intent.action.id)
 
-        _uiState.value = UiState.FinishedAndExit
+        updateUiState(UiState.FinishedAndExit)
       }
 
       is OverviewIntent.CloseDialog -> {
-        _uiState.value = UiState.FinishedAndExit
+        updateUiState(UiState.FinishedAndExit)
       }
     }
   }
