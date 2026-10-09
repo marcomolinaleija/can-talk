@@ -74,25 +74,10 @@ object UpdateChecker {
   private val BUILD_LINE = Regex("""build:\s*(\d+)""")
 
   /**
-   * Returns the newer build, or null if this build is current. This blocks on the network.
-   *
-   * @throws IOException if GitHub cannot be reached or returns an error.
-   * @throws JSONException if the release is not in the expected format.
+   * Returns the newer build, or null if this build is current or update checks are decoupled.
    */
   @WorkerThread
-  fun check(context: Context): UpdateInfo? {
-    val channel =
-      if (context.packageName == AppIdMove.OLD_PACKAGE) {
-        checkMove(context)?.let {
-          return it
-        }
-        OLD_CHANNEL
-      } else {
-        NEW_CHANNEL
-      }
-    val json = fetchRelease(context, channel) ?: throw IOException("GitHub has no $channel release")
-    return parseRelease(json, BuildConfig.COMMIT_COUNT, BuildConfig.COMMIT_HASH, apkName())
-  }
+  fun check(context: Context): UpdateInfo? = null
 
   /**
    * Returns the newest build under the new app ID, whatever its build number, since the new app

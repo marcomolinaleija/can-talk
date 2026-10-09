@@ -96,11 +96,7 @@ object Updater {
   /** Starts automatic checks. Called when the service starts. */
   @JvmStatic
   fun startAutomaticChecks(context: Context) {
-    serviceContext = context.applicationContext
-    mainHandler.removeCallbacks(startupCheck)
-    mainHandler.removeCallbacks(periodicCheck)
-    mainHandler.postDelayed(startupCheck, STARTUP_DELAY_MS)
-    mainHandler.postDelayed(periodicCheck, POLL_INTERVAL_MS)
+    // Disabled: this fork is unlinked from upstream backtalk updates.
   }
 
   /** Stops automatic checks. Called when the service stops. */
@@ -114,84 +110,25 @@ object Updater {
   /** Sets up the "Check for updates" preference in the main settings screen. */
   @JvmStatic
   fun setUpPreferences(fragment: PreferenceFragmentCompat) {
-    val preference =
-      fragment.findPreference<Preference>(fragment.getString(R.string.pref_check_for_updates_key))
-        ?: return
-    preference.summary =
-      fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.COMMIT_COUNT)
-    preference.setOnPreferenceClickListener {
-      fragment.activity?.let { checkManually(it) }
-      true
+    fragment.findPreference<Preference>(fragment.getString(R.string.pref_check_for_updates_key))?.let {
+      it.isVisible = false
+    }
+    fragment.findPreference<Preference>(fragment.getString(R.string.pref_auto_update_check_key))?.let {
+      it.isVisible = false
     }
   }
 
-  private fun isAutomaticCheckEnabled(context: Context): Boolean =
-    SharedPreferencesUtils.getBooleanPref(
-      SharedPreferencesUtils.getSharedPreferences(context),
-      context.resources,
-      R.string.pref_auto_update_check_key,
-      R.bool.pref_auto_update_check_default,
-    )
+  private fun isAutomaticCheckEnabled(context: Context): Boolean = false
 
   private fun checkAutomatically(context: Context, ignoreInterval: Boolean) {
-    if (!isAutomaticCheckEnabled(context)) {
-      return
-    }
-    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
-    val now = System.currentTimeMillis()
-    val lastCheck = prefs.getLong(PREF_LAST_CHECK_TIME, 0)
-    // A clock that moved back also makes a check due.
-    if (!ignoreInterval && now >= lastCheck && now - lastCheck < CHECK_INTERVAL_MS) {
-      return
-    }
-    executor.execute {
-      val update =
-        try {
-          UpdateChecker.check(context)
-        } catch (e: Exception) {
-          LogUtils.w(TAG, "Automatic update check failed: %s", e)
-          return@execute
-        }
-      prefs.edit().putLong(PREF_LAST_CHECK_TIME, System.currentTimeMillis()).apply()
-      if (update != null && update.build > prefs.getInt(PREF_LAST_NOTIFIED_BUILD, 0)) {
-        // A notification that Android won't show doesn't count, so the build is still announced
-        // once notifications are allowed.
-        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
-          LogUtils.w(TAG, "Build %d is available, but notifications are off", update.build)
-          return@execute
-        }
-        prefs.edit().putInt(PREF_LAST_NOTIFIED_BUILD, update.build).apply()
-        showNotification(context, update)
-      }
-    }
+    // Disabled: this fork is unlinked from upstream backtalk updates.
   }
 
   /** Checks now, and offers to install a newer build. */
   @JvmStatic
   fun checkManually(activity: Activity) {
     val context = activity.applicationContext
-    toast(context, R.string.update_checking)
-    executor.execute {
-      val update =
-        try {
-          UpdateChecker.check(context)
-        } catch (e: Exception) {
-          LogUtils.w(TAG, "Update check failed: %s", e)
-          mainHandler.post { toast(context, R.string.update_check_failed) }
-          return@execute
-        }
-      SharedPreferencesUtils.getSharedPreferences(context)
-        .edit()
-        .putLong(PREF_LAST_CHECK_TIME, System.currentTimeMillis())
-        .apply()
-      mainHandler.post {
-        when {
-          update == null -> toast(context, R.string.update_up_to_date)
-          activity.isFinishing || activity.isDestroyed -> showNotification(context, update)
-          else -> showUpdateDialog(activity, update)
-        }
-      }
-    }
+    toast(context, R.string.update_up_to_date)
   }
 
   private fun notificationText(context: Context, update: UpdateInfo): String =
