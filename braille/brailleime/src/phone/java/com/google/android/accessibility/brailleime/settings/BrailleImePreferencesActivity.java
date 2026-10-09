@@ -71,6 +71,7 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
   /** TalkBack invokes this to provide us with the TalkBackForBrailleIme instance. */
   public static void initialize(TalkBackForBrailleIme talkBackForBrailleIme) {
     BrailleImePreferencesActivity.talkBackForBrailleIme = talkBackForBrailleIme;
+    BraillePointCalibrationActivity.initialize(talkBackForBrailleIme);
   }
 
   @Override
@@ -227,6 +228,7 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
         if (pointRecalibrationPref != null) {
           pointRecalibrationPref.setOnPreferenceClickListener(
               preference -> {
+                BraillePointCalibrationActivity.initialize(talkBackForBrailleIme);
                 startActivity(new Intent(getContext(), BraillePointCalibrationActivity.class));
                 return true;
               });

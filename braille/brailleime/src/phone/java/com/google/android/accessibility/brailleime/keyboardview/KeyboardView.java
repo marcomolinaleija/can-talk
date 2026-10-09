@@ -48,6 +48,7 @@ import com.google.android.accessibility.brailleime.R;
 import com.google.android.accessibility.brailleime.Utils;
 import com.google.android.accessibility.brailleime.dialog.ViewAttachedDialog;
 import com.google.android.accessibility.brailleime.input.BrailleDisplayImeStripView;
+import com.google.android.accessibility.brailleime.input.BrailleInputPlane;
 import com.google.android.accessibility.brailleime.input.BrailleInputView;
 import com.google.android.accessibility.brailleime.input.PortPosition;
 import com.google.android.accessibility.brailleime.tutorial.TutorialView;
@@ -404,6 +405,19 @@ public abstract class KeyboardView {
       return;
     }
     brailleInputView.calibrateByTwoSteps();
+  }
+
+  /** Starts sequential dot calibration (dots 1 through 6). */
+  public void startSequentialCalibration(
+      @Nullable BrailleInputPlane.SequentialCalibrationListener listener) {
+    if (brailleInputView != null) {
+      brailleInputView.startSequentialCalibration(listener);
+    }
+  }
+
+  /** Whether sequential dot calibration is currently active. */
+  public boolean isSequentialCalibrationActive() {
+    return brailleInputView != null && brailleInputView.isSequentialCalibrationActive();
   }
 
   /** Returns ime region size on the screen. */

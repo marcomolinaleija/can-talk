@@ -8,7 +8,7 @@
   <string name="summary_pref_point_recalibration">Toca cada uno de los 6 puntos en la pantalla para recalibrar el teclado como en ABK.</string>
   <string name="recalibrate_intro">Recalibración de puntos. Toca en la pantalla la posición para el punto 1.</string>
   <string name="recalibrate_touch_dot_prompt">Toca el punto %d</string>
-  <string name="recalibrate_dot_saved_prompt">Punto %d guardado. Toca el punto %d.</string>
+  <string name="recalibrate_dot_saved_prompt">Punto %1$d guardado. Toca el punto %2$d.</string>
   <string name="recalibrate_dot_saved">Punto %d guardado</string>
   <string name="recalibrate_completed">Calibración completada con éxito.</string>
   <string name="recalibrate_reset">Reiniciar</string>

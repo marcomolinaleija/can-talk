@@ -35,9 +35,18 @@ import android.util.Size;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
+import android.graphics.Color;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
+import android.os.Build;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import androidx.annotation.ColorInt;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.accessibility.braille.common.BrailleCommonTalkBackSpeaker;
 import com.google.android.accessibility.braille.common.Constants.BrailleType;
+import com.google.android.accessibility.braille.common.TalkBackSpeaker;
 import com.google.android.accessibility.braille.interfaces.BrailleCharacter;
 import com.google.android.accessibility.brailleime.BrailleImeLog;
 import com.google.android.accessibility.brailleime.BrailleInputOptions;
@@ -49,8 +58,10 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -110,7 +121,20 @@ public abstract class BrailleInputPlane {
   private PointF[] textPosition;
   private PointF[] dotCenterPosition;
   private TwoStepCalibrationState twoStepCalibrationState = NONE;
+  private int sequentialCalibrationDot = 0;
+  private final Map<Integer, PointF> sequentialCalibratedDots = new HashMap<>();
+  private SequentialCalibrationListener sequentialCalibrationListener;
+  private ToneGenerator calibrationToneGenerator;
+  private Paint calibratedDotPaint;
+  private Paint promptTextPaint;
   private final CustomOnGestureListener customOnGestureListener;
+
+  /** Listener for sequential dot calibration (1 to 6). */
+  public interface SequentialCalibrationListener {
+    default void onDotSaved(int dotNumber, int nextDotNumber) {}
+
+    void onCalibrationCompleted();
+  }
   private final MultitouchResultListener multitouchResultListener =
       new MultitouchResultListener() {
         @Override
@@ -397,6 +421,12 @@ public abstract class BrailleInputPlane {
    * @param event the MotionEvent as received by the owning View's onTouchEvent() method.
    */
   boolean onTouchEvent(MotionEvent event) {
+    if (sequentialCalibrationDot > 0) {
+      if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+        onSequentialDotTapped(event.getX(), event.getY());
+      }
+      return true;
+    }
     boolean result = multitouchHandler.onTouchEvent(event);
     currentlyPressedDots = matchTouchToTargets(multitouchHandler.getActivePoints());
     return result;
@@ -495,6 +525,109 @@ public abstract class BrailleInputPlane {
     calibrationFailCount = 0;
   }
 
+  /** Starts sequential dot calibration (dots 1 through 6). */
+  public void startSequentialCalibration(@Nullable SequentialCalibrationListener listener) {
+    this.sequentialCalibrationListener = listener;
+    this.sequentialCalibrationDot = 1;
+    this.sequentialCalibratedDots.clear();
+    this.twoStepCalibrationState = NONE;
+    String intro = context.getString(R.string.recalibrate_intro);
+    String prompt = context.getString(R.string.recalibrate_touch_dot_prompt, 1);
+    BrailleCommonTalkBackSpeaker.getInstance().speak(
+        intro + " " + prompt, TalkBackSpeaker.AnnounceType.INTERRUPT);
+  }
+
+  /** Cancels sequential calibration. */
+  public void cancelSequentialCalibration() {
+    sequentialCalibrationDot = 0;
+    sequentialCalibratedDots.clear();
+    sequentialCalibrationListener = null;
+    if (calibrationToneGenerator != null) {
+      try {
+        calibrationToneGenerator.release();
+      } catch (Exception ignored) {
+      }
+      calibrationToneGenerator = null;
+    }
+  }
+
+  /** Whether sequential calibration is currently active. */
+  public boolean isSequentialCalibrationActive() {
+    return sequentialCalibrationDot > 0;
+  }
+
+  private void onSequentialDotTapped(float x, float y) {
+    int totalDots = options.brailleType().getDotCount();
+    if (sequentialCalibrationDot < 1 || sequentialCalibrationDot > totalDots) {
+      return;
+    }
+    int currentDot = sequentialCalibrationDot;
+    sequentialCalibratedDots.put(currentDot, new PointF(x, y));
+    provideSequentialCalibrationFeedback();
+
+    if (currentDot < totalDots) {
+      int nextDot = currentDot + 1;
+      sequentialCalibrationDot = nextDot;
+      String prompt = context.getString(R.string.recalibrate_dot_saved_prompt, currentDot, nextDot);
+      BrailleCommonTalkBackSpeaker.getInstance().speak(
+          prompt, TalkBackSpeaker.AnnounceType.INTERRUPT);
+      if (sequentialCalibrationListener != null) {
+        sequentialCalibrationListener.onDotSaved(currentDot, nextDot);
+      }
+    } else {
+      finishSequentialCalibration();
+    }
+  }
+
+  private void finishSequentialCalibration() {
+    sequentialCalibrationDot = 0;
+    String completedMsg = context.getString(R.string.recalibrate_completed);
+    BrailleCommonTalkBackSpeaker.getInstance().speak(
+        completedMsg, TalkBackSpeaker.AnnounceType.INTERRUPT);
+
+    oldDotTargets = new ArrayList<>(dotTargets);
+    int[] dotNumber = getDotNumberOrder();
+    List<DotTarget> newTargets = new ArrayList<>();
+    for (int i = 0; i < dotNumber.length; i++) {
+      int num = dotNumber[i];
+      PointF pt = sequentialCalibratedDots.get(num);
+      if (pt == null) {
+        pt = (i < dotTargets.size()) ? dotTargets.get(i).center : new PointF(0, 0);
+      }
+      newTargets.add(new DotTarget(num, pt.x, pt.y));
+    }
+    dotTargets = newTargets;
+    updateDotPosition(dotTargets);
+    storeLayoutPoints();
+
+    SequentialCalibrationListener listener = sequentialCalibrationListener;
+    sequentialCalibrationListener = null;
+    if (listener != null) {
+      listener.onCalibrationCompleted();
+    }
+  }
+
+  private void provideSequentialCalibrationFeedback() {
+    try {
+      if (calibrationToneGenerator == null) {
+        calibrationToneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+      }
+      calibrationToneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 70);
+    } catch (Exception ignored) {
+    }
+    try {
+      Vibrator vib = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+      if (vib != null && vib.hasVibrator()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          vib.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+        } else {
+          vib.vibrate(50);
+        }
+      }
+    } catch (Exception ignored) {
+    }
+  }
+
   /**
    * Figure which dots are pressed by the given points.
    *
@@ -534,6 +667,10 @@ public abstract class BrailleInputPlane {
   }
 
   private void drawDots(Canvas canvas) {
+    if (sequentialCalibrationDot > 0) {
+      drawSequentialCalibration(canvas);
+      return;
+    }
     for (int i = 0; i < dotTargets.size(); i++) {
       boolean pressed = false;
       for (DotTarget dotTarget : currentlyPressedDots) {
@@ -567,6 +704,60 @@ public abstract class BrailleInputPlane {
       canvas.drawText(text, textPosition[i].x, textPosition[i].y, dotNumberPaint);
       canvas.restore();
     }
+  }
+
+  private void drawSequentialCalibration(Canvas canvas) {
+    if (calibratedDotPaint == null) {
+      calibratedDotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      calibratedDotPaint.setColor(Color.parseColor("#4CAF50"));
+      calibratedDotPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+    }
+    if (promptTextPaint == null) {
+      promptTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+      promptTextPaint.setColor(Color.WHITE);
+      promptTextPaint.setTextAlign(Paint.Align.CENTER);
+      promptTextPaint.setTypeface(
+          Typeface.create(context.getString(R.string.accessibility_font), Typeface.NORMAL));
+    }
+    promptTextPaint.setTextSize(dotRadius * 0.85f);
+
+    // Draw uncalibrated dots dimmed
+    dotBackgroundPaint.setColor(dotBackgroundColorDefaultCalibration);
+    for (int i = 0; i < dotTargets.size(); i++) {
+      int dotNum = dotTargets.get(i).dotNumber;
+      if (!sequentialCalibratedDots.containsKey(dotNum)) {
+        canvas.drawCircle(
+            dotCenterPosition[i].x, dotCenterPosition[i].y, dotRadius, dotBackgroundPaint);
+        dotNumberPaint.setColor(dotNumberColorDefaultCalibration);
+        String text = Integer.toString(dotNum);
+        canvas.save();
+        canvas.rotate(getRotateDegree(), dotCenterPosition[i].x, dotCenterPosition[i].y);
+        canvas.drawText(text, textPosition[i].x, textPosition[i].y, dotNumberPaint);
+        canvas.restore();
+      }
+    }
+
+    // Draw calibrated dots in green
+    dotNumberPaint.setColor(Color.WHITE);
+    for (Map.Entry<Integer, PointF> entry : sequentialCalibratedDots.entrySet()) {
+      int dotNum = entry.getKey();
+      PointF pt = entry.getValue();
+      canvas.drawCircle(pt.x, pt.y, dotRadius, calibratedDotPaint);
+      canvas.save();
+      canvas.rotate(getRotateDegree(), pt.x, pt.y);
+      canvas.drawText(Integer.toString(dotNum), pt.x, pt.y + textBaseline, dotNumberPaint);
+      canvas.restore();
+    }
+
+    // Draw prompt caption in center
+    PointF captionPt = getCaptionCenterPoint(sizeInPixels);
+    String prompt = context.getString(
+        R.string.recalibrate_touch_dot_prompt, sequentialCalibrationDot)
+        + " (" + sequentialCalibrationDot + "/" + options.brailleType().getDotCount() + ")";
+    canvas.save();
+    canvas.rotate(getRotateDegree(), captionPt.x, captionPt.y);
+    canvas.drawText(prompt, captionPt.x, captionPt.y, promptTextPaint);
+    canvas.restore();
   }
 
   public void createAnimator(View view) {

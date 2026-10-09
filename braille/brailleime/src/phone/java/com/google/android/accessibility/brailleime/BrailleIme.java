@@ -110,6 +110,7 @@ import com.google.android.accessibility.brailleime.keyboardview.KeyboardView.Key
 import com.google.android.accessibility.brailleime.keyboardview.StandardKeyboardView;
 import com.google.android.accessibility.brailleime.settings.BrailleImeGestureCommandActivity;
 import com.google.android.accessibility.brailleime.settings.BrailleImePreferencesActivity;
+import com.google.android.accessibility.brailleime.settings.BraillePointCalibrationActivity;
 import com.google.android.accessibility.brailleime.tutorial.TutorialView.TutorialCallback;
 import com.google.android.accessibility.brailleime.tutorial.TutorialView.TutorialState.State;
 import com.google.android.accessibility.utils.AccessibilityServiceCompatUtils.Constants;
@@ -311,7 +312,12 @@ public class BrailleIme extends InputMethodService {
     BrailleCommonTalkBackSpeaker.getInstance().initialize(talkBackForBrailleCommon);
     BrailleImePreferencesActivity.initialize(talkBackForBrailleIme);
     BrailleImeGestureCommandActivity.initialize(talkBackForBrailleIme);
+    BraillePointCalibrationActivity.initialize(talkBackForBrailleIme);
     Utils.setComponentEnabled(context, Constants.BRAILLE_KEYBOARD, true);
+  }
+
+  public static TalkBackForBrailleIme getTalkBackForBrailleIme() {
+    return talkBackForBrailleIme;
   }
 
   /** Releases what {@link #initialize} started, when TalkBack shuts down. */
@@ -1953,7 +1959,7 @@ public class BrailleIme extends InputMethodService {
         public void onCalibration() {
           activateBrailleIme();
           layoutOrientator.startIfNeeded();
-          keyboardView.calibrateBrailleInputView();
+          keyboardView.startSequentialCalibration(/* listener= */ null);
         }
       };
 

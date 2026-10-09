@@ -16,51 +16,49 @@
 
 package com.google.android.accessibility.brailleime.settings;
 
-import android.content.Context;
-import android.graphics.Canvas;
+import android.content.res.Configuration;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PointF;
-import android.media.AudioManager;
-import android.media.ToneGenerator;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.util.Size;
-import android.view.HapticFeedbackConstants;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import com.google.android.accessibility.braille.common.BrailleCommonTalkBackSpeaker;
 import com.google.android.accessibility.braille.common.BrailleUserPreferences;
-import com.google.android.accessibility.braille.common.BrailleUtils;
-import com.google.android.accessibility.braille.common.TalkBackSpeaker;
 import com.google.android.accessibility.braille.common.TouchDots;
+import com.google.android.accessibility.braille.interfaces.BrailleCharacter;
+import com.google.android.accessibility.braille.interfaces.TalkBackForBrailleIme;
+import com.google.android.accessibility.brailleime.BrailleIme;
 import com.google.android.accessibility.brailleime.BrailleImeLog;
-import com.google.android.accessibility.brailleime.R;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.android.accessibility.brailleime.BrailleImeVibrator;
+import com.google.android.accessibility.brailleime.BrailleInputOptions;
+import com.google.android.accessibility.brailleime.Utils;
+import com.google.android.accessibility.brailleime.input.BrailleInputPlane;
+import com.google.android.accessibility.brailleime.input.BrailleInputView;
+import com.google.android.accessibility.brailleime.input.DotHoldSwipe;
+import com.google.android.accessibility.brailleime.input.Swipe;
+import com.google.android.accessibility.brailleime.keyboardview.AccessibilityOverlayKeyboardView;
+import com.google.android.accessibility.brailleime.keyboardview.KeyboardView;
 
 /**
- * Full-screen calibration activity allowing user to tap dots 1 through 6 on the screen,
- * saving the dot coordinates sequentially (similar to ABK).
+ * Full-screen calibration activity that hosts the actual Braille keyboard (BrailleInputView)
+ * with TalkBack Explore-by-Touch disabled, allowing the user to calibrate dots 1 through 6
+ * with direct single taps (similar to ABK).
  */
 public class BraillePointCalibrationActivity extends AppCompatActivity {
   private static final String TAG = "BraillePointCalibration";
-  private static final int TOTAL_DOTS = 6;
+  private static TalkBackForBrailleIme talkBackForBrailleIme;
 
-  private final List<PointF> calibratedPoints = new ArrayList<>();
-  private CalibrationTouchView touchView;
-  private ToneGenerator toneGenerator;
-  private Vibrator vibrator;
+  private KeyboardView keyboardView;
+  private BrailleInputView fallbackInputView;
   private final Handler handler = new Handler(Looper.getMainLooper());
+  private boolean isCleanedUp = false;
+
+  public static void initialize(TalkBackForBrailleIme talkBackForBrailleIme) {
+    BraillePointCalibrationActivity.talkBackForBrailleIme = talkBackForBrailleIme;
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -70,170 +68,146 @@ public class BraillePointCalibrationActivity extends AppCompatActivity {
         WindowManager.LayoutParams.FLAG_FULLSCREEN,
         WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-    try {
-      toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
-    } catch (Exception e) {
-      BrailleImeLog.e(TAG, "ToneGenerator failed to initialize", e);
+    if (talkBackForBrailleIme == null) {
+      talkBackForBrailleIme = BrailleIme.getTalkBackForBrailleIme();
     }
-    vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-    touchView = new CalibrationTouchView(this);
-    setContentView(touchView);
+    View backgroundView = new View(this);
+    backgroundView.setBackgroundColor(Color.BLACK);
+    setContentView(backgroundView);
+
+    boolean isTabletop = (BrailleUserPreferences.readLayoutMode(this) == TouchDots.TABLETOP);
+
+    if (talkBackForBrailleIme != null) {
+      keyboardView = new AccessibilityOverlayKeyboardView(this, keyboardViewCallback);
+      keyboardView.setWindowManager(talkBackForBrailleIme.getWindowManager());
+      keyboardView.createViewContainer();
+      keyboardView.createAndAddInputView(inputPlaneCallback, isTabletop);
+    } else {
+      BrailleInputOptions options =
+          BrailleInputOptions.builder()
+              .setReverseDots(BrailleUserPreferences.readReverseDotsMode(this))
+              .setFlipDotsVertically(BrailleUserPreferences.readFlipDotsVertically(this))
+              .setBrailleType(BrailleUserPreferences.getCurrentTypingLanguageType(this))
+              .setTutorialMode(false)
+              .build();
+      Size screenSize = Utils.getDisplaySizeInPixels(this);
+      fallbackInputView =
+          new BrailleInputView(this, inputPlaneCallback, screenSize, options, isTabletop);
+      fallbackInputView.setAccumulationMode(BrailleUserPreferences.readAccumulateMode(this));
+      setContentView(fallbackInputView);
+      fallbackInputView.post(
+          () -> fallbackInputView.startSequentialCalibration(sequentialCalibrationListener));
+    }
   }
 
   @Override
-  protected void onResume() {
-    super.onResume();
-    calibratedPoints.clear();
-    touchView.invalidate();
-    handler.postDelayed(
-        () -> speak(getString(R.string.recalibrate_intro)),
-        300);
+  public void onConfigurationChanged(Configuration newConfig) {
+    super.onConfigurationChanged(newConfig);
+    if (keyboardView != null) {
+      keyboardView.onOrientationChanged(newConfig.orientation);
+    }
+    if (fallbackInputView != null) {
+      fallbackInputView.onOrientationChanged(
+          newConfig.orientation, Utils.getDisplaySizeInPixels(this));
+    }
+  }
+
+  @Override
+  public void onBackPressed() {
+    cleanupAndFinish();
+    super.onBackPressed();
   }
 
   @Override
   protected void onDestroy() {
-    if (toneGenerator != null) {
-      toneGenerator.release();
-      toneGenerator = null;
-    }
+    cleanupAndFinish();
     super.onDestroy();
   }
 
-  private void onScreenTapped(float x, float y) {
-    if (calibratedPoints.size() >= TOTAL_DOTS) {
+  private synchronized void cleanupAndFinish() {
+    if (isCleanedUp) {
       return;
     }
-
-    calibratedPoints.add(new PointF(x, y));
-    int recordedDot = calibratedPoints.size();
-
-    // Haptics and sound
-    provideFeedback();
-
-    if (recordedDot < TOTAL_DOTS) {
-      int nextDot = recordedDot + 1;
-      String prompt = getString(R.string.recalibrate_dot_saved_prompt, recordedDot, nextDot);
-      speak(prompt);
-      touchView.invalidate();
-    } else {
-      touchView.invalidate();
-      saveCalibrationAndFinish();
+    isCleanedUp = true;
+    handler.removeCallbacksAndMessages(null);
+    if (keyboardView != null) {
+      keyboardView.tearDown();
+      keyboardView = null;
+    }
+    if (talkBackForBrailleIme != null) {
+      talkBackForBrailleIme.onBrailleImeInactivated(Utils.useImeSuppliedInputWindow());
+    }
+    if (!isFinishing()) {
+      finish();
     }
   }
 
-  private void provideFeedback() {
-    touchView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
-    if (vibrator != null && vibrator.hasVibrator()) {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
-      } else {
-        vibrator.vibrate(50);
-      }
-    }
-    if (toneGenerator != null) {
-      try {
-        toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 70);
-      } catch (Exception ignored) {
-      }
-    }
-  }
+  private final KeyboardView.KeyboardViewCallback keyboardViewCallback =
+      new KeyboardView.KeyboardViewCallback() {
+        @Override
+        public void onViewReady() {
+          BrailleImeLog.d(TAG, "onViewReady");
+          if (talkBackForBrailleIme != null) {
+            if (talkBackForBrailleIme.isVibrationFeedbackEnabled()) {
+              BrailleImeVibrator.getInstance(BraillePointCalibrationActivity.this).enable();
+            }
+            talkBackForBrailleIme.onBrailleImeActivated(
+                /* disableEbt= */ true,
+                Utils.useImeSuppliedInputWindow(),
+                keyboardView.obtainImeViewRegion().orElse(null));
+          }
+          if (keyboardView != null) {
+            keyboardView.startSequentialCalibration(sequentialCalibrationListener);
+          }
+        }
 
-  private void saveCalibrationAndFinish() {
-    String completedMsg = getString(R.string.recalibrate_completed);
-    speak(completedMsg);
+        @Override
+        public void onViewUpdated() {}
 
-    boolean isPhone = BrailleUtils.isPhoneSizedDevice(getResources());
-    TouchDots mode = BrailleUserPreferences.readLayoutMode(this);
-    boolean isTabletop = (mode == TouchDots.TABLETOP);
-    int orientation = getResources().getConfiguration().orientation;
-    Size screenSize = new Size(
-        touchView.getWidth() > 0 ? touchView.getWidth() : getResources().getDisplayMetrics().widthPixels,
-        touchView.getHeight() > 0 ? touchView.getHeight() : getResources().getDisplayMetrics().heightPixels);
+        @Override
+        public void onViewCleared() {
+          BrailleImeLog.d(TAG, "onViewCleared");
+          BrailleImeVibrator.getInstance(BraillePointCalibrationActivity.this).disable();
+        }
 
-    try {
-      if (isPhone) {
-        BrailleUserPreferences.writeCalibrationPointsPhone(
-            this, isTabletop, orientation, calibratedPoints, screenSize);
-      } else {
-        BrailleUserPreferences.writeCalibrationPointsTablet(
-            this, isTabletop, orientation, calibratedPoints, screenSize);
-      }
-    } catch (ParseException e) {
-      BrailleImeLog.e(TAG, "Failed to save calibrated points", e);
-    }
+        @Override
+        public boolean isHideScreenMode() {
+          return talkBackForBrailleIme != null && talkBackForBrailleIme.isHideScreenMode();
+        }
+      };
 
-    Toast.makeText(this, completedMsg, Toast.LENGTH_SHORT).show();
-    handler.postDelayed(this::finish, 1200);
-  }
+  private final BrailleInputPlane.SequentialCalibrationListener sequentialCalibrationListener =
+      new BrailleInputPlane.SequentialCalibrationListener() {
+        @Override
+        public void onDotSaved(int dotNumber, int nextDotNumber) {}
 
-  private void speak(String text) {
-    BrailleCommonTalkBackSpeaker.getInstance().speak(text, TalkBackSpeaker.AnnounceType.INTERRUPT);
-    touchView.announceForAccessibility(text);
-  }
+        @Override
+        public void onCalibrationCompleted() {
+          handler.postDelayed(BraillePointCalibrationActivity.this::cleanupAndFinish, 1200);
+        }
+      };
 
-  private class CalibrationTouchView extends View {
-    private final Paint backgroundPaint = new Paint();
-    private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint dotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint dotSavedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint dotTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final float dotRadius;
+  private final BrailleInputView.Callback inputPlaneCallback =
+      new BrailleInputView.Callback() {
+        @Override
+        public boolean onSwipeProduced(Swipe swipe) {
+          return false;
+        }
 
-    public CalibrationTouchView(Context context) {
-      super(context);
-      setFocusable(true);
-      setFocusableInTouchMode(true);
+        @Override
+        public boolean onDotHoldAndDotSwipe(DotHoldSwipe dotHoldSwipe) {
+          return false;
+        }
 
-      backgroundPaint.setColor(Color.BLACK);
-      textPaint.setColor(Color.WHITE);
-      textPaint.setTextSize(getResources().getDisplayMetrics().density * 22);
-      textPaint.setTextAlign(Paint.Align.CENTER);
+        @Override
+        public boolean onHoldProduced(int pointersHeldCount) {
+          return false;
+        }
 
-      dotSavedPaint.setColor(Color.parseColor("#4CAF50")); // Green for saved dots
-      dotPaint.setColor(Color.parseColor("#2196F3"));      // Blue for touch
-      dotTextPaint.setColor(Color.WHITE);
-      dotTextPaint.setTextSize(getResources().getDisplayMetrics().density * 18);
-      dotTextPaint.setTextAlign(Paint.Align.CENTER);
-
-      dotRadius = getResources().getDisplayMetrics().density * 28;
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-      if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-        onScreenTapped(event.getX(), event.getY());
-        return true;
-      }
-      return super.onTouchEvent(event);
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-      super.onDraw(canvas);
-      canvas.drawPaint(backgroundPaint);
-
-      int currentStep = calibratedPoints.size() + 1;
-      String prompt;
-      if (currentStep <= TOTAL_DOTS) {
-        prompt = getString(R.string.recalibrate_touch_dot_prompt, currentStep)
-            + " (" + (currentStep) + "/" + TOTAL_DOTS + ")";
-      } else {
-        prompt = getString(R.string.recalibrate_completed);
-      }
-
-      float centerX = getWidth() / 2f;
-      float topMargin = getHeight() * 0.15f;
-      canvas.drawText(prompt, centerX, topMargin, textPaint);
-
-      // Draw all saved points
-      for (int i = 0; i < calibratedPoints.size(); i++) {
-        PointF point = calibratedPoints.get(i);
-        canvas.drawCircle(point.x, point.y, dotRadius, dotSavedPaint);
-        // Center text vertically in circle
-        float textY = point.y - ((dotTextPaint.descent() + dotTextPaint.ascent()) / 2);
-        canvas.drawText(String.valueOf(i + 1), point.x, textY, dotTextPaint);
-      }
-    }
-  }
+        @Override
+        public String onBrailleProduced(BrailleCharacter brailleCharacter) {
+          return "";
+        }
+      };
 }

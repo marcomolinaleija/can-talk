@@ -732,6 +732,24 @@ public class BrailleInputView extends View
     invalidate();
   }
 
+  /** Starts sequential dot calibration (dots 1 through 6). */
+  public void startSequentialCalibration(
+      @Nullable BrailleInputPlane.SequentialCalibrationListener listener) {
+    inputPlane.startSequentialCalibration(listener);
+    invalidate();
+  }
+
+  /** Cancels sequential dot calibration. */
+  public void cancelSequentialCalibration() {
+    inputPlane.cancelSequentialCalibration();
+    invalidate();
+  }
+
+  /** Whether sequential dot calibration is currently active. */
+  public boolean isSequentialCalibrationActive() {
+    return inputPlane.isSequentialCalibrationActive();
+  }
+
   private void updateTouchAction(MotionEvent event) {
     switch (event.getAction()) {
       case MotionEvent.ACTION_DOWN -> touchInteracting = true;

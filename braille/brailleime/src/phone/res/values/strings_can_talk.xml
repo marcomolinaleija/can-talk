@@ -9,7 +9,7 @@
   <string name="summary_pref_point_recalibration" tools:ignore="MissingTranslation">Tap each of the 6 dots on the screen to recalibrate the keyboard.</string>
   <string name="recalibrate_intro" tools:ignore="MissingTranslation">Dot recalibration. Touch the screen at the position for dot 1.</string>
   <string name="recalibrate_touch_dot_prompt" tools:ignore="MissingTranslation">Touch dot %d</string>
-  <string name="recalibrate_dot_saved_prompt" tools:ignore="MissingTranslation">Dot %d saved. Touch dot %d.</string>
+  <string name="recalibrate_dot_saved_prompt" tools:ignore="MissingTranslation">Dot %1$d saved. Touch dot %2$d.</string>
   <string name="recalibrate_dot_saved" tools:ignore="MissingTranslation">Dot %d saved</string>
   <string name="recalibrate_completed" tools:ignore="MissingTranslation">Calibration completed successfully.</string>
   <string name="recalibrate_reset" tools:ignore="MissingTranslation">Reset</string>
