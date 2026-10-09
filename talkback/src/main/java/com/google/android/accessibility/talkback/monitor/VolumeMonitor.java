@@ -96,6 +96,9 @@ public class VolumeMonitor extends SameThreadBroadcastReceiver {
   /** The stream type currently being controlled. */
   private int currentStream = -1;
 
+  /** Only devices without a separate accessibility stream need the legacy system override. */
+  private boolean ownsStreamOverride = false;
+
   /**
    * Performance optimization for checking whether we should hint how to control a11y volume as
    * getA11yVolumeControlHintTimes() reads from storage and can be time consuming.
@@ -183,10 +186,17 @@ public class VolumeMonitor extends SameThreadBroadcastReceiver {
 
     notifyVolumeChangedListener(streamType, volume, prevVolume, getStreamVolume(streamType));
 
-    if (currentStream < 0) {
-      // If the current stream hasn't been set, acquire control.
+    if (currentStream != streamType) {
+      releaseControl();
+      // Track the latest stream for the delayed announcement.
       currentStream = streamType;
-      AudioManagerCompatUtils.forceVolumeControlStream(audioManager, currentStream);
+      // On phones, accessibility adjustments are already explicit in ProcessorVolumeStream.
+      // Forcing the system's suggested stream here can keep ordinary keys on accessibility
+      // after the user lifts their finger, even when media is playing.
+      if (!FeatureSupport.hasAccessibilityAudioStream(context)) {
+        AudioManagerCompatUtils.forceVolumeControlStream(audioManager, currentStream);
+        ownsStreamOverride = true;
+      }
       handler.onControlAcquired(streamType);
       return;
     }
@@ -219,10 +229,11 @@ public class VolumeMonitor extends SameThreadBroadcastReceiver {
     }
 
     if (!shouldAnnounceStream(streamType)) {
-      handler.post(this::releaseControl);
+      releaseControl();
       return;
     }
-    speakWithCompletion(text, streamType, utteranceCompleteRunnable, EVENT_ID_UNTRACKED);
+    releaseControl();
+    speakVolumeAnnouncement(text, streamType, EVENT_ID_UNTRACKED);
   }
 
   private void internalSpeakA11yVolumeControlHint() {
@@ -340,18 +351,18 @@ public class VolumeMonitor extends SameThreadBroadcastReceiver {
    * duration. Announces the current volume and releases control of the stream.
    */
   private void internalOnReleaseControl() {
-    handler.clearReleaseControl();
-
     final int streamType = currentStream;
+    // Never retain a system override while waiting for a queued announcement to finish.
+    // Its completion must not release a newer volume adjustment either.
+    releaseControl();
     if (streamType < 0) {
       // Already released!
       return;
     }
 
-    LogUtils.v(TAG, "Released control of stream %d", currentStream);
+    LogUtils.v(TAG, "Released control of stream %d", streamType);
 
     if (!shouldAnnounceStream(streamType) || !speakVolumeChanges()) {
-      handler.post(this::releaseControl);
       return;
     }
 
@@ -359,13 +370,17 @@ public class VolumeMonitor extends SameThreadBroadcastReceiver {
         getAnnouncementForStreamType(R.string.template_stream_volume_set, streamType);
 
     EventId eventId = EVENT_ID_UNTRACKED; // Delayed feedback occurs after normal feedback.
-    speakWithCompletion(text, streamType, utteranceCompleteRunnable, eventId);
+    speakVolumeAnnouncement(text, streamType, eventId);
   }
 
   /** Releases control of the stream. */
   public void releaseControl() {
+    handler.clearReleaseControl();
     currentStream = -1;
-    AudioManagerCompatUtils.forceVolumeControlStream(audioManager, -1);
+    if (ownsStreamOverride) {
+      ownsStreamOverride = false;
+      AudioManagerCompatUtils.forceVolumeControlStream(audioManager, -1);
+    }
   }
 
   /**
@@ -391,28 +406,24 @@ public class VolumeMonitor extends SameThreadBroadcastReceiver {
       default ->
           // Announce all other streams by default. The VOICE_CALL and
           // RING streams are handled by checking the telephony state in
-          // speakWithCompletion().
+          // speakVolumeAnnouncement().
           true;
     };
   }
 
   /**
-   * Speaks text with a completion action, or just runs the completion action if the volume monitor
-   * should be quiet.
+   * Speaks a volume announcement after releasing stream control.
    *
    * @param text The text to speak.
    * @param streamType The type of stream.
-   * @param completedAction The action to run after speaking.
    */
-  private void speakWithCompletion(
+  private void speakVolumeAnnouncement(
       String text,
       int streamType,
-      SpeechController.UtteranceCompleteRunnable completedAction,
       EventId eventId) {
     if ((callStateMonitor != null)
         && (callStateMonitor.getCurrentCallState() != TelephonyManager.CALL_STATE_IDLE)) {
       // If the phone is busy, don't speak anything.
-      handler.post(this::releaseControl);
       return;
     }
 
@@ -421,8 +432,7 @@ public class VolumeMonitor extends SameThreadBroadcastReceiver {
             .setQueueMode(SpeechController.QUEUE_MODE_QUEUE)
             .setFlags(
                 FLAG_SOURCE_IS_VOLUME_CONTROL | FLAG_FORCE_FEEDBACK_EVEN_IF_AUDIO_PLAYBACK_ACTIVE)
-            .setUtteranceGroup(SpeechController.UTTERANCE_GROUP_DEFAULT)
-            .setCompletedAction(completedAction);
+            .setUtteranceGroup(SpeechController.UTTERANCE_GROUP_DEFAULT);
     Speech.Builder speechBuilder =
         Speech.builder().setAction(Action.SPEAK).setText(text).setOptions(speakOptions);
 
@@ -527,24 +537,6 @@ public class VolumeMonitor extends SameThreadBroadcastReceiver {
   }
 
   private final VolumeHandler handler = new VolumeHandler(this);
-
-  /**
-   * Runnable that hides the volume overlay. Used as a completion action for the "volume set"
-   * utterance.
-   */
-  private final SpeechController.UtteranceCompleteRunnable utteranceCompleteRunnable =
-      new SpeechController.UtteranceCompleteRunnable() {
-        @Override
-        public void run(int status) {
-          releaseControl();
-        }
-      };
-
-  /** This is to check data of Feedback of Pipeline for test purpose. */
-  @VisibleForTesting
-  SpeechController.UtteranceCompleteRunnable getUtteranceCompleteRunnable() {
-    return utteranceCompleteRunnable;
-  }
 
   public void onVolumeKeyPressed() {
     handler.volumeButtonHintDelayed();
