@@ -1728,6 +1728,8 @@ Description: Explain that the feature is enabled for all images. [CHAR_LIMIT=NON
   <string name="shortcut_select_previous_setting">Previous reading control</string>
   <!--Label for the shortcut that enables pass-through [CHAR_LIMIT=NONE] -->
   <string name="shortcut_pass_through_next">Pass through system gesture</string>
+  <!--Label for the shortcut that enables experimental direct touch [CHAR_LIMIT=NONE] -->
+  <string name="shortcut_experimental_touch">Experimental touch</string>
   <!--Label for the shortcut that triggers clicking the Accessibility button -->
   <string name="shortcut_a11y_button">Accessibility shortcut</string>
   <!--Label for the shortcut that triggers long clicking the Accessibility button -->

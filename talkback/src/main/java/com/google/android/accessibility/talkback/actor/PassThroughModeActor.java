@@ -22,6 +22,8 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.graphics.Region;
 import android.hardware.display.DisplayManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import androidx.annotation.Nullable;
@@ -94,6 +96,7 @@ public class PassThroughModeActor {
    */
   public void setTouchExplorePassThrough(boolean enable) {
     if (FeatureSupport.supportPassthrough() && !locked) {
+      cancelPassThroughGuardTimer();
       if (enable) {
         applyTouchRegion(getRegionOfFullScreen(service));
         startPassThroughGuardTimer();
@@ -160,8 +163,9 @@ public class PassThroughModeActor {
    * activity detected, the timer should be killed.
    */
   public void cancelPassThroughGuardTimer() {
-    if (touchExplorePassThroughActive && !locked) {
+    if (passThroughGuardTimer != null) {
       passThroughGuardTimer.cancel();
+      passThroughGuardTimer = null;
     }
   }
 
@@ -180,6 +184,7 @@ public class PassThroughModeActor {
   }
 
   private void startPassThroughGuardTimer() {
+    cancelPassThroughGuardTimer();
     passThroughGuardTimer = new Timer();
     passThroughGuardTimer.schedule(new PassThroughExitTask(), PASS_THROUGH_IDLE_MS);
   }
@@ -187,10 +192,12 @@ public class PassThroughModeActor {
   private class PassThroughExitTask extends TimerTask {
     @Override
     public void run() {
-      // While in locked mode, we can ignore the time out event
-      if (!locked) {
-        setTouchExplorePassThrough(false);
-      }
+      new Handler(service.getMainLooper()).post(() -> {
+        // While in locked mode, we can ignore the time out event
+        if (!locked) {
+          setTouchExplorePassThrough(false);
+        }
+      });
     }
   }
 

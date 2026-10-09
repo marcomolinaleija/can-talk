@@ -46,6 +46,7 @@ import static com.google.android.accessibility.talkback.Feedback.FocusDirection.
 import static com.google.android.accessibility.talkback.Feedback.FocusDirection.Action.SCROLL_LEFT;
 import static com.google.android.accessibility.talkback.Feedback.FocusDirection.Action.SCROLL_RIGHT;
 import static com.google.android.accessibility.talkback.Feedback.FocusDirection.Action.SCROLL_UP;
+import static com.google.android.accessibility.talkback.Feedback.PassThroughMode.Action.ENABLE_PASSTHROUGH;
 import static com.google.android.accessibility.talkback.Feedback.PassThroughMode.Action.PASSTHROUGH_CONFIRM_DIALOG;
 import static com.google.android.accessibility.talkback.Feedback.Speech.Action.COPY_LAST;
 import static com.google.android.accessibility.talkback.Feedback.Speech.Action.REPEAT_LAST;
@@ -479,6 +480,10 @@ public class GestureController {
         service.getString(R.string.shortcut_value_pass_through_next_gesture))) {
       result =
           pipeline.returnFeedback(eventId, Feedback.passThroughMode(PASSTHROUGH_CONFIRM_DIALOG));
+    } else if (action.equals(
+        service.getString(R.string.shortcut_value_experimental_touch))) {
+      result =
+          pipeline.returnFeedback(eventId, Feedback.passThroughMode(ENABLE_PASSTHROUGH));
     } else if (action.equals(service.getString(R.string.shortcut_value_a11y_button))) {
       result =
           pipeline.returnFeedback(

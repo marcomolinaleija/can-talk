@@ -479,6 +479,7 @@ Los retrasos inferiores a 0.3 segundos cambiarán la acción de presionar dos ve
   <string name="shortcut_select_next_setting">Siguiente control de lectura</string>
   <string name="shortcut_select_previous_setting">Control de lectura anterior</string>
   <string name="shortcut_pass_through_next">Gesto de desactivación</string>
+  <string name="shortcut_experimental_touch">Toque experimental</string>
   <string name="shortcut_a11y_button">Atajo de accesibilidad</string>
   <string name="shortcut_a11y_button_long_press">Mantener presionado el atajo de accesibilidad</string>
   <string name="shortcut_selected_setting_next_action">Mover el control de lectura hacia abajo o hacia adelante</string>

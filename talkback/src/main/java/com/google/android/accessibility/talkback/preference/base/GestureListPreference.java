@@ -450,6 +450,11 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               resources.getString(R.string.shortcut_pass_through_next),
               resources.getString(R.string.shortcut_value_pass_through_next_gesture),
               TYPE_ACTION_ITEM));
+      builder.add(
+          new ActionItem(
+              resources.getString(R.string.shortcut_experimental_touch),
+              resources.getString(R.string.shortcut_value_experimental_touch),
+              TYPE_ACTION_ITEM));
     }
 
     SharedPreferences preferences = SharedPreferencesUtils.getSharedPreferences(getContext());

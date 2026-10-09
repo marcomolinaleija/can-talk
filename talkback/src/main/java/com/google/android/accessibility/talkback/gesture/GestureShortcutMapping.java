@@ -527,6 +527,8 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
     PAUSE_BACKTALK(R.string.shortcut_value_pause_backtalk, R.string.title_pause_backtalk),
     PASS_THROUGH_NEXT_GESTURE(
         R.string.shortcut_value_pass_through_next_gesture, R.string.shortcut_pass_through_next),
+    EXPERIMENTAL_TOUCH(
+        R.string.shortcut_value_experimental_touch, R.string.shortcut_experimental_touch),
     PRINT_NODE_TREE(R.string.shortcut_value_print_node_tree, R.string.shortcut_print_node_tree),
     PRINT_PERFORMANCE_STATS(
         R.string.shortcut_value_print_performance_stats, R.string.shortcut_print_performance_stats),

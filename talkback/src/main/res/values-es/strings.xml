@@ -479,6 +479,7 @@ Si la latencia es inferior a 0,3 segundos, el gesto de tocar dos veces para acti
   <string name="shortcut_select_next_setting">Control de lectura siguiente</string>
   <string name="shortcut_select_previous_setting">Control de lectura anterior</string>
   <string name="shortcut_pass_through_next">Gesto sin can-talk</string>
+  <string name="shortcut_experimental_touch">Toque experimental</string>
   <string name="shortcut_a11y_button">Acceso directo a accesibilidad</string>
   <string name="shortcut_a11y_button_long_press">Mantener pulsado el acceso directo a accesibilidad</string>
   <string name="shortcut_selected_setting_next_action">Mover el control de lectura hacia abajo o hacia delante</string>
