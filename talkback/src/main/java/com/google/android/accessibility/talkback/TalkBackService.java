@@ -161,6 +161,7 @@ import com.google.android.accessibility.talkback.eventprocessor.AccessibilityEve
 import com.google.android.accessibility.talkback.eventprocessor.AccessibilityEventProcessor.TalkBackListener;
 import com.google.android.accessibility.talkback.eventprocessor.CallSpeechVolumeKeyHandler;
 import com.google.android.accessibility.talkback.clipboard.ClipboardHistoryController;
+import com.google.android.accessibility.talkback.appsearch.BrailleAppSearchController;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorEmojiTraversal;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorEventQueue;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorGestureVibrator;
@@ -673,6 +674,7 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   private CallSpeechVolumeKeyHandler callSpeechVolumeKeyHandler;
   private ClipboardHistoryController clipboardHistoryController;
+  private BrailleAppSearchController brailleAppSearchController;
 
   /** {@link android.content.BroadcastReceiver} for tracking battery status changes. */
   private BatteryMonitor batteryMonitor;
@@ -916,6 +918,10 @@ public class TalkBackService extends AccessibilityServiceCompat
       clipboardHistoryController.shutdown();
       clipboardHistoryController = null;
     }
+    if (brailleAppSearchController != null) {
+      brailleAppSearchController.shutdown();
+      brailleAppSearchController = null;
+    }
     if (translationController != null) {
       translationController.close();
     }
@@ -997,6 +1003,7 @@ public class TalkBackService extends AccessibilityServiceCompat
   @Override
   public void onConfigurationChanged(Configuration newConfig) {
     if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
+    if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
     this.getTheme().applyStyle(R.style.TalkbackBaseTheme, /* force= */ true);
 
     // onConfigurationChanged may be called before TalkBack initialization. To avoid crash, each
@@ -1066,6 +1073,7 @@ public class TalkBackService extends AccessibilityServiceCompat
   @Override
   public void onAccessibilityEvent(AccessibilityEvent event) {
     if (clipboardHistoryController != null) clipboardHistoryController.onAccessibilityEvent(event);
+    if (brailleAppSearchController != null) brailleAppSearchController.onAccessibilityEvent(event);
     // Paused Backtalk drops events, except the end of a touch that started before the pause, so
     // that nothing still thinks a finger is down after resuming. Its feedback is dropped too.
     if (PauseController.isPaused()
@@ -1194,6 +1202,9 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   /** Handles a key event and returns whether it should be considered consumed. */
   protected boolean onKeyEventInternal(KeyEvent keyEvent) {
+    if (brailleAppSearchController != null && brailleAppSearchController.onKeyEvent(keyEvent)) {
+      return true;
+    }
     if (clipboardHistoryController != null && clipboardHistoryController.onKeyEvent(keyEvent)) {
       return true;
     }
@@ -1394,6 +1405,10 @@ public class TalkBackService extends AccessibilityServiceCompat
   }
 
   private boolean handleOnGestureById(int displayId, int gestureId) {
+    if (brailleAppSearchController != null && brailleAppSearchController.isShowing()) {
+      // Raw braille touches own this surface. Consume any late framework gesture.
+      return true;
+    }
     // A modal history surface owns touches; late framework gestures must not reach the app.
     if (clipboardHistoryController != null && clipboardHistoryController.isShowing()) {
       if (gestureId == AccessibilityService.GESTURE_2_FINGER_SWIPE_LEFT) {
@@ -1443,11 +1458,25 @@ public class TalkBackService extends AccessibilityServiceCompat
   }
 
   public boolean showClipboardHistory() {
+    if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
     return clipboardHistoryController != null && isServiceActive() && !PauseController.isPaused()
         && clipboardHistoryController.show();
   }
 
+  public boolean showBrailleAppSearch() {
+    if (!isServiceActive() || PauseController.isPaused() || brailleAppSearchController == null) {
+      return false;
+    }
+    if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
+    return brailleAppSearchController.show();
+  }
+
   public void setClipboardHistoryTouchRegion(@Nullable Region region) {
+    setModalTouchRegion(region);
+  }
+
+  /** A modal raw-touch surface temporarily overrides the keyboard and direct-touch regions. */
+  public void setModalTouchRegion(@Nullable Region region) {
     passThroughModeActor.setOverlayTouchRegion(region);
     if (FeatureSupport.supportPassthrough()) {
       setGestureDetectionPassthroughRegion(Display.DEFAULT_DISPLAY, region == null ? new Region() : region);
@@ -2322,8 +2351,10 @@ public class TalkBackService extends AccessibilityServiceCompat
 
     clipboardHistoryController = new ClipboardHistoryController(
         this, pipeline.getFeedbackReturner(), accessibilityFocusMonitor);
+    brailleAppSearchController = new BrailleAppSearchController(this, pipeline.getFeedbackReturner());
     ringerModeAndScreenMonitor.addScreenChangedListener((interactive, eventId) -> {
       if (!interactive && clipboardHistoryController != null) clipboardHistoryController.dismiss();
+      if (!interactive && brailleAppSearchController != null) brailleAppSearchController.dismiss();
     });
 
     callSpeechVolumeKeyHandler = new CallSpeechVolumeKeyHandler(this, percent ->
@@ -2370,6 +2401,7 @@ public class TalkBackService extends AccessibilityServiceCompat
               @Override
               public void stopForPause() {
                 if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
+                if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
                 if (menuManager != null) {
                   menuManager.dismissAll();
                 }
@@ -2913,6 +2945,7 @@ public class TalkBackService extends AccessibilityServiceCompat
    */
   private void suspendInfrastructure() {
     if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
+    if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
     if (translationController != null) {
       translationController.stop();
     }

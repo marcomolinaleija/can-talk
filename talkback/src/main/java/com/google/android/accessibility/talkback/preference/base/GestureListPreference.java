@@ -282,6 +282,11 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
             R.array.shortcut_system_actions,
             R.array.shortcut_value_system_actions);
     Resources resources = getContext().getResources();
+    if (FeatureSupport.supportPassthrough()
+        && !FormFactorUtils.isAndroidWear() && !FormFactorUtils.isAndroidTv()) {
+      builder.add(new ActionItem(resources.getString(R.string.braille_app_search_title),
+          resources.getString(R.string.shortcut_value_braille_app_search), TYPE_ACTION_ITEM));
+    }
     if (FeatureSupport.supportGetSystemActions(getContext())) {
       builder.add(
           new ActionItem(
