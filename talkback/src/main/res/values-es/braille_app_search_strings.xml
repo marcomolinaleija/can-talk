@@ -1,13 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
-  <string name="braille_app_search_title">Buscar aplicaciones en braille</string>
-  <string name="braille_app_search_opened">Búsqueda de aplicaciones abierta. Escribe el nombre de una aplicación en braille.</string>
-  <string name="braille_app_search_closed">Búsqueda de aplicaciones cerrada</string>
+  <string name="braille_app_search_title">Búsqueda braille</string>
+  <string name="braille_app_search_opened">Búsqueda abierta. %1$s</string>
+  <string name="braille_app_search_closed">Búsqueda cerrada</string>
   <string name="braille_app_search_type_name">Escribe el nombre de una aplicación en braille</string>
   <string name="braille_app_search_result">%1$s. %2$d de %3$d</string>
   <string name="braille_app_search_no_results">%1$s. Sin aplicaciones coincidentes</string>
-  <string name="braille_app_search_hint">Escribe el nombre de una aplicación en braille. Un dedo arriba o abajo para elegir un resultado. Un dedo a la izquierda para borrar, a la derecha para añadir un espacio. Dos dedos a la derecha para abrir la aplicación seleccionada. Dos dedos a la izquierda o hacia abajo para cerrar la búsqueda.</string>
-  <string name="braille_app_search_unavailable">Desbloquea el teléfono para buscar aplicaciones en braille. Esta interfaz requiere Android 11 o posterior.</string>
-  <string name="braille_app_search_failed">No se pudo abrir la búsqueda de aplicaciones</string>
+  <string name="braille_app_search_hint">Escribe en braille. Tres dedos a izquierda o derecha para alternar entre aplicaciones y elementos de la pantalla. Un dedo arriba o abajo para elegir un resultado. Un dedo a la izquierda para borrar, a la derecha para añadir un espacio. Dos dedos a la derecha para abrir la aplicación o activar el elemento. Dos dedos a la izquierda o hacia abajo para cerrar la búsqueda.</string>
+  <string name="braille_app_search_unavailable">Desbloquea el teléfono para usar la búsqueda braille. Esta interfaz requiere Android 11 o posterior.</string>
+  <string name="braille_app_search_failed">No se pudo abrir la búsqueda braille</string>
   <string name="braille_app_search_launch_failed">No se pudo abrir %1$s</string>
+  <string name="braille_search_apps">Aplicaciones</string>
+  <string name="braille_search_elements">Elementos</string>
+  <string name="braille_search_type_element">Escribe el nombre o texto de un elemento de la pantalla en braille</string>
+  <string name="braille_search_no_elements">%1$s. Sin elementos coincidentes</string>
+  <string name="braille_search_element_unavailable">El elemento ya no está disponible en la pantalla original</string>
+  <string name="braille_search_activation_failed">No se pudo activar el elemento</string>
 </resources>

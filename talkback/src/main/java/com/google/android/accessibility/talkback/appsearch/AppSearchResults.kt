@@ -33,7 +33,7 @@ class AppSearchResults(apps: List<App>) {
   companion object {
     private val marks = Regex("\\p{M}+")
     private val spaces = Regex("\\s+")
-    private fun normalize(text: String): String = Normalizer.normalize(text, Normalizer.Form.NFD)
+    internal fun normalize(text: String): String = Normalizer.normalize(text, Normalizer.Form.NFD)
       .replace(marks, "").lowercase(Locale.ROOT).trim().replace(spaces, " ")
   }
 }

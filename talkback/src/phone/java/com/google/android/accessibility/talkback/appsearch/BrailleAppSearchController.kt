@@ -7,6 +7,8 @@ import android.content.pm.ApplicationInfo
 import android.graphics.PixelFormat
 import android.graphics.Region
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Size
 import android.view.KeyEvent
 import android.view.Gravity
@@ -20,20 +22,29 @@ import com.google.android.accessibility.talkback.Pipeline
 import com.google.android.accessibility.talkback.R
 import com.google.android.accessibility.talkback.TalkBackService
 import com.google.android.accessibility.utils.Performance.EVENT_ID_UNTRACKED
+import com.google.android.accessibility.utils.SharedPreferencesUtils
 import com.google.android.accessibility.utils.monitor.ScreenMonitor
 import com.google.android.accessibility.utils.output.FeedbackItem
 import com.google.android.accessibility.utils.output.SpeechController
 import com.google.android.accessibility.utils.output.SpeechController.SpeakOptions
 import com.google.android.libraries.accessibility.utils.log.LogUtils
 
-/** A modal braille launcher independent of the active keyboard and current text editor. */
+/** Unified braille search independent of the active keyboard and current text editor. */
 class BrailleAppSearchController @JvmOverloads constructor(
   private val service: TalkBackService,
   private val pipeline: Pipeline.FeedbackReturner,
+  private val screenSearch: ScreenElementSearch = ScreenElementSearch.forService(service, pipeline),
   private val createInput: (Size, BrailleAppSearchInput.Listener) -> BrailleAppSearchInput =
     { size, listener -> BrailleAppSearchInput(service, size, listener) },
 ) : BrailleAppSearchInput.Listener {
   private val windows = service.getSystemService(WindowManager::class.java)
+  private val prefs = SharedPreferencesUtils.getSharedPreferences(service)
+  private val handler = Handler(Looper.getMainLooper())
+  private enum class Mode { APPS, ELEMENTS }
+  private var mode = Mode.APPS
+  private var generation = 0
+  private var elementsDirty = true
+  private var hasAnnouncedResult = false
   private var view: BrailleAppSearchInput? = null
   private var results = AppSearchResults(emptyList())
   private var originWindowId: Int? = null
@@ -41,6 +52,7 @@ class BrailleAppSearchController @JvmOverloads constructor(
   val isShowing: Boolean get() = view != null
 
   fun show(): Boolean {
+    cancelPendingActivation()
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || ScreenMonitor.isDeviceLocked(service)) {
       speak(service.getString(R.string.braille_app_search_unavailable))
       return false
@@ -48,9 +60,13 @@ class BrailleAppSearchController @JvmOverloads constructor(
     hide(false)
     try {
       results = AppSearchResults(loadApps())
+      mode = if (prefs.getBoolean("pref_braille_search_elements_mode", false)) Mode.ELEMENTS else Mode.APPS
+      hasAnnouncedResult = false
+      originWindowId = activeAppWindowId()
+      elementsDirty = true
+      if (mode == Mode.ELEMENTS) refreshElements()
       val bounds = windows.currentWindowMetrics.bounds
       val input = createInput(Size(bounds.width(), bounds.height()), this)
-      originWindowId = activeAppWindowId()
       val params = WindowManager.LayoutParams().apply {
         type = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
         width = bounds.width()
@@ -67,7 +83,7 @@ class BrailleAppSearchController @JvmOverloads constructor(
       windows.addView(input, params)
       service.setModalTouchRegion(Region(bounds))
       updateView()
-      speak(service.getString(R.string.braille_app_search_opened))
+      speak(service.getString(R.string.braille_app_search_opened, modeName()))
       return true
     } catch (e: RuntimeException) {
       LogUtils.w("BrailleAppSearch", "Cannot open search: %s", e.javaClass.simpleName)
@@ -93,23 +109,47 @@ class BrailleAppSearchController @JvmOverloads constructor(
   override fun onQueryChanged(query: String) {
     if (!isShowing) return
     results.search(query)
+    if (mode == Mode.ELEMENTS) {
+      if (elementsDirty) refreshElements() else screenSearch.search(query)
+    }
     announceResult()
   }
 
   override fun onAction(action: Action) {
     if (!isShowing) return
     when (action) {
-      Action.PREVIOUS -> { results.move(-1); announceResult() }
-      Action.NEXT -> { results.move(1); announceResult() }
-      Action.OPEN -> openSelected()
+      Action.PREVIOUS -> { move(-1); announceResult() }
+      Action.NEXT -> { move(1); announceResult() }
+      Action.OPEN -> if (mode == Mode.APPS) openSelected() else activateElement()
       Action.CLOSE -> dismiss()
       Action.HELP -> speak(service.getString(R.string.braille_app_search_hint))
+      Action.SWITCH_MODE -> {
+        mode = if (mode == Mode.APPS) Mode.ELEMENTS else Mode.APPS
+        prefs.edit().putBoolean("pref_braille_search_elements_mode", mode == Mode.ELEMENTS).apply()
+        if (mode == Mode.ELEMENTS) {
+          refreshElements()
+        } else {
+          results.search(results.query)
+        }
+        hasAnnouncedResult = false
+        updateView()
+        speak(modeName())
+      }
     }
   }
 
   override fun onAnnouncement(text: String) { if (isShowing) speak(text) }
 
   private fun resultText(): String {
+    if (mode == Mode.ELEMENTS) {
+      val element = screenSearch.selected
+      return when {
+        results.query.isBlank() -> service.getString(R.string.braille_search_type_element)
+        element == null -> service.getString(R.string.braille_search_no_elements, results.query)
+        else -> service.getString(R.string.braille_app_search_result,
+          element.label, screenSearch.index + 1, screenSearch.matches.size)
+      }
+    }
     val app = results.selected
     return when {
       results.query.isBlank() -> service.getString(R.string.braille_app_search_type_name)
@@ -121,10 +161,49 @@ class BrailleAppSearchController @JvmOverloads constructor(
 
   private fun updateView() {
     view?.setDescription(service.getString(R.string.braille_app_search_title) + "\n" +
-      results.query + "\n" + resultText())
+      modeName() + "\n" + results.query + "\n" + resultText())
   }
 
-  private fun announceResult() { updateView(); speak(resultText()) }
+  private fun announceResult() {
+    hasAnnouncedResult = true
+    updateView(); speak(resultText())
+  }
+
+  private fun modeName() = service.getString(if (mode == Mode.APPS)
+    R.string.braille_search_apps else R.string.braille_search_elements)
+
+  private fun move(step: Int) {
+    // Opening/switching only announces the mode; the first navigation reads the first match.
+    if (!hasAnnouncedResult) return
+    if (mode == Mode.APPS) results.move(step) else screenSearch.move(step)
+  }
+
+  private fun refreshElements() {
+    screenSearch.load(originWindowId)
+    screenSearch.search(results.query)
+    elementsDirty = false
+  }
+
+  private fun activateElement() {
+    if (ScreenMonitor.isDeviceLocked(service)) { dismiss(); return }
+    val entry = screenSearch.selected ?: run { announceResult(); return }
+    val originalWindow = originWindowId
+    val token = generation
+    hide(false)
+    // Release the modal touch region before focusing/clicking. Never redirect to another window.
+    handler.postDelayed({
+      if (token != generation) return@postDelayed
+      if (ScreenMonitor.isDeviceLocked(service) || activeAppWindowId() != originalWindow) {
+        speak(service.getString(R.string.braille_search_element_unavailable))
+        return@postDelayed
+      }
+      when (screenSearch.activate(entry)) {
+        ScreenElementSearch.Activation.UNAVAILABLE -> speak(service.getString(R.string.braille_search_element_unavailable))
+        ScreenElementSearch.Activation.FAILED -> speak(service.getString(R.string.braille_search_activation_failed))
+        else -> { }
+      }
+    }, 150)
+  }
 
   private fun openSelected() {
     if (ScreenMonitor.isDeviceLocked(service)) { dismiss(); return }
@@ -149,6 +228,8 @@ class BrailleAppSearchController @JvmOverloads constructor(
   fun onAccessibilityEvent(event: AccessibilityEvent) {
     if (!isShowing) return
     if (ScreenMonitor.isDeviceLocked(service)) { dismiss(); return }
+    if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED && event.windowId == originWindowId)
+      elementsDirty = true
     if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
         event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
       val active = activeAppWindowId()
@@ -166,8 +247,9 @@ class BrailleAppSearchController @JvmOverloads constructor(
     return true
   }
 
-  fun dismiss() = hide(true)
-  fun shutdown() = hide(false)
+  private fun cancelPendingActivation() { generation++; handler.removeCallbacksAndMessages(null) }
+  fun dismiss() { cancelPendingActivation(); hide(true) }
+  fun shutdown() { cancelPendingActivation(); hide(false) }
 
   private fun hide(announce: Boolean) {
     val input = view ?: return
@@ -177,6 +259,7 @@ class BrailleAppSearchController @JvmOverloads constructor(
     service.setModalTouchRegion(null)
     try { windows.removeViewImmediate(input) } catch (_: IllegalArgumentException) { }
     results = AppSearchResults(emptyList())
+    screenSearch.clear()
     if (announce) speak(service.getString(R.string.braille_app_search_closed))
   }
 
