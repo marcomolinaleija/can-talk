@@ -71,6 +71,17 @@
         android:summary="%s"
         android:title="@string/title_pref_braille_keyboard_echo" />
 
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:key="@string/pref_brailleime_voice_allow_profanity"
+        android:summary="@string/summary_pref_voice_allow_profanity"
+        android:title="@string/title_pref_voice_allow_profanity" />
+
+    <Preference
+        android:key="@string/pref_brailleime_system_voice_settings"
+        android:summary="@string/summary_pref_system_voice_settings"
+        android:title="@string/title_pref_system_voice_settings" />
+
   </PreferenceCategory>
 
 </PreferenceScreen>

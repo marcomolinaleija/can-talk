@@ -271,4 +271,11 @@
   <string name="emoji_added_to_favorites">%s se agregó a favoritos</string>
   <string name="emoji_removed_from_favorites">%s se eliminó de favoritos</string>
   <string name="emoji_favorites_empty">Sin contenido en favoritos. Usa los puntos 3 y 6 para añadir el emoji actual.</string>
+  <string name="emoji_inserted">%s insertado</string>
+
+  <!-- Voice input preferences -->
+  <string name="title_pref_voice_allow_profanity">Permitir palabras explícitas en dictado por voz</string>
+  <string name="summary_pref_voice_allow_profanity">No censurar malas palabras durante el dictado por voz</string>
+  <string name="title_pref_system_voice_settings">Ajustes de dictado por voz del sistema</string>
+  <string name="summary_pref_system_voice_settings">Abre los ajustes de teclado para configurar el filtro de palabras ofensivas de Google</string>
 </resources>

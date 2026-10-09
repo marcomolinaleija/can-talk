@@ -572,4 +572,11 @@
   <string name="emoji_added_to_favorites">%s added to favorites</string>
   <string name="emoji_removed_from_favorites">%s removed from favorites</string>
   <string name="emoji_favorites_empty">No favorites saved. Use dots 3 and 6 to add.</string>
+  <string name="emoji_inserted">%s inserted</string>
+
+  <!-- Voice input preferences -->
+  <string name="title_pref_voice_allow_profanity">Allow explicit words in voice dictation</string>
+  <string name="summary_pref_voice_allow_profanity">Do not censor offensive words during voice dictation</string>
+  <string name="title_pref_system_voice_settings">System voice input settings</string>
+  <string name="summary_pref_system_voice_settings">Open keyboard settings to configure Google voice typing offensive word filter</string>
 </resources>

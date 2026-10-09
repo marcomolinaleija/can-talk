@@ -182,6 +182,38 @@ public class EmojiManagerTest {
   }
 
   @Test
+  public void testDirectColumnBrailleDirectInsertion() {
+    emojiManager.enterEmojiMode(null);
+    class FakeInputConnection extends BaseInputConnection {
+      String committedText;
+      int committedPosition;
+
+      FakeInputConnection() {
+        super(new View(context), false);
+      }
+
+      @Override
+      public boolean commitText(CharSequence text, int newCursorPosition) {
+        committedText = text != null ? text.toString() : null;
+        committedPosition = newCursorPosition;
+        return true;
+      }
+    }
+
+    FakeInputConnection fakeInputConnection = new FakeInputConnection();
+
+    // Dropped 2 (dots 2, 3) -> Column 1 directly commits "😃"
+    emojiManager.onBrailleProduced(new BrailleCharacter("23"), fakeInputConnection);
+    assertEquals(1, emojiManager.getCurrentSelected());
+    assertEquals("😃", fakeInputConnection.committedText);
+
+    // Dropped 7 (dots 2, 3, 5, 6) -> Column 6 directly commits "😂"
+    emojiManager.onBrailleProduced(new BrailleCharacter("2356"), fakeInputConnection);
+    assertEquals(6, emojiManager.getCurrentSelected());
+    assertEquals("😂", fakeInputConnection.committedText);
+  }
+
+  @Test
   public void testCommitSelectedEmoji() {
     emojiManager.enterEmojiMode(null);
     class FakeInputConnection extends BaseInputConnection {

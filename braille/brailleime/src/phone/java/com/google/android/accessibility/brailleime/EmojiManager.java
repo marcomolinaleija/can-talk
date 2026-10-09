@@ -285,10 +285,10 @@ public class EmojiManager {
       return true;
     }
 
-    // 4. Direct column selection (1..10)
+    // 4. Direct column selection & insertion (1..10)
     int colIndex = COLUMN_DIRECT_CHARS.indexOf(brailleChar);
     if (colIndex >= 0 && colIndex < MAX_COLUMNS) {
-      selectColumn(colIndex);
+      selectAndCommitColumn(colIndex, inputConnection);
       return true;
     }
 
@@ -387,11 +387,29 @@ public class EmojiManager {
     }
   }
 
+  public void selectAndCommitColumn(int colIndex, @Nullable InputConnection inputConnection) {
+    List<String> curCatList = getCurrentCategoryList();
+    int countInRow = getCountInRow(curCatList, currentRow);
+    if (countInRow == 0) {
+      return;
+    }
+    if (colIndex < countInRow) {
+      currentSelected = colIndex;
+    } else {
+      currentSelected = Math.max(0, countInRow - 1);
+    }
+    if (inputConnection != null) {
+      commitSelectedEmoji(inputConnection);
+    } else {
+      announceFocusedEmoji();
+    }
+  }
+
   public void commitSelectedEmoji(@Nullable InputConnection inputConnection) {
     String emoji = getSelectedEmoji();
     if (emoji != null && inputConnection != null) {
       inputConnection.commitText(emoji, 1);
-      speak(emoji);
+      speak(context.getString(R.string.emoji_inserted, emoji));
     }
   }
 
