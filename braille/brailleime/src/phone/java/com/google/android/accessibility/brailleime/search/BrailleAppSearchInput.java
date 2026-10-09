@@ -29,7 +29,7 @@ import com.google.android.accessibility.brailleime.input.Swipe;
 
 /** Hosts the existing braille dots without opening an IME or sending text to the underlying app. */
 public final class BrailleAppSearchInput extends FrameLayout implements BrailleInputView.Callback {
-  public enum Action { PREVIOUS, NEXT, OPEN, CLOSE, HELP }
+  public enum Action { PREVIOUS, NEXT, OPEN, CLOSE, HELP, SWITCH_MODE }
 
   public interface Listener {
     void onQueryChanged(String query);
@@ -156,6 +156,8 @@ public final class BrailleAppSearchInput extends FrameLayout implements BrailleI
     else if (fingers == 2 && (direction == Swipe.Direction.LEFT || direction == Swipe.Direction.DOWN))
       listener.onAction(Action.CLOSE);
     else if (fingers == 3 && direction == Swipe.Direction.UP) listener.onAction(Action.HELP);
+    else if (fingers == 3 && (direction == Swipe.Direction.LEFT || direction == Swipe.Direction.RIGHT))
+      listener.onAction(Action.SWITCH_MODE);
     return true;
   }
 

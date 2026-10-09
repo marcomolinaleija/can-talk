@@ -65,4 +65,12 @@ public class BrailleAppSearchInputTest {
     assertTrue(actions.isEmpty());
     assertTrue(queries.isEmpty());
   }
+
+  @Test public void threeFingersHorizontallySwitchModesWithoutChangingTheQuery() {
+    input.onBrailleProduced(new BrailleCharacter("1"));
+    input.onSwipeProduced(new Swipe(Swipe.Direction.LEFT, 3));
+    input.onSwipeProduced(new Swipe(Swipe.Direction.RIGHT, 3));
+    assertEquals(List.of(Action.SWITCH_MODE, Action.SWITCH_MODE), actions);
+    assertEquals(List.of("a"), queries);
+  }
 }
