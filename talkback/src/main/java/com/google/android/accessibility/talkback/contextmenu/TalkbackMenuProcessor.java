@@ -205,6 +205,12 @@ public class TalkbackMenuProcessor {
     setSkipRefocusAndWindowAnnounce(menu, R.id.translate_last, true);
     setMenuItemDeferredType(menu, R.id.toggle_translation, DeferredType.WINDOWS_STABLE);
     setMenuItemDeferredType(menu, R.id.translate_last, DeferredType.WINDOWS_STABLE);
+    setSkipRefocusAndWindowAnnounce(menu, R.id.clipboard_history, true);
+    setMenuItemDeferredType(menu, R.id.clipboard_history, DeferredType.WINDOWS_STABLE);
+    if (!FeatureSupport.supportPassthrough()
+        || FormFactorUtils.isAndroidWear() || FormFactorUtils.isAndroidTv()) {
+      menu.removeItem(R.id.clipboard_history);
+    }
     if (com.google.android.accessibility.utils.FormFactorUtils.isAndroidWear()
         || com.google.android.accessibility.utils.FormFactorUtils.isAndroidTv()) {
       menu.removeItem(R.id.toggle_translation);

@@ -507,6 +507,7 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
     COPY(R.string.shortcut_value_copy, android.R.string.copy),
     CUT(R.string.shortcut_value_cut, android.R.string.cut),
     PASTE(R.string.shortcut_value_paste, android.R.string.paste),
+    CLIPBOARD_HISTORY(R.string.shortcut_value_clipboard_history, R.string.clipboard_history_title),
     COPY_LAST_SPOKEN_UTTERANCE(
         R.string.shortcut_value_copy_last_spoken_phrase, R.string.title_copy_last_spoken_phrase),
     BRAILLE_KEYBOARD(R.string.shortcut_value_braille_keyboard, R.string.shortcut_braille_keyboard),

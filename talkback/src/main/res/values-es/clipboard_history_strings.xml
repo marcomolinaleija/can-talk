@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="clipboard_history_title">Historial del portapapeles</string>
+  <string name="clipboard_history_general">General</string>
+  <string name="clipboard_history_favorites">Favoritos</string>
+  <string name="clipboard_history_favorite">Favorito</string>
+  <string name="clipboard_history_item">%1$s, %2$d de %3$d. %4$s. %5$s</string>
+  <string name="clipboard_history_spoken_item">%1$s. %2$d de %3$d</string>
+  <string name="clipboard_history_empty">Sin elementos</string>
+  <string name="clipboard_history_hint">Izquierda y derecha para recorrer. Arriba o abajo para alternar entre general y favoritos de forma cíclica. Un toque para copiar y cerrar, doble toque para pegar y cerrar. Mantén pulsado para marcar o quitar favorito. Dos dedos hacia la izquierda para cerrar.</string>
+  <string name="clipboard_history_copied">Copiado</string>
+  <string name="clipboard_history_pasted">Elemento pegado</string>
+  <string name="clipboard_history_opened">Historial abierto</string>
+  <string name="clipboard_history_closed">Historial cerrado</string>
+  <string name="clipboard_history_favorite_added">Añadido a favoritos</string>
+  <string name="clipboard_history_favorite_removed">Quitado de favoritos</string>
+  <string name="clipboard_history_favorites_full">Puedes guardar hasta 50 favoritos</string>
+  <string name="clipboard_history_no_editor">El campo de texto original no está disponible. Abre el historial desde el campo donde quieras pegar.</string>
+  <string name="clipboard_history_copy_failed">No se pudo copiar</string>
+  <string name="clipboard_history_paste_failed">Este campo no pudo pegar el texto</string>
+  <string name="clipboard_history_unavailable">Desbloquea el teléfono para abrir el historial del portapapeles. Esta interfaz requiere Android 11 o posterior.</string>
+</resources>

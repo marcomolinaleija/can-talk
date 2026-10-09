@@ -61,10 +61,12 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.accessibilityservice.FingerprintGestureController;
 import android.accessibilityservice.FingerprintGestureController.FingerprintGestureCallback;
 import android.accessibilityservice.TouchInteractionController;
+import android.accessibilityservice.AccessibilityService;
 import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ClipboardManager;
+import android.graphics.Region;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -158,6 +160,7 @@ import com.google.android.accessibility.talkback.directtouch.DirectTouchControll
 import com.google.android.accessibility.talkback.eventprocessor.AccessibilityEventProcessor;
 import com.google.android.accessibility.talkback.eventprocessor.AccessibilityEventProcessor.TalkBackListener;
 import com.google.android.accessibility.talkback.eventprocessor.CallSpeechVolumeKeyHandler;
+import com.google.android.accessibility.talkback.clipboard.ClipboardHistoryController;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorEmojiTraversal;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorEventQueue;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorGestureVibrator;
@@ -669,6 +672,7 @@ public class TalkBackService extends AccessibilityServiceCompat
   private VolumeMonitor volumeMonitor;
 
   private CallSpeechVolumeKeyHandler callSpeechVolumeKeyHandler;
+  private ClipboardHistoryController clipboardHistoryController;
 
   /** {@link android.content.BroadcastReceiver} for tracking battery status changes. */
   private BatteryMonitor batteryMonitor;
@@ -908,6 +912,10 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onDestroy() {
+    if (clipboardHistoryController != null) {
+      clipboardHistoryController.shutdown();
+      clipboardHistoryController = null;
+    }
     if (translationController != null) {
       translationController.close();
     }
@@ -988,6 +996,7 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onConfigurationChanged(Configuration newConfig) {
+    if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
     this.getTheme().applyStyle(R.style.TalkbackBaseTheme, /* force= */ true);
 
     // onConfigurationChanged may be called before TalkBack initialization. To avoid crash, each
@@ -1056,6 +1065,7 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onAccessibilityEvent(AccessibilityEvent event) {
+    if (clipboardHistoryController != null) clipboardHistoryController.onAccessibilityEvent(event);
     // Paused Backtalk drops events, except the end of a touch that started before the pause, so
     // that nothing still thinks a finger is down after resuming. Its feedback is dropped too.
     if (PauseController.isPaused()
@@ -1184,6 +1194,9 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   /** Handles a key event and returns whether it should be considered consumed. */
   protected boolean onKeyEventInternal(KeyEvent keyEvent) {
+    if (clipboardHistoryController != null && clipboardHistoryController.onKeyEvent(keyEvent)) {
+      return true;
+    }
     boolean readerActive = isServiceActive() && !PauseController.isPaused();
     boolean touchingScreen = isTouchInteracting || isBrailleImeTouchInteracting();
     // Finish a captured press even if the reader is paused or suspended in the meantime.
@@ -1381,6 +1394,13 @@ public class TalkBackService extends AccessibilityServiceCompat
   }
 
   private boolean handleOnGestureById(int displayId, int gestureId) {
+    // A modal history surface owns touches; late framework gestures must not reach the app.
+    if (clipboardHistoryController != null && clipboardHistoryController.isShowing()) {
+      if (gestureId == AccessibilityService.GESTURE_2_FINGER_SWIPE_LEFT) {
+        clipboardHistoryController.dismiss();
+      }
+      return true;
+    }
     if (!isServiceActive() || PauseController.isPaused()) {
       return false;
     }
@@ -1420,6 +1440,18 @@ public class TalkBackService extends AccessibilityServiceCompat
     }
 
     return speechController;
+  }
+
+  public boolean showClipboardHistory() {
+    return clipboardHistoryController != null && isServiceActive() && !PauseController.isPaused()
+        && clipboardHistoryController.show();
+  }
+
+  public void setClipboardHistoryTouchRegion(@Nullable Region region) {
+    passThroughModeActor.setOverlayTouchRegion(region);
+    if (FeatureSupport.supportPassthrough()) {
+      setGestureDetectionPassthroughRegion(Display.DEFAULT_DISPLAY, region == null ? new Region() : region);
+    }
   }
 
   public FeedbackController getFeedbackController() {
@@ -2288,6 +2320,12 @@ public class TalkBackService extends AccessibilityServiceCompat
 
     headphoneStateMonitor = new HeadphoneStateMonitor(this);
 
+    clipboardHistoryController = new ClipboardHistoryController(
+        this, pipeline.getFeedbackReturner(), accessibilityFocusMonitor);
+    ringerModeAndScreenMonitor.addScreenChangedListener((interactive, eventId) -> {
+      if (!interactive && clipboardHistoryController != null) clipboardHistoryController.dismiss();
+    });
+
     callSpeechVolumeKeyHandler = new CallSpeechVolumeKeyHandler(this, percent ->
         pipeline.getFeedbackReturner().returnFeedback(EVENT_ID_UNTRACKED,
             Feedback.speech(getString(R.string.call_speech_volume_announcement, percent),
@@ -2331,6 +2369,7 @@ public class TalkBackService extends AccessibilityServiceCompat
             new PauseController.Host() {
               @Override
               public void stopForPause() {
+                if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
                 if (menuManager != null) {
                   menuManager.dismissAll();
                 }
@@ -2873,6 +2912,7 @@ public class TalkBackService extends AccessibilityServiceCompat
    * {@link #onDestroy}.
    */
   private void suspendInfrastructure() {
+    if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
     if (translationController != null) {
       translationController.stop();
     }

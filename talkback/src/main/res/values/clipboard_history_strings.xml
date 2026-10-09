@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+  <string name="shortcut_value_clipboard_history" translatable="false">CLIPBOARD_HISTORY</string>
+  <string name="clipboard_history_title">Clipboard history</string>
+  <string name="clipboard_history_general">General</string>
+  <string name="clipboard_history_favorites">Favorites</string>
+  <string name="clipboard_history_favorite">Favorite</string>
+  <string name="clipboard_history_item">%1$s, %2$d of %3$d. %4$s. %5$s</string>
+  <string name="clipboard_history_spoken_item">%1$s. %2$d of %3$d</string>
+  <string name="clipboard_history_empty">No items</string>
+  <string name="clipboard_history_hint">Swipe left or right to browse. Up or down to cycle between general and favorites. Tap to copy and close, double tap to paste and close. Hold to toggle favorite. Swipe left with two fingers to close.</string>
+  <string name="clipboard_history_copied">Copied</string>
+  <string name="clipboard_history_pasted">Item pasted</string>
+  <string name="clipboard_history_opened">History opened</string>
+  <string name="clipboard_history_closed">History closed</string>
+  <string name="clipboard_history_favorite_added">Added to favorites</string>
+  <string name="clipboard_history_favorite_removed">Removed from favorites</string>
+  <string name="clipboard_history_favorites_full">No more than 50 favorites can be saved</string>
+  <string name="clipboard_history_no_editor">The original text field is unavailable. Open the history from the field where you want to paste.</string>
+  <string name="clipboard_history_copy_failed">Could not copy</string>
+  <string name="clipboard_history_paste_failed">This field could not paste the text</string>
+  <string name="clipboard_history_unavailable">Unlock the phone to open clipboard history. This interface requires Android 11 or later.</string>
+</resources>
