@@ -160,8 +160,12 @@ public class VoiceInputManager {
     intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
     intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
     boolean allowProfanity = BrailleUserPreferences.readVoiceAllowProfanity(context);
-    intent.putExtra("android.speech.extra.PROFANITY_FILTER", !allowProfanity);
-    intent.putExtra("profanity_filter", !allowProfanity);
+    boolean maskOffensiveWords = !allowProfanity;
+    intent.putExtra("android.speech.extra.MASK_OFFENSIVE_WORDS", maskOffensiveWords);
+    intent.putExtra("com.google.recognition.extra.MASK_OFFENSIVE_WORDS", maskOffensiveWords);
+    intent.putExtra("android.speech.extra.PROFANITY_FILTER", maskOffensiveWords);
+    intent.putExtra("profanity_filter", maskOffensiveWords);
+    intent.putExtra("maskOffensiveWords", maskOffensiveWords);
     intent.putExtra("android.speech.extra.DICTATION_MODE", true);
     return intent;
   }
