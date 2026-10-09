@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
   <com.google.android.accessibility.material.preference.AccessibilitySuiteListPreference
       android:defaultValue=""
       android:key="@string/pref_tts_engine_key"
@@ -31,6 +32,20 @@
       android:key="@string/pref_speech_volume_seekbar_key_int"
       android:persistent="false"
       android:title="@string/title_pref_speech_volume" />
+  <com.google.android.accessibility.material.preference.AccessibilitySuiteSwitchPreference
+      android:defaultValue="false"
+      android:key="@string/pref_call_speech_volume_enabled_key"
+      android:title="@string/title_call_speech_volume_enabled"
+      android:summary="@string/summary_call_speech_volume_enabled" />
+  <com.google.android.accessibility.material.preference.AccessibilitySeekBarPreference
+      android:defaultValue="@integer/pref_call_speech_volume_default"
+      android:dependency="@string/pref_call_speech_volume_enabled_key"
+      android:key="@string/pref_call_speech_volume_percent_key"
+      android:max="100"
+      android:title="@string/title_call_speech_volume_percent"
+      android:summary="@string/summary_call_speech_volume_percent"
+      app:min="25"
+      app:showSeekBarValue="true" />
   <com.google.android.accessibility.talkback.preference.base.SpeechRatePreference
       android:defaultValue="@integer/pref_speech_rate_default_int"
       android:key="@string/pref_speech_rate_seekbar_key_int"
