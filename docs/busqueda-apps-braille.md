@@ -1,5 +1,8 @@
 # Buscar aplicaciones en braille
 
+Esta guía documenta la primera implementación. La ampliación de la interfaz y sus
+controles actuales se describen en [Búsqueda braille unificada](busqueda-braille-unificada.md).
+
 Primera implementación en `codex/busqueda-apps-braille`, a partir de `codex/desarrollo`.
 
 En los ajustes de can-talk, abre **Personalizar gestos**, elige un gesto y asígnale
