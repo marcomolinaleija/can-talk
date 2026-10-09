@@ -342,6 +342,12 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
             R.array.shortcut_text_editing,
             R.array.shortcut_value_text_editing);
     Resources resources = getContext().getResources();
+    if (!FormFactorUtils.isAndroidWear() && !FormFactorUtils.isAndroidTv()) {
+      builder.add(new ActionItem(resources.getString(R.string.translation_toggle),
+          resources.getString(R.string.shortcut_value_toggle_translation), TYPE_ACTION_ITEM));
+      builder.add(new ActionItem(resources.getString(R.string.translation_last),
+          resources.getString(R.string.shortcut_value_translate_last), TYPE_ACTION_ITEM));
+    }
     if (FeatureSupport.supportSwitchToInputMethod() && !FormFactorUtils.isAndroidWear()) {
       builder.add(
           new ActionItem(

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:id="@+id/toggle_translation" android:orderInCategory="28"
+      android:title="@string/translation_start" />
+  <item android:id="@+id/translate_last" android:orderInCategory="29"
+      android:title="@string/translation_last" />
 
   <item
       android:id="@+id/read_from_top"
@@ -51,14 +55,14 @@
       android:title="@string/title_show_keyboard_shortcuts" />
   <item
       android:id="@+id/talkback_settings"
-      android:orderInCategory="23"
+      android:orderInCategory="31"
       android:title="@string/talkback_show_talkback_settings" />
   <item
       android:id="@+id/tts_settings"
-      android:orderInCategory="24"
+      android:orderInCategory="32"
       android:title="@string/tts_preferences_title" />
   <item
       android:id="@+id/braille_display_settings"
-      android:orderInCategory="25"
+      android:orderInCategory="30"
       android:title="@string/title_show_braille_display_settings" />
 </menu>

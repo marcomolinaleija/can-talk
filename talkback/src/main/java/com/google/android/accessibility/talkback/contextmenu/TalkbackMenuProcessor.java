@@ -64,9 +64,11 @@ public class TalkbackMenuProcessor {
    * ORDER_VIBRATION_FEEDBACK = 18;
    * ORDER_SCREEN_SEARCH = 19;
    * ORDER_VOICE_COMMANDS = 21;
-   * ORDER_TALKBACK_SETTINGS = 22;
-   * ORDER_TTS_SETTINGS = 23;
-   * ORDER_BRAILLE_DISPLAY_SETTINGS = 25;
+   * ORDER_TOGGLE_TRANSLATION = 28;
+   * ORDER_TRANSLATE_LAST = 29;
+   * ORDER_BRAILLE_DISPLAY_SETTINGS = 30;
+   * ORDER_TALKBACK_SETTINGS = 31;
+   * ORDER_TTS_SETTINGS = 32;
    */
   private static final int ORDER_TYPO_SUGGESTIONS = 1;
   private static final int ORDER_ACTIONS = 2;
@@ -199,6 +201,18 @@ public class TalkbackMenuProcessor {
 
     setSkipRefocusAndWindowAnnounce(menu, R.id.spell_last_utterance, true);
     setSkipRefocusAndWindowAnnounce(menu, R.id.repeat_last_utterance, true);
+    setSkipRefocusAndWindowAnnounce(menu, R.id.toggle_translation, true);
+    setSkipRefocusAndWindowAnnounce(menu, R.id.translate_last, true);
+    setMenuItemDeferredType(menu, R.id.toggle_translation, DeferredType.WINDOWS_STABLE);
+    setMenuItemDeferredType(menu, R.id.translate_last, DeferredType.WINDOWS_STABLE);
+    if (com.google.android.accessibility.utils.FormFactorUtils.isAndroidWear()
+        || com.google.android.accessibility.utils.FormFactorUtils.isAndroidTv()) {
+      menu.removeItem(R.id.toggle_translation);
+      menu.removeItem(R.id.translate_last);
+    } else if (service.getTranslationController() != null) {
+      menu.findItem(R.id.toggle_translation).setTitle(service.getTranslationController().getContinuous()
+          ? R.string.translation_stop : R.string.translation_start);
+    }
     setSkipRefocusAndWindowAnnounce(menu, R.id.copy_last_utterance_to_clipboard, true);
     setSkipRefocusAndWindowAnnounce(menu, R.id.audio_ducking, true);
     setSkipRefocusAndWindowAnnounce(menu, R.id.sound_feedback, true);
