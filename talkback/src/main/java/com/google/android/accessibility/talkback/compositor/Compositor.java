@@ -589,8 +589,22 @@ public class Compositor {
       int clearQueueGroup = eventFeedback.ttsClearQueueGroup();
       // Compose other speech flags/parameters.
       int flags = eventFeedback.getOutputSpeechFlags();
+      if ((options.eventObject != null && options.eventObject.isPassword())
+          || (options.sourceNode != null && (options.sourceNode.isPassword()
+              || (android.os.Build.VERSION.SDK_INT >= 34
+                  && options.sourceNode.unwrap().isAccessibilityDataSensitive())))) {
+        flags |= FeedbackItem.FLAG_NO_TRANSLATION;
+      }
       double speechPitch = eventFeedback.ttsPitch();
       Bundle speechParams = new Bundle();
+      CharSequence sourcePackage = options.sourceNode != null
+          ? options.sourceNode.getPackageName()
+          : (options.eventObject != null ? options.eventObject.getPackageName() : null);
+      if (sourcePackage != null) {
+        speechParams.putString(
+            com.google.android.accessibility.utils.output.SpeechTextTransformer.SOURCE_PACKAGE,
+            sourcePackage.toString());
+      }
       speechParams.putFloat(SpeechParam.PITCH, (float) speechPitch);
 
       // Output feedback: speech, haptics, earcons.

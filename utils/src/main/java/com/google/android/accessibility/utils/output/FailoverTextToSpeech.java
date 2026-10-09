@@ -852,7 +852,9 @@ public class FailoverTextToSpeech {
 
     requestRate = effectiveRate;
     synchronized (ttsLock) {
-      locale = localeToSpeak(locale);
+      String translationLocale = params.get(SpeechTextTransformer.FORCE_LOCALE);
+      locale = translationLocale == null
+          ? localeToSpeak(locale) : Locale.forLanguageTag(translationLocale);
       String utteranceId = params.get(Engine.KEY_PARAM_UTTERANCE_ID);
       boolean isLocaleAttached = locale != null;
       Locale previousLocale = getUsedLocale();

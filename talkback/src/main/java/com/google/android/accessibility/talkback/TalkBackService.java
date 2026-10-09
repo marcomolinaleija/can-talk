@@ -748,6 +748,11 @@ public class TalkBackService extends AccessibilityServiceCompat
   private ScreenStateMonitor screenStateMonitor;
   private DirectTouchController directTouchController;
   private PauseController pauseController;
+  private com.google.android.accessibility.talkback.translation.TranslationController translationController;
+
+  public com.google.android.accessibility.talkback.translation.TranslationController getTranslationController() {
+    return translationController;
+  }
   private AudioDeviceRouter audioDeviceRouter;
   private InputMethodMonitor inputMethodMonitor;
   private DisplayMonitor displayMonitor;
@@ -899,6 +904,9 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onDestroy() {
+    if (translationController != null) {
+      translationController.close();
+    }
     if (userInterface != null) {
       userInterface.unregisterAllListeners();
     }
@@ -1827,6 +1835,15 @@ public class TalkBackService extends AccessibilityServiceCompat
             FeatureFlagReader.catchIndexOutOfBounds(this),
             "TALKBACK",
             FeatureFlagReader.hasLocalCacheCapability(this));
+    try {
+      translationController =
+          new com.google.android.accessibility.talkback.translation.TranslationController(
+              this, speechController);
+      speechController.setTextTransformer(translationController);
+    } catch (IllegalArgumentException exception) {
+      // A restored configuration must not break ordinary speech if its adapter was removed.
+      LogUtils.w(TAG, "Configured translation provider is unavailable");
+    }
 
     if (FeatureFlagReader.enableAggressiveChunking(this)) {
       FeedbackProcessingUtils.enableAggressiveChunking();
@@ -2239,6 +2256,11 @@ public class TalkBackService extends AccessibilityServiceCompat
     if (speechCacheController != null) {
       ringerModeAndScreenMonitor.addScreenChangedListener(speechCacheController);
     }
+    ringerModeAndScreenMonitor.addScreenChangedListener((interactive, eventId) -> {
+      if (!interactive) {
+        speechController.interruptPendingTextTransformation();
+      }
+    });
 
     ringerModeAndScreenMonitor.addScreenChangedListener(proximitySensorMonitor);
     accessibilityEventProcessor.setRingerModeAndScreenMonitor(ringerModeAndScreenMonitor);
@@ -2819,6 +2841,9 @@ public class TalkBackService extends AccessibilityServiceCompat
    * {@link #onDestroy}.
    */
   private void suspendInfrastructure() {
+    if (translationController != null) {
+      translationController.stop();
+    }
     if (!isServiceActive()) {
       LogUtils.e(TAG, "Attempted to suspend while already suspended");
       return;

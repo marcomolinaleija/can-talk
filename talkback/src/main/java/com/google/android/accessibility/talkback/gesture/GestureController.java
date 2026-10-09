@@ -686,6 +686,10 @@ public class GestureController {
       result =
           pipeline.returnFeedback(
               eventId, Feedback.part().setSpeech(Feedback.Speech.create(REPEAT_LAST)));
+    } else if (action.equals(service.getString(R.string.shortcut_value_toggle_translation))) {
+      result = service.getTranslationController() != null && service.getTranslationController().toggle();
+    } else if (action.equals(service.getString(R.string.shortcut_value_translate_last))) {
+      result = service.getTranslationController() != null && service.getTranslationController().translateLast(false);
     } else if (action.equals(service.getString(R.string.shortcut_value_spell_last_spoken_phrase))) {
       result =
           pipeline.returnFeedback(

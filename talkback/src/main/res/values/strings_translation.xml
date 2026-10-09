@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="pref_translation_key" translatable="false">translation_settings</string>
+  <string name="shortcut_value_toggle_translation" translatable="false">TOGGLE_TRANSLATION</string>
+  <string name="shortcut_value_translate_last" translatable="false">TRANSLATE_LAST</string>
+  <string name="translation_title">Translation</string>
+  <string name="translation_provider">Translation provider</string>
+  <string name="translation_provider_description">Google Translate web using the InstantTranslate method (experimental). This test build includes a web service credential, not a personal Cloud API key. This unofficial endpoint can change or stop working. Powered by Google Translate.</string>
+  <string name="translation_allow_network">Allow online translation</string>
+  <string name="translation_privacy">When translation is requested, spoken text is sent to Google. It may include messages, names, notifications or financial information. Password and Android-marked sensitive fields, excluded apps and the lock screen are not translated. These checks cannot identify every private text. Only enable translation when you know what will be read. Nothing is sent while translation is off, except when you request a single translation. Cached text stays in memory only.</string>
+  <string name="translation_agree">Allow</string>
+  <string name="translation_continuous">Continuous translation</string>
+  <string name="translation_continuous_description">Translate speech until turned off. Off after restarting or disabling the reader. Paused while locked. Voice input, braille and app text stay unchanged.</string>
+  <string name="translation_toggle">Toggle continuous translation</string>
+  <string name="translation_start">Start continuous translation</string>
+  <string name="translation_stop">Stop continuous translation</string>
+  <string name="translation_last">Translate last spoken phrase</string>
+  <string name="translation_gestures_description">Assign both actions in Gestures, under Reading controls. No existing gesture is changed. You can also use the Can Talk menu.</string>
+  <string name="translation_target">Translate into</string>
+  <string name="translation_source">Translate from</string>
+  <string name="translation_system">System language</string>
+  <string name="translation_auto">Detect automatically</string>
+  <string name="translation_cache">Translation cache scope</string>
+  <string name="translation_cache_app">Separate for each app</string>
+  <string name="translation_cache_global">Shared across apps</string>
+  <string name="translation_cache_off">No cache</string>
+  <string name="translation_cache_info">Cache retention</string>
+  <string name="translation_cache_description">Memory only, up to 500 entries and 512,000 characters; expires after 24 hours. Cleared when the reader stops or translation settings change. Successful results only; protected fields are excluded.</string>
+  <string name="translation_clear_app">Clear last app cache</string>
+  <string name="translation_clear_app_description">Clears the last app outside Can Talk. In shared mode this clears the whole shared cache.</string>
+  <string name="translation_clear_all">Clear all translation cache</string>
+  <string name="translation_excluded">Apps never translated</string>
+  <string name="translation_excluded_description">Selected apps are excluded from both translation modes. Android may limit which installed apps appear here.</string>
+  <string name="translation_enabled">Continuous translation on</string>
+  <string name="translation_disabled">Continuous translation off</string>
+  <string name="translation_consent_required">Allow online translation in Translation settings first.</string>
+  <string name="translation_no_history">There is no spoken phrase to translate.</string>
+  <string name="translation_protected">This phrase is excluded from translation.</string>
+  <string name="translation_too_long">This phrase is too long to translate safely.</string>
+  <string name="translation_cache_cleared">Translation cache cleared</string>
+  <string name="translation_failed">Translation unavailable. Reading the original text.</string>
+</resources>

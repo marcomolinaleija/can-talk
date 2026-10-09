@@ -189,6 +189,31 @@ public class SpeechControllerImpl implements SpeechController {
 
   /** Listener used for testing. */
   private SpeechControllerListener speechListener;
+  private @Nullable SpeechTextTransformer textTransformer;
+  private @Nullable Runnable cancelTextTransformation;
+  private long textTransformationGeneration;
+
+  public void setTextTransformer(@Nullable SpeechTextTransformer transformer) {
+    cancelTextTransformation();
+    textTransformer = transformer;
+  }
+
+  /** Cancels only translation preparation, without changing ordinary screen-off speech. */
+  public void interruptPendingTextTransformation() {
+    if (cancelTextTransformation != null) {
+      interrupt(false);
+    }
+  }
+
+  private void cancelTextTransformation() {
+    textTransformationGeneration++;
+    if (cancelTextTransformation != null) {
+      cancelTextTransformation.run();
+      cancelTextTransformation = null;
+    }
+  }
+
+  public @Nullable FeedbackItem getSavedUtterance() { return savedUtterance; }
 
   private final Set<SpeechController.Observer> observers = new HashSet<>();
 
@@ -798,6 +823,9 @@ public class SpeechControllerImpl implements SpeechController {
 
   public void setSilenceSpeech(boolean shouldSlientSpeech) {
     this.shouldSilentSpeech = shouldSlientSpeech;
+    if (shouldSlientSpeech && cancelTextTransformation != null) {
+      interrupt(false);
+    }
   }
 
   /** Returns the last spoken utterance. */
@@ -1060,7 +1088,7 @@ public class SpeechControllerImpl implements SpeechController {
       speak(
           mContext.getString(R.string.function_on),
           QUEUE_MODE_BIT_UNINTERRUPTIBLE_BY_NEW_SPEECH,
-          /* flags= */ 0,
+          /* flags= */ FeedbackItem.FLAG_NO_TRANSLATION,
           /* speechParams= */ null,
           EVENT_ID_UNTRACKED);
     } else {
@@ -1068,7 +1096,7 @@ public class SpeechControllerImpl implements SpeechController {
       speak(
           mContext.getString(R.string.function_off),
           QUEUE_MODE_BIT_UNINTERRUPTIBLE_BY_NEW_SPEECH,
-          /* flags= */ 0,
+          /* flags= */ FeedbackItem.FLAG_NO_TRANSLATION,
           /* speechParams= */ null,
           EVENT_ID_UNTRACKED);
       isMuteSpeech = true;
@@ -1083,6 +1111,9 @@ public class SpeechControllerImpl implements SpeechController {
   @Override
   public void setMute(boolean mute) {
     isMuteSpeech = mute;
+    if (mute && cancelTextTransformation != null) {
+      interrupt(false);
+    }
   }
 
   /**
@@ -1155,6 +1186,7 @@ public class SpeechControllerImpl implements SpeechController {
 
     text = replaceSpanByContentDescription(text);
     text = replaceBrailleSymbolByDescription(mContext, text);
+    String translationSource = text == null ? "" : text.toString();
     text = EmojiSpeech.process(mContext, text);
     final FeedbackItem pendingItem =
         FeedbackProcessingUtils.generateFeedbackItemFromInput(
@@ -1173,6 +1205,10 @@ public class SpeechControllerImpl implements SpeechController {
             nonSpeechParams,
             eventId);
     updateInlineFormattingHistory(text, flags);
+    pendingItem.setTranslationSource(translationSource);
+    if (textTransformer != null) {
+      textTransformer.capture(pendingItem);
+    }
     makeSpeakablePunctuation(pendingItem);
     speak(pendingItem, queueMode, startAction, rangeStartCallback, completedAction);
   }
@@ -1506,6 +1542,9 @@ public class SpeechControllerImpl implements SpeechController {
   }
 
   private void notifyItemInterrupted(FeedbackItem item) {
+    if (item == currentFeedbackItem) {
+      cancelTextTransformation();
+    }
     if (item == null) {
       LogUtils.w(TAG, "notifyItemInterrupted: FeedbackItem is null");
       return;
@@ -1786,6 +1825,11 @@ public class SpeechControllerImpl implements SpeechController {
   /** Stops speech and shuts down this controller. */
   @Override
   public void shutdown() {
+    cancelTextTransformation();
+    if (textTransformer != null) {
+      textTransformer.close();
+      textTransformer = null;
+    }
     interrupt(false /* stopTtsSpeechCompletely */);
 
     failoverTts.shutdown();
@@ -1922,11 +1966,6 @@ public class SpeechControllerImpl implements SpeechController {
       addUtteranceStartAction(utteranceIndex, startAction);
     }
 
-    final UtteranceRangeStartCallback rangeStartCallback = item.getRangeStartCallback();
-    if (rangeStartCallback != null) {
-      setUtteranceRangeStartCallback(utteranceIndex, rangeStartCallback);
-    }
-
     final UtteranceCompleteRunnable completedAction = item.getCompletedAction();
     final int utteranceGroup = item.getUtteranceGroup();
     if (completedAction != null) {
@@ -1938,7 +1977,56 @@ public class SpeechControllerImpl implements SpeechController {
       addUtteranceCompleteAction(utteranceIndex, utteranceGroup, fullScreenReadNextCallback);
     }
 
-    if ((item != null) && !item.hasFlag(FeedbackItem.FLAG_NO_HISTORY)) {
+    if (textTransformer != null && !isMuteSpeech && !shouldSilenceSpeech(item)
+        && textTransformer.shouldTransform(item)) {
+      // Earcons/haptics remain immediate while text is prepared; do not play them twice.
+      for (FeedbackFragment fragment : item.getFragments()) {
+        playEarconsFromFragment(fragment, item.getEventId());
+        playHapticsFromFragment(fragment, item.getEventId());
+        fragment.clearAllEarcons();
+        fragment.clearAllHaptics();
+      }
+      final long generation = ++textTransformationGeneration;
+      cancelTextTransformation = textTransformer.transform(item, result -> mHandler.post(() -> {
+        if (generation != textTransformationGeneration || currentFeedbackItem != item) {
+          return;
+        }
+        cancelTextTransformation = null;
+        if (result != null && !TextUtils.isEmpty(result.getText())) {
+          replaceTranslatedFragments(item, result);
+        }
+        startPreparedItem(item, utteranceIndex);
+      }));
+      return;
+    }
+    startPreparedItem(item, utteranceIndex);
+  }
+
+  private void replaceTranslatedFragments(FeedbackItem item, SpeechTextTransformer.Result result) {
+    FeedbackFragment first = item.getFragments().get(0);
+    Bundle params = new Bundle(first.getSpeechParams());
+    params.putString(SpeechTextTransformer.FORCE_LOCALE, result.getLocale().toLanguageTag());
+    FeedbackItem translated = FeedbackProcessingUtils.generateFeedbackItemFromInput(
+        mContext, result.getText(), mUsePunctuation, cachedInlineFormattingHistory, formattingOptions,
+        formattingFeedbackMode, removeUnnecessarySpans, null, null, item.getFlags(),
+        item.getUtteranceGroup(), params, first.getNonSpeechParams(), item.getEventId());
+    item.clearFragments();
+    for (FeedbackFragment fragment : translated.getFragments()) {
+      fragment.setLocale(result.getLocale());
+      item.addFragment(fragment);
+    }
+    item.setTranslationApplied(true);
+    makeSpeakablePunctuation(item);
+  }
+
+  private void startPreparedItem(FeedbackItem item, int utteranceIndex) {
+    currentFragmentIterator = new FeedbackFragmentsIterator(
+        item.getFragments().iterator(), item.getUtteranceId());
+    // Translated offsets cannot safely be used to select ranges in the original node.
+    if (!item.isTranslationApplied() && item.getRangeStartCallback() != null) {
+      setUtteranceRangeStartCallback(utteranceIndex, item.getRangeStartCallback());
+    }
+    if (!item.hasFlag(FeedbackItem.FLAG_NO_HISTORY)) {
       while (mFeedbackHistory.size() >= MAX_HISTORY_ITEMS) {
         mFeedbackHistory.remove(mFeedbackHistory.peek());
       }
@@ -2256,6 +2344,7 @@ public class SpeechControllerImpl implements SpeechController {
    *     FeedbackItem}
    */
   private void clearCurrentAndQueuedUtterances(boolean notifyObserver) {
+    cancelTextTransformation();
     // We should save some of the feedback information to provide Pause / Resume feedback.
     // Because clearCurrentAndQueuedUtterances() clears all feedback
     // before recognizing the single tap with two fingers gesture.
