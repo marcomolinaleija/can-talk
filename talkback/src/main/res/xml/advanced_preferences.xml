@@ -39,6 +39,11 @@
           android:targetPackage="@string/app_id"
           android:targetClass="com.google.android.accessibility.talkback.labeling.LabelManagerSummaryActivity" />
     </com.google.android.accessibility.material.preference.AccessibilitySuitePreference>
+    <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
+        android:fragment="com.google.android.accessibility.talkback.backup.BackupRestoreFragment"
+        android:key="@string/pref_backup_restore_key"
+        android:title="@string/title_pref_backup_restore"
+        android:summary="@string/summary_pref_backup_restore" />
     <com.google.android.accessibility.material.preference.AccessibilitySuiteSwitchPreference
         android:defaultValue="@bool/pref_single_tap_default"
         android:key="@string/pref_single_tap_key"

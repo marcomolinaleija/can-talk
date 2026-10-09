@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 Backtalk contributors. SPDX-License-Identifier: Apache-2.0 -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+  <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
+      android:key="@string/pref_backup_export_key"
+      android:title="@string/title_pref_backup_export"
+      android:summary="@string/summary_pref_backup_export" />
+  <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
+      android:key="@string/pref_backup_import_key"
+      android:title="@string/title_pref_backup_import"
+      android:summary="@string/summary_pref_backup_import" />
+</PreferenceScreen>

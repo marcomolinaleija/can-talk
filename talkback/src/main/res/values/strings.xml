@@ -4162,4 +4162,24 @@ Do not use any markdown in your response."</string>
   <!-- Tip notification content for lock screen notifications. [CHAR_LIMIT=NONE] -->
   <string name="notifictions_in_lock_screen_notification_content">To hear notifications when your screen is off, turn on \"Speak notifications when screen is off\" in Backtalk verbosity settings</string>
 
+  <!-- Backup and restore strings -->
+  <string name="title_pref_backup_restore">Backup and restore</string>
+  <string name="summary_pref_backup_restore">Back up or restore all settings and gestures</string>
+  <string name="title_pref_backup_export">Create backup</string>
+  <string name="summary_pref_backup_export">Export all TalkBack settings and gestures to a file</string>
+  <string name="title_pref_backup_import">Restore backup</string>
+  <string name="summary_pref_backup_import">Import TalkBack settings and gestures from a file</string>
+  <string name="dialog_title_confirm_restore">Restore settings and gestures?</string>
+  <string name="dialog_message_confirm_restore">Your current settings and gestures will be replaced with the data from the selected backup file. TalkBack will apply the restored configuration immediately.</string>
+  <string name="dialog_button_restore">Restore</string>
+  <string name="toast_backup_export_success">Backup saved successfully</string>
+  <string name="toast_backup_export_failed">Failed to save backup</string>
+  <string name="toast_backup_restore_success">Settings and gestures restored successfully</string>
+  <string name="toast_backup_restore_failed">Failed to restore backup: %1$s</string>
+  <string name="backup_error_invalid_format">Invalid or unrecognized backup file format</string>
+  <string name="backup_error_unsupported_version">Unsupported backup file version</string>
+  <string name="backup_error_checksum_mismatch">Backup file is corrupt or has been modified (checksum mismatch)</string>
+  <string name="backup_error_commit_failed">Failed to apply preferences to storage</string>
+  <string name="backup_error_io">Could not read the backup file</string>
+
 </resources>

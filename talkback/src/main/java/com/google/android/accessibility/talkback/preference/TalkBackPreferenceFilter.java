@@ -189,6 +189,7 @@ public class TalkBackPreferenceFilter {
         R.string.pref_show_context_menu_pause_backtalk_setting_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
     // A TV has no touchscreen for direct touch, and no gesture for the status readout.
     DIRECT_TOUCH(R.string.pref_direct_touch_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
+    BACKUP_RESTORE(R.string.pref_backup_restore_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
     STATUS_READOUT(R.string.pref_status_readout_key, HIDDEN_ON_TV),
     SPEECH_VOLUME(R.string.pref_speech_volume_key, HIDE_HAS_VOLUME_KEY),
     BRAILLE_KEYBOARD(

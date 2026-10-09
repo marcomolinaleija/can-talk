@@ -13,6 +13,9 @@
     <string name="pref_direct_touch_key" translatable="false">pref_direct_touch</string>
     <string name="pref_check_for_updates_key" translatable="false">pref_check_for_updates</string>
     <string name="pref_auto_update_check_key" translatable="false">pref_auto_update_check</string>
+    <string name="pref_backup_restore_key" translatable="false">pref_backup_restore</string>
+    <string name="pref_backup_export_key" translatable="false">pref_backup_export</string>
+    <string name="pref_backup_import_key" translatable="false">pref_backup_import</string>
     <string name="pref_show_exit_watermark_key">pref_show_exit_watermark</string>
     <string name="pref_speech_rate_key">pref_rate_volume</string>
     <string name="pref_speech_rate_seekbar_key_int">pref_speech_rate_seekbar_key_int</string>

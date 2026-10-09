@@ -1463,4 +1463,25 @@ No uses Markdown en tu respuesta.</string>
   <string name="close_string">Cerrar</string>
   <string name="talkback_label">can-talk</string>
   <string name="notifictions_in_lock_screen_notification_content">Para oír las notificaciones cuando la pantalla esté apagada, activa la opción \"Decir notificaciones con pantalla apagada\" en los ajustes de verbosidad de can-talk</string>
+
+  <!-- Backup and restore strings -->
+  <string name="title_pref_backup_restore">Copia de seguridad y restauración</string>
+  <string name="summary_pref_backup_restore">Crea o restaura una copia de seguridad de la configuración y los gestos</string>
+  <string name="title_pref_backup_export">Crear copia de seguridad</string>
+  <string name="summary_pref_backup_export">Exportar toda la configuración y los gestos a un archivo</string>
+  <string name="title_pref_backup_import">Restaurar copia de seguridad</string>
+  <string name="summary_pref_backup_import">Importar la configuración y los gestos desde un archivo</string>
+  <string name="dialog_title_confirm_restore">¿Restaurar configuración y gestos?</string>
+  <string name="dialog_message_confirm_restore">La configuración actual y los gestos asignados se reemplazarán con los datos de la copia de seguridad. Los cambios se aplicarán de inmediato.</string>
+  <string name="dialog_button_restore">Restaurar</string>
+  <string name="toast_backup_export_success">Copia de seguridad guardada correctamente</string>
+  <string name="toast_backup_export_failed">Error al guardar la copia de seguridad</string>
+  <string name="toast_backup_restore_success">Configuración y gestos restaurados correctamente</string>
+  <string name="toast_backup_restore_failed">Error al restaurar la copia de seguridad: %1$s</string>
+  <string name="backup_error_invalid_format">Formato de archivo no válido o no reconocido</string>
+  <string name="backup_error_unsupported_version">Versión de copia de seguridad no compatible</string>
+  <string name="backup_error_checksum_mismatch">El archivo de copia de seguridad está dañado o fue modificado (la suma de comprobación no coincide)</string>
+  <string name="backup_error_commit_failed">No se pudieron guardar las preferencias en el almacenamiento</string>
+  <string name="backup_error_io">No se pudo leer el archivo de copia de seguridad</string>
+
 </resources>
