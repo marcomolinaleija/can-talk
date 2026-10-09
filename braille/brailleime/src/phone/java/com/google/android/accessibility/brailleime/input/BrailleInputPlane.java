@@ -296,8 +296,8 @@ public abstract class BrailleInputPlane {
     }
     if (dotCenters.isEmpty()) {
       dotCenters = buildDotTargetCenters(screenSize);
+      sortDotCenters(dotCenters);
     }
-    sortDotCenters(dotCenters);
 
     // Now we create the DotTarget.
     List<DotTarget> dotTargets = new ArrayList<>();

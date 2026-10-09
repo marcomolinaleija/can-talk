@@ -28,8 +28,10 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputConnectionWrapper;
 import android.widget.EditText;
 import com.google.android.accessibility.braille.common.BrailleImeAction;
+import com.google.android.accessibility.braille.common.BrailleUserPreferences;
 import com.google.android.accessibility.braille.common.ImeConnection;
 import com.google.android.accessibility.braille.common.TalkBackSpeaker;
+import com.google.android.accessibility.braille.common.translate.BrailleTranslateUtils;
 import com.google.android.accessibility.braille.common.translate.EditBuffer;
 import com.google.android.accessibility.braille.common.translate.EditBufferSpanish;
 import com.google.android.accessibility.braille.common.translate.EditBufferSpanish2;
@@ -92,6 +94,35 @@ public class BrailleImeSubmitTest {
     assertEquals("ab", fixture.editor.getText().toString());
   }
 
+  @Test
+  public void autoCapitalizeInitialLetterAndCancelOnDelete() {
+    Fixture fixture = new Fixture(false, true);
+    fixture.actor.performTyping(new BrailleCharacter("1"));
+    assertEquals("A", fixture.editor.getText().toString());
+
+    assertTrue(fixture.actor.performAction(BrailleImeAction.DELETE_CHARACTER_OR_PREVIOUS_ITEM));
+    assertEquals("", fixture.editor.getText().toString());
+
+    fixture.actor.performTyping(new BrailleCharacter("1"));
+    assertEquals("a", fixture.editor.getText().toString());
+  }
+
+  @Test
+  public void autoCapitalizeAfterPeriodAndSpace() {
+    Fixture fixture = new Fixture(false, true);
+    fixture.actor.performTyping(new BrailleCharacter("1"));
+    assertTrue(fixture.actor.performAction(BrailleImeAction.DELETE_CHARACTER_OR_PREVIOUS_ITEM));
+    fixture.actor.performTyping(new BrailleCharacter("1"));
+    assertEquals("a", fixture.editor.getText().toString());
+
+    fixture.actor.performTyping(new BrailleCharacter("256"));
+    fixture.actor.performAction(BrailleImeAction.ADD_SPACE_OR_NEXT_ITEM);
+    assertEquals("a. ", fixture.editor.getText().toString());
+
+    fixture.actor.performTyping(new BrailleCharacter("12"));
+    assertEquals("a. B", fixture.editor.getText().toString());
+  }
+
   private static final class Fixture implements BrailleImeActor.Callback {
     final EditText editor;
     final ImeConnection imeConnection;
@@ -102,7 +133,12 @@ public class BrailleImeSubmitTest {
     int hideCount;
 
     Fixture(boolean contracted) {
+      this(contracted, false);
+    }
+
+    Fixture(boolean contracted, boolean autoCapitalize) {
       Context context = RuntimeEnvironment.getApplication();
+      BrailleUserPreferences.writeAutoCapitalize(context, autoCapitalize);
       editor = new EditText(context);
       editor.setInputType(InputType.TYPE_CLASS_TEXT);
       EditorInfo info = new EditorInfo();
@@ -181,8 +217,20 @@ public class BrailleImeSubmitTest {
     @Override
     public String translateToPrint(BrailleWord word) {
       StringBuilder result = new StringBuilder();
+      boolean upper = false;
       for (int i = 0; i < word.size(); i++) {
-        result.append(word.get(i).equals(new BrailleCharacter("1")) ? "a" : "b");
+        BrailleCharacter ch = word.get(i);
+        if (ch.equals(BrailleTranslateUtils.DOTS46)) {
+          upper = true;
+          continue;
+        }
+        if (ch.equals(new BrailleCharacter("256"))) {
+          result.append(".");
+          continue;
+        }
+        String letter = ch.equals(new BrailleCharacter("1")) ? "a" : "b";
+        result.append(upper ? letter.toUpperCase() : letter);
+        upper = false;
       }
       return result.toString();
     }

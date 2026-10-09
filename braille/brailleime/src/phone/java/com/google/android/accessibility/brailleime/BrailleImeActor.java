@@ -42,6 +42,7 @@ import android.view.inputmethod.InputConnection;
 import androidx.annotation.Nullable;
 import com.google.android.accessibility.braille.common.BrailleCommonTalkBackSpeaker;
 import com.google.android.accessibility.braille.common.BrailleImeAction;
+import com.google.android.accessibility.braille.common.BrailleUserPreferences;
 import com.google.android.accessibility.braille.common.FeedbackManager;
 import com.google.android.accessibility.braille.common.ImeConnection;
 import com.google.android.accessibility.braille.common.translate.EditBuffer;
@@ -63,6 +64,8 @@ public class BrailleImeActor {
   private final FeedbackManager feedbackManager;
   private final Callback callback;
   private final Handler handler;
+  private boolean shouldCapitalize = true;
+  private boolean justAutoCapitalized = false;
 
   /** Callback for actions which request InputMethodService. */
   public interface Callback {
@@ -125,6 +128,12 @@ public class BrailleImeActor {
     this.handler = new Handler();
   }
 
+  /** Called when the braille keyboard becomes active or opens. */
+  public void onKeyboardActivated() {
+    justAutoCapitalized = false;
+    shouldCapitalize = BrailleUserPreferences.readAutoCapitalize(context);
+  }
+
   @Nullable
   public String performTyping(BrailleCharacter brailleChar) {
     if (!callback.isConnectionValid()) {
@@ -134,7 +143,15 @@ public class BrailleImeActor {
     if (talkBackForBrailleIme.isCurrentGranularityTypoCorrection()) {
       talkBackForBrailleIme.resetGranularity();
     }
-    return callback.getEditBuffer().appendBraille(callback.getImeConnection(), brailleChar);
+    boolean autoCapSetting = BrailleUserPreferences.readAutoCapitalize(context);
+    boolean shouldAutoCap = shouldCapitalize && autoCapSetting;
+    String result =
+        callback.getEditBuffer().appendBraille(callback.getImeConnection(), brailleChar, shouldAutoCap);
+    if (callback.getEditBuffer().wasLastAutoCapitalized()) {
+      shouldCapitalize = false;
+      justAutoCapitalized = true;
+    }
+    return result;
   }
 
   public boolean performAction(BrailleImeAction action) {
@@ -176,7 +193,19 @@ public class BrailleImeActor {
                             : R.string.no_spelling_suggestion_available_announcement));
           }
         } else {
+          justAutoCapitalized = false;
           callback.getEditBuffer().appendSpace(imeConnection);
+          if (BrailleUserPreferences.readAutoCapitalize(context)) {
+            CharSequence textBefore =
+                imeConnection.inputConnection != null
+                    ? imeConnection.inputConnection.getTextBeforeCursor(4, 0)
+                    : null;
+            if (textBefore != null && textBefore.toString().matches(".*\\.[ ]+$")) {
+              shouldCapitalize = true;
+            } else {
+              shouldCapitalize = false;
+            }
+          }
         }
       }
       case ADD_NEWLINE -> {
@@ -186,7 +215,11 @@ public class BrailleImeActor {
             feedbackManager.emitFeedback(FeedbackManager.Type.NAVIGATE_OUT_OF_BOUNDS);
           }
         } else {
+          justAutoCapitalized = false;
           callback.getEditBuffer().appendNewline(imeConnection);
+          if (BrailleUserPreferences.readAutoCapitalize(context)) {
+            shouldCapitalize = true;
+          }
         }
       }
       case DELETE_CHARACTER_OR_PREVIOUS_ITEM -> {
@@ -200,10 +233,16 @@ public class BrailleImeActor {
                             : R.string.no_spelling_suggestion_available_announcement));
           }
         } else {
+          if (justAutoCapitalized) {
+            shouldCapitalize = false;
+            justAutoCapitalized = false;
+          }
           callback.getEditBuffer().deleteCharacterBackward(imeConnection);
         }
       }
       case DELETE_WORD -> {
+        justAutoCapitalized = false;
+        shouldCapitalize = false;
         if (talkBackForBrailleIme.isCurrentGranularityTypoCorrection()) {
           result = typoHandler.undoConfirmSuggestion();
           if (!result) {
@@ -214,6 +253,8 @@ public class BrailleImeActor {
         }
       }
       case MOVE_CURSOR_FORWARD -> {
+        justAutoCapitalized = false;
+        shouldCapitalize = false;
         if (talkBackForBrailleIme.shouldUseCharacterGranularity()) {
           if (!callback.getEditBuffer().moveCursorForward(imeConnection)) {
             performTextAction(imeConnection, ScreenReaderAction.FOCUS_NEXT_CHARACTER);
@@ -231,6 +272,8 @@ public class BrailleImeActor {
         }
       }
       case MOVE_CURSOR_BACKWARD -> {
+        justAutoCapitalized = false;
+        shouldCapitalize = false;
         if (talkBackForBrailleIme.shouldUseCharacterGranularity()) {
           if (!callback.getEditBuffer().moveCursorBackward(imeConnection)) {
             performTextAction(imeConnection, ScreenReaderAction.FOCUS_PREVIOUS_CHARACTER);

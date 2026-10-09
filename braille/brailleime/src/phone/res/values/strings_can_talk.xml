@@ -3,4 +3,15 @@
   <!-- These Can Talk additions provide English and Spanish; other locales use the English fallback. -->
   <string name="title_pref_keep_open_after_send" tools:ignore="MissingTranslation">Keep the keyboard open when sending messages</string>
   <string name="summary_pref_keep_open_after_send" tools:ignore="MissingTranslation">After sending a message, continue typing without reopening the braille keyboard.</string>
+  <string name="title_pref_auto_capitalize" tools:ignore="MissingTranslation">Capitalize all sentences and text after a period</string>
+  <string name="summary_pref_auto_capitalize" tools:ignore="MissingTranslation">First letter when activating the keyboard and after a period and space will be capitalized unless deleted.</string>
+  <string name="title_pref_point_recalibration" tools:ignore="MissingTranslation">Dot recalibration</string>
+  <string name="summary_pref_point_recalibration" tools:ignore="MissingTranslation">Tap each of the 6 dots on the screen to recalibrate the keyboard.</string>
+  <string name="recalibrate_intro" tools:ignore="MissingTranslation">Dot recalibration. Touch the screen at the position for dot 1.</string>
+  <string name="recalibrate_touch_dot_prompt" tools:ignore="MissingTranslation">Touch dot %d</string>
+  <string name="recalibrate_dot_saved_prompt" tools:ignore="MissingTranslation">Dot %d saved. Touch dot %d.</string>
+  <string name="recalibrate_dot_saved" tools:ignore="MissingTranslation">Dot %d saved</string>
+  <string name="recalibrate_completed" tools:ignore="MissingTranslation">Calibration completed successfully.</string>
+  <string name="recalibrate_reset" tools:ignore="MissingTranslation">Reset</string>
+  <string name="recalibrate_cancelled" tools:ignore="MissingTranslation">Calibration cancelled.</string>
 </resources>

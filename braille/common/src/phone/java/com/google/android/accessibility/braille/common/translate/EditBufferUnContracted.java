@@ -73,12 +73,35 @@ public class EditBufferUnContracted implements EditBuffer {
   private final Context context;
   protected final BrailleWord holdings = new BrailleWord();
   protected int lastCommitIndexOfHoldings = NO_CURSOR;
+  private boolean autoCapitalizedHolding = false;
 
   protected EditBufferUnContracted(
       Context context, BrailleTranslator ueb1Translator, TalkBackSpeaker talkBack) {
     this.context = context;
     this.translator = ueb1Translator;
     this.talkBack = talkBack;
+  }
+
+  @Override
+  public boolean wasLastAutoCapitalized() {
+    return autoCapitalizedHolding;
+  }
+
+  @CanIgnoreReturnValue
+  @Override
+  public String appendBraille(
+      ImeConnection imeConnection, BrailleCharacter brailleCharacter, boolean autoCapitalize) {
+    if (autoCapitalize && holdings.isEmpty()) {
+      BrailleCharacter cap = getCapitalize();
+      if (cap != null && !cap.isEmpty()) {
+        String testPrint = translator.translateToPrint(new BrailleWord(brailleCharacter));
+        if (!TextUtils.isEmpty(testPrint) && Character.isLetter(testPrint.charAt(0))) {
+          holdings.append(cap);
+          autoCapitalizedHolding = true;
+        }
+      }
+    }
+    return appendBraille(imeConnection, brailleCharacter);
   }
 
   @CanIgnoreReturnValue
@@ -147,16 +170,17 @@ public class EditBufferUnContracted implements EditBuffer {
 
   @Override
   public void deleteCharacterBackward(ImeConnection imeConnection) {
-    deleteCharacter(imeConnection.inputConnection, KeyEvent.KEYCODE_DEL);
+    deleteCharacter(imeConnection, KeyEvent.KEYCODE_DEL);
   }
 
   @Override
   public void deleteCharacterForward(ImeConnection imeConnection) {
-    deleteCharacter(imeConnection.inputConnection, KeyEvent.KEYCODE_FORWARD_DEL);
+    deleteCharacter(imeConnection, KeyEvent.KEYCODE_FORWARD_DEL);
   }
 
   @Override
   public void deleteWord(ImeConnection imeConnection) {
+    autoCapitalizedHolding = false;
     // Delete all terminal prefixes from holdings, if any.
     while (holdingsEndsWithPrefix()) {
       holdings.remove(holdings.size() - 1);
@@ -238,6 +262,7 @@ public class EditBufferUnContracted implements EditBuffer {
 
   private void clearHoldingsAndFinishComposing(InputConnection inputConnection) {
     holdings.clear();
+    autoCapitalizedHolding = false;
     lastCommitIndexOfHoldings = NO_CURSOR;
     inputConnection.finishComposingText();
   }
@@ -249,7 +274,19 @@ public class EditBufferUnContracted implements EditBuffer {
             .equals(translator.translateToPrint(holdings.subword(0, holdings.size() - 1)));
   }
 
-  private void deleteCharacter(InputConnection inputConnection, int keyCode) {
+  private void deleteCharacter(ImeConnection imeConnection, int keyCode) {
+    if (autoCapitalizedHolding && holdings.size() <= 2) {
+      holdings.clear();
+      autoCapitalizedHolding = false;
+      lastCommitIndexOfHoldings = NO_CURSOR;
+      if (BrailleCommonUtils.isTextField(imeConnection.editorInfo)
+          && !BrailleCommonUtils.isPasswordField(imeConnection.editorInfo)) {
+        imeConnection.inputConnection.setComposingText("", 0);
+      } else {
+        BrailleCommonUtils.performKeyAction(imeConnection.inputConnection, keyCode);
+      }
+      return;
+    }
     // Delete a single terminal prefix from holdings, if any. In that case, stop.
     if (holdingsEndsWithPrefix()) {
       BrailleCharacter brailleCharacter = holdings.remove(holdings.size() - 1);
@@ -264,7 +301,7 @@ public class EditBufferUnContracted implements EditBuffer {
       if (!holdings.isEmpty()) {
         holdings.remove(holdings.size() - 1);
       }
-      BrailleCommonUtils.performKeyAction(inputConnection, keyCode);
+      BrailleCommonUtils.performKeyAction(imeConnection.inputConnection, keyCode);
     }
     lastCommitIndexOfHoldings = holdings.size();
   }

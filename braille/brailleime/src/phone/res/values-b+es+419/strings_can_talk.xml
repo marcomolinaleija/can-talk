@@ -2,4 +2,15 @@
 <resources>
   <string name="title_pref_keep_open_after_send">Mantener el teclado abierto al enviar mensajes</string>
   <string name="summary_pref_keep_open_after_send">Después de enviar un mensaje, puedes seguir escribiendo sin volver a abrir el teclado braille.</string>
+  <string name="title_pref_auto_capitalize">Poner todas las oraciones y el texto luego de un punto en mayúsculas</string>
+  <string name="summary_pref_auto_capitalize">Al activar el teclado la primera letra estará en mayúscula y tras un punto y un espacio, a menos que se borre.</string>
+  <string name="title_pref_point_recalibration">Recalibración de puntos</string>
+  <string name="summary_pref_point_recalibration">Toca cada uno de los 6 puntos en la pantalla para recalibrar el teclado como en ABK.</string>
+  <string name="recalibrate_intro">Recalibración de puntos. Toca en la pantalla la posición para el punto 1.</string>
+  <string name="recalibrate_touch_dot_prompt">Toca el punto %d</string>
+  <string name="recalibrate_dot_saved_prompt">Punto %d guardado. Toca el punto %d.</string>
+  <string name="recalibrate_dot_saved">Punto %d guardado</string>
+  <string name="recalibrate_completed">Calibración completada con éxito.</string>
+  <string name="recalibrate_reset">Reiniciar</string>
+  <string name="recalibrate_cancelled">Calibración cancelada.</string>
 </resources>

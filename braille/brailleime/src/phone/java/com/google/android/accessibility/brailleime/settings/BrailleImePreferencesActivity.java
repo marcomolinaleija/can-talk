@@ -206,6 +206,34 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
       }
 
       {
+        // Auto-capitalize preference.
+        SwitchPreferenceCompat autoCapitalizePref =
+            findPreference(getString(R.string.pref_brailleime_auto_capitalize));
+        if (autoCapitalizePref != null) {
+          autoCapitalizePref.setChecked(BrailleUserPreferences.readAutoCapitalize(getContext()));
+          autoCapitalizePref.setOnPreferenceClickListener(
+              preference -> {
+                BrailleUserPreferences.writeAutoCapitalize(
+                    getContext(), ((SwitchPreferenceCompat) preference).isChecked());
+                return true;
+              });
+        }
+      }
+
+      {
+        // Point recalibration preference.
+        Preference pointRecalibrationPref =
+            findPreference(getString(R.string.pref_brailleime_point_recalibration));
+        if (pointRecalibrationPref != null) {
+          pointRecalibrationPref.setOnPreferenceClickListener(
+              preference -> {
+                startActivity(new Intent(getContext(), BraillePointCalibrationActivity.class));
+                return true;
+              });
+        }
+      }
+
+      {
         // Accumulate mode preference.
         SwitchPreferenceCompat accumulateModePref =
             findPreference(getString(R.string.pref_brailleime_accumulate_mode));

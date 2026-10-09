@@ -18,6 +18,8 @@
   <string name="pref_brailleime_flip_dots_vertically" translatable="false">pref_brailleime_flip_dots_vertically</string>
   <string name="pref_brailleime_tablet_held_up_faces_away" translatable="false">pref_brailleime_tablet_held_up_faces_away</string>
   <string name="pref_brailleime_typing_sounds" translatable="false">pref_brailleime_typing_sounds</string>
+  <string name="pref_brailleime_auto_capitalize" translatable="false">pref_brailleime_auto_capitalize</string>
+  <string name="pref_brailleime_point_recalibration" translatable="false">pref_brailleime_point_recalibration</string>
   <string name="pref_brailleime_voice_allow_profanity" translatable="false">pref_brailleime_voice_allow_profanity</string>
   <string name="pref_brailleime_system_voice_settings" translatable="false">pref_brailleime_system_voice_settings</string>
   <string name="pref_brailleime_keyboard_echo" translatable="false">pref_brailleime_keyboard_echo</string>

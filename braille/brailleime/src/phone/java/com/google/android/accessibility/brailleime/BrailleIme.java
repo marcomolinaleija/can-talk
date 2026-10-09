@@ -417,6 +417,9 @@ public class BrailleIme extends InputMethodService {
     // therefore we first confirm that the screen is indeed on before invoking activateIfNeeded.
     PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
     if (pm.isInteractive()) {
+      if (brailleImeActor != null) {
+        brailleImeActor.onKeyboardActivated();
+      }
       if (showKeyboardView() && !restarting) {
         if (isBrailleDisplayStateChanged()) {
           updateInputView();
@@ -1888,6 +1891,14 @@ public class BrailleIme extends InputMethodService {
                       TalkBackSpeaker.AnnounceType.INTERRUPT);
             }
             refreshEditBufferAndBrailleDisplay();
+          } else if (key != null && key.startsWith("pref_brailleime_calibration_points")) {
+            if (keyboardView != null) {
+              keyboardView.refreshInputView();
+            }
+          } else if (key != null && key.equals(getString(R.string.pref_brailleime_auto_capitalize))) {
+            if (brailleImeActor != null) {
+              brailleImeActor.onKeyboardActivated();
+            }
           }
         }
 

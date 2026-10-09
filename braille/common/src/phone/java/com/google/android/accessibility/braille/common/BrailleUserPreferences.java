@@ -72,6 +72,7 @@ public class BrailleUserPreferences {
   private static final boolean SHOW_SWITCH_INPUT_CODE_GESTURE_TIP = true;
   private static final boolean ACCUMULATE_MODE_DEFAULT = true;
   private static final boolean KEEP_OPEN_AFTER_SEND_DEFAULT = true;
+  private static final boolean AUTO_CAPITALIZE_DEFAULT = true;
   private static final boolean REVERSE_DOTS_MODE_DEFAULT = false;
   private static final boolean FLIP_DOTS_VERTICALLY_DEFAULT = false;
   private static final boolean TABLET_HELD_UP_FACES_AWAY_DEFAULT = true;
@@ -302,6 +303,22 @@ public class BrailleUserPreferences {
         .getBoolean(
             context.getString(R.string.pref_brailleime_keep_open_after_send),
             KEEP_OPEN_AFTER_SEND_DEFAULT);
+  }
+
+  /** Reads whether auto-capitalization of sentences is enabled. */
+  public static boolean readAutoCapitalize(Context context) {
+    return getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
+        .getBoolean(
+            context.getString(R.string.pref_brailleime_auto_capitalize),
+            AUTO_CAPITALIZE_DEFAULT);
+  }
+
+  /** Writes whether auto-capitalization of sentences is enabled. */
+  public static void writeAutoCapitalize(Context context, boolean autoCapitalize) {
+    getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
+        .edit()
+        .putBoolean(context.getString(R.string.pref_brailleime_auto_capitalize), autoCapitalize)
+        .apply();
   }
 
   /** Reads reverse dots mode status. */

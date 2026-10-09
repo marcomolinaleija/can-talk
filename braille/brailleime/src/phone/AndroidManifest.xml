@@ -49,6 +49,12 @@
         android:exported="false"
         android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout"
         android:theme="@style/BrailleImeTheme" />
+    <activity
+        android:name="com.google.android.accessibility.brailleime.settings.BraillePointCalibrationActivity"
+        android:exported="false"
+        android:label="@string/title_pref_point_recalibration"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout"
+        android:theme="@style/BrailleImeTheme" />
 
     <receiver android:name="com.google.android.accessibility.brailleime.MyPackageReplacedReceiver"
         android:enabled="true"
