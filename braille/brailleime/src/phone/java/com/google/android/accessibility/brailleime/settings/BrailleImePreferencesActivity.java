@@ -262,6 +262,8 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
         }
       }
 
+      TypingSoundPreferences.configure(this);
+
       {
         // System voice input settings shortcut.
         Preference systemVoiceSettingsPref =
@@ -357,6 +359,7 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
         new OnSharedPreferenceChangeListener() {
           @Override
           public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            TypingSoundPreferences.updateEnabled(BrailleImePrefFragment.this);
             if (key.equals(getString(R.string.pref_braille_contracted_mode))) {
               updateBrailleGradeSummary();
             }

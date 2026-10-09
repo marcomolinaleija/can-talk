@@ -25,6 +25,15 @@ import android.media.SoundPool
  * the theme is set, so that the first key typed plays at once.
  */
 object ThemeSounds {
+  /** Speech's software gain, published by the reader when its volume setting changes. */
+  @Volatile var readerSpeechVolume: Float = 1f
+    private set
+
+  @JvmStatic
+  fun setSpeechVolume(volume: Float) {
+    readerSpeechVolume = volume.coerceIn(0f, 1f)
+  }
+
   private const val MAX_STREAMS = 4
 
   private val lock = Any()

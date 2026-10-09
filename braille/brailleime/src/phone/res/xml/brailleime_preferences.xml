@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
   <PreferenceCategory android:key="@string/pref_brailleime_preferences_category">
 
@@ -62,6 +63,33 @@
         android:key="@string/pref_brailleime_typing_sounds"
         android:summary="@string/summary_pref_typing_sounds"
         android:title="@string/title_pref_typing_sounds" />
+
+    <ListPreference
+        android:key="pref_brailleime_sound_profile"
+        android:defaultValue="theme"
+        android:dependency="@string/pref_brailleime_typing_sounds"
+        android:title="@string/braille_sound_profile_title" />
+
+    <SwitchPreferenceCompat
+        android:key="pref_brailleime_sound_follow_reader"
+        android:defaultValue="true"
+        android:dependency="@string/pref_brailleime_typing_sounds"
+        android:title="@string/braille_sound_follow_title"
+        android:summary="@string/braille_sound_follow_summary" />
+
+    <SeekBarPreference
+        android:key="pref_brailleime_sound_volume"
+        android:defaultValue="50"
+        android:max="100"
+        app:min="0"
+        app:showSeekBarValue="true"
+        android:title="@string/braille_sound_volume_title"
+        android:summary="@string/braille_sound_volume_summary" />
+
+    <Preference
+        android:key="pref_brailleime_sound_preview"
+        android:dependency="@string/pref_brailleime_typing_sounds"
+        android:title="@string/braille_sound_preview_title" />
 
     <ListPreference
         android:defaultValue="@string/pref_brailleime_keyboard_echo_default"

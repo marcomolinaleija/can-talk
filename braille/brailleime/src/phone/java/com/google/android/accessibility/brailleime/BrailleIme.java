@@ -407,6 +407,9 @@ public class BrailleIme extends InputMethodService {
 
   @Override
   public void onStartInputView(EditorInfo info, boolean restarting) {
+    if (BrailleUserPreferences.readTypingSounds(this)) {
+      BrailleImeTypingSounds.prepare(this);
+    }
     BrailleImeLog.d(TAG, "onStartInputView");
     getWindow().setTitle(Utils.getBrailleKeyboardDisplayName(this));
 
@@ -471,6 +474,7 @@ public class BrailleIme extends InputMethodService {
 
   @Override
   public void onDestroy() {
+    BrailleImeTypingSounds.release();
     super.onDestroy();
     BrailleImeLog.d(TAG, "onDestroy");
     instance = null;
