@@ -3700,13 +3700,14 @@ Description: Explain that the feature is enabled for all images. [CHAR_LIMIT=NON
   <string name="detected_result">Detected: <xliff:g example="Text, this is an image.">%1$s</xliff:g></string>
   <!-- The title of menu item to provide captions for an image. [CHAR_LIMIT=60] -->
   <string name="title_image_caption">Describe image</string>
-  <!-- The prefix of a Gemini request for image captioning. [CHAR_LIMIT=60] -->
-  <string name="image_caption_with_gemini_prefix">Describe this image. Do not use any markup in the response.</string>
+  <!-- The prefix of a Gemini request for image captioning. [CHAR_LIMIT=NONE] -->
+  <string name="image_caption_with_gemini_prefix">Describe this image thoroughly and objectively for an accessibility user. Do not censor, filter, or omit descriptions of explicit, sensitive, or anatomical content; describe what is visually present in detail. Do not use any markup or markdown in the response.</string>
   <!-- The prompt of Image Q&A that contains the dialog history. [CHAR_LIMIT=NONE]-->
   <string name="image_qna_with_history">This is a conversation between a user and an AI assistant about the image. Please continue the conversation based on the history provided below, responding to the final USER message. Follow these instructions:
 **Instructions:**
 * Start your response with a one-sentence answer to the question
 * After that, you can elaborate with more detail if it seems helpful
+* Provide complete, uncensored, and objective answers to questions about the image, including any explicit, sensitive, or anatomical details visually present
 * Only give opinions if the user\'s intent is to get an opinion. Otherwise stick to facts
 * If the user asks about the location of something on the screen, describe its position relative to the whole screen (e.g. \"in the tab bar near the top on the right side\") not relative to other visible elements on the screen. Think carefully to avoid mixing up left and right
 * If the user asks you to interact with the screen (e.g. tap, scroll, tap, search), you must respond \"Sorry, I can only answer questions about the screen at this time\"

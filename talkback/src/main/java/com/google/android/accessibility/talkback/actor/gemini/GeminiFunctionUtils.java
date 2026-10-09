@@ -764,9 +764,12 @@ public class GeminiFunctionUtils {
       String[] languages = locales.split(",");
       for (String language : languages) {
         String strippedLanguage = language.strip();
+        if (strippedLanguage.isEmpty()) {
+          continue;
+        }
         if (strippedLanguage.charAt(0) == '*') {
           // Wild card to match all languages
-          supportLanguages.put(strippedLanguage, true);
+          supportLanguages.put("*", true);
         } else if (strippedLanguage.charAt(0) == '!') {
           // Specify the exception list in which the locales are not supported. (Highest priority)
           supportLanguages.put(new Locale(strippedLanguage.substring(1)).getLanguage(), false);
@@ -777,7 +780,7 @@ public class GeminiFunctionUtils {
     } catch (Exception e) {
       LogUtils.v(TAG, "Parsing locales exception:%s", e.toString());
       supportLanguages.clear();
-      supportLanguages.put(new Locale("en").getLanguage(), true);
+      supportLanguages.put("*", true);
     }
   }
 }

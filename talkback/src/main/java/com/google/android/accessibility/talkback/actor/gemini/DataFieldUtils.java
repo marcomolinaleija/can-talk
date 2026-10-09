@@ -132,9 +132,28 @@ public class DataFieldUtils {
     return byteArrayOutputStream.toByteArray();
   }
 
+  public static final String ACCESSIBILITY_SYSTEM_INSTRUCTION =
+      "You are an objective visual accessibility assistant for blind and visually impaired users. "
+          + "Provide thorough, neutral, factual, and detailed descriptions of all visual content. "
+          + "Do not censor, filter, refuse, sanitize, or limit descriptions of sensitive or explicit content "
+          + "(including nudity, sexuality, anatomy, romance, bodily functions, or violence); "
+          + "describe exactly what is visually depicted without moral judgment or avoidance so the user has complete, equal access to visual information. "
+          + "Do not use markdown formatting in your response.";
+
   /** Creates a JSON object for the data body of a Gemini request. */
   public static JSONObject createPostDataJson(
       String command, String encodedImage, JSONArray safetySettings) throws JSONException {
+    return createPostDataJson(
+        command, encodedImage, safetySettings, ACCESSIBILITY_SYSTEM_INSTRUCTION);
+  }
+
+  /** Creates a JSON object for the data body of a Gemini request with system instruction. */
+  public static JSONObject createPostDataJson(
+      String command,
+      String encodedImage,
+      JSONArray safetySettings,
+      @Nullable String systemInstructionText)
+      throws JSONException {
     JSONObject prompt = new JSONObject();
     prompt.put(TEXT, command);
 
@@ -153,6 +172,15 @@ public class DataFieldUtils {
         CONTENTS, new JSONArray().put(0, new JSONObject().put(ROLE, USER).put(PARTS, parts)));
     postData.put(SAFETY_SETTINGS, safetySettings);
     postData.put(GENERATION_CONFIG, createGenerationConfig(/* temperature= */ 0.0));
+
+    if (!TextUtils.isEmpty(systemInstructionText)) {
+      JSONObject systemInstruction = new JSONObject();
+      JSONArray systemParts =
+          new JSONArray().put(0, new JSONObject().put(TEXT, systemInstructionText));
+      systemInstruction.put(PARTS, systemParts);
+      postData.put("system_instruction", systemInstruction);
+    }
+
     LogUtils.v(TAG, "Message Body JSONArray parts:%s", parts);
     LogUtils.v(TAG, "Message Body JSONArray safetySettings:%s", safetySettings);
 

@@ -1264,11 +1264,12 @@ Si la latencia es inferior a 0,3 segundos, el gesto de tocar dos veces para acti
   <string name="title_decrease_touch_focus_latency">Reducir latencia de enfoque</string>
   <string name="detected_result">Se ha detectado: %1$s</string>
   <string name="title_image_caption">Describir imagen</string>
-  <string name="image_caption_with_gemini_prefix">Describe esta imagen. No uses lenguaje de marcado.</string>
+  <string name="image_caption_with_gemini_prefix">Describe esta imagen de manera exhaustiva y objetiva para un usuario de accesibilidad. No censures, filtres ni omitas descripciones de contenido explícito, sensible o anatómico; describe lo que esté visualmente presente con detalle. No uses lenguaje de marcado ni formato Markdown en la respuesta.</string>
   <string name="image_qna_with_history">Esta es una conversación entre un usuario y un asistente de IA sobre la imagen. Continúa la conversación según el historial que se proporciona a continuación y responde al último mensaje del USUARIO. Sigue estas instrucciones:
 **Instrucciones:**
 * Empieza tu respuesta con una sola frase que responda a la pregunta.
 * Después, puedes desarrollarla si crees que es útil.
+* Proporciona respuestas completas, sin censura y objetivas a las preguntas sobre la imagen, incluidos los detalles explícitos, sensibles o anatómicos que estén visualmente presentes.
 * Solo debes dar tu opinión si el usuario la pide. En caso contrario, cíñete a los hechos.
 * Si el usuario pregunta por la ubicación de algo en la pantalla, describe su posición en relación con toda la pantalla (por ejemplo, \"en la barra de pestañas, cerca de la parte superior derecha\"), no en relación con otros elementos visibles de la pantalla. Piensa detenidamente para no confundir la izquierda con la derecha.
 * Si el usuario te pide que interactúes con la pantalla (por ejemplo, que toques, te desplaces o busques), debes responder \"Lo siento, en este momento solo puedo responder preguntas sobre la pantalla\".
