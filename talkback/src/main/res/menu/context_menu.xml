@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:id="@+id/clipboard_history" android:orderInCategory="10"
+      android:title="@string/clipboard_history_title" />
   <item android:id="@+id/toggle_translation" android:orderInCategory="28"
       android:title="@string/translation_start" />
   <item android:id="@+id/translate_last" android:orderInCategory="29"

@@ -91,6 +91,7 @@ public class ContextMenuItemClickProcessor {
         || (itemId == R.id.repeat_last_utterance)
         || (itemId == R.id.toggle_translation)
         || (itemId == R.id.translate_last)
+        || (itemId == R.id.clipboard_history)
         || (itemId == R.id.spell_last_utterance)
         || (itemId == R.id.copy_last_utterance_to_clipboard)
         || (itemId == R.id.verbosity)
@@ -130,6 +131,8 @@ public class ContextMenuItemClickProcessor {
       if (service.getTranslationController() != null) service.getTranslationController().toggle();
     } else if (itemId == R.id.translate_last) {
       if (service.getTranslationController() != null) service.getTranslationController().translateLast(true);
+    } else if (itemId == R.id.clipboard_history) {
+      service.showClipboardHistory();
     } else if (itemId == R.id.spell_last_utterance) {
       pipeline.returnFeedback(
           eventId, Feedback.part().setSpeech(Feedback.Speech.create(SPELL_SAVED)));

@@ -61,10 +61,12 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.accessibilityservice.FingerprintGestureController;
 import android.accessibilityservice.FingerprintGestureController.FingerprintGestureCallback;
 import android.accessibilityservice.TouchInteractionController;
+import android.accessibilityservice.AccessibilityService;
 import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ClipboardManager;
+import android.graphics.Region;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -157,6 +159,8 @@ import com.google.android.accessibility.talkback.controlsounds.ControlSoundsSett
 import com.google.android.accessibility.talkback.directtouch.DirectTouchController;
 import com.google.android.accessibility.talkback.eventprocessor.AccessibilityEventProcessor;
 import com.google.android.accessibility.talkback.eventprocessor.AccessibilityEventProcessor.TalkBackListener;
+import com.google.android.accessibility.talkback.eventprocessor.CallSpeechVolumeKeyHandler;
+import com.google.android.accessibility.talkback.clipboard.ClipboardHistoryController;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorEmojiTraversal;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorEventQueue;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorGestureVibrator;
@@ -283,6 +287,7 @@ import com.google.android.accessibility.utils.output.EditTextActionHistory;
 import com.google.android.accessibility.utils.output.EmojiSpeech;
 import com.google.android.accessibility.utils.output.FailoverTextToSpeech;
 import com.google.android.accessibility.utils.output.FeedbackController;
+import com.google.android.accessibility.utils.output.FeedbackItem;
 import com.google.android.accessibility.utils.output.FeedbackProcessingUtils;
 import com.google.android.accessibility.utils.output.ScrollActionRecord;
 import com.google.android.accessibility.utils.output.SelectionStateReader;
@@ -666,6 +671,9 @@ public class TalkBackService extends AccessibilityServiceCompat
   /** {@link BroadcastReceiver} for tracking volume changes. */
   private VolumeMonitor volumeMonitor;
 
+  private CallSpeechVolumeKeyHandler callSpeechVolumeKeyHandler;
+  private ClipboardHistoryController clipboardHistoryController;
+
   /** {@link android.content.BroadcastReceiver} for tracking battery status changes. */
   private BatteryMonitor batteryMonitor;
   private StatusReader statusReader;
@@ -904,6 +912,10 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onDestroy() {
+    if (clipboardHistoryController != null) {
+      clipboardHistoryController.shutdown();
+      clipboardHistoryController = null;
+    }
     if (translationController != null) {
       translationController.close();
     }
@@ -984,6 +996,7 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onConfigurationChanged(Configuration newConfig) {
+    if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
     this.getTheme().applyStyle(R.style.TalkbackBaseTheme, /* force= */ true);
 
     // onConfigurationChanged may be called before TalkBack initialization. To avoid crash, each
@@ -1052,6 +1065,7 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onAccessibilityEvent(AccessibilityEvent event) {
+    if (clipboardHistoryController != null) clipboardHistoryController.onAccessibilityEvent(event);
     // Paused Backtalk drops events, except the end of a touch that started before the pause, so
     // that nothing still thinks a finger is down after resuming. Its feedback is dropped too.
     if (PauseController.isPaused()
@@ -1180,6 +1194,17 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   /** Handles a key event and returns whether it should be considered consumed. */
   protected boolean onKeyEventInternal(KeyEvent keyEvent) {
+    if (clipboardHistoryController != null && clipboardHistoryController.onKeyEvent(keyEvent)) {
+      return true;
+    }
+    boolean readerActive = isServiceActive() && !PauseController.isPaused();
+    boolean touchingScreen = isTouchInteracting || isBrailleImeTouchInteracting();
+    // Finish a captured press even if the reader is paused or suspended in the meantime.
+    if (callSpeechVolumeKeyHandler != null
+        && callSpeechVolumeKeyHandler.hasCapturedKey(keyEvent)
+        && callSpeechVolumeKeyHandler.onKeyEvent(keyEvent, readerActive, touchingScreen)) {
+      return true;
+    }
     if (pauseController != null) {
       // While paused, keys pass to apps except the ones that resume Backtalk.
       Boolean handled = pauseController.onKeyEvent(keyEvent);
@@ -1189,6 +1214,11 @@ public class TalkBackService extends AccessibilityServiceCompat
     }
 
     if (brailleDisplay.onKeyEvent(keyEvent)) {
+      return true;
+    }
+
+    if (callSpeechVolumeKeyHandler != null
+        && callSpeechVolumeKeyHandler.onKeyEvent(keyEvent, readerActive, touchingScreen)) {
       return true;
     }
 
@@ -1214,12 +1244,16 @@ public class TalkBackService extends AccessibilityServiceCompat
               || pipeline.getActorState().getContinuousRead().isActive();
       switch (keyCode) {
         case KeyEvent.KEYCODE_VOLUME_DOWN -> {
-          passThroughThisKey = !handleVolumeKeyInTalkBack;
-          volumeDownKeyPressedInPassThroughWindow = passThroughThisKey;
+          if (keyEvent.getRepeatCount() == 0) {
+            volumeDownKeyPressedInPassThroughWindow = !handleVolumeKeyInTalkBack;
+          }
+          passThroughThisKey = volumeDownKeyPressedInPassThroughWindow;
         }
         case KeyEvent.KEYCODE_VOLUME_UP -> {
-          passThroughThisKey = !handleVolumeKeyInTalkBack;
-          volumeUpKeyPressedInPassThroughWindow = passThroughThisKey;
+          if (keyEvent.getRepeatCount() == 0) {
+            volumeUpKeyPressedInPassThroughWindow = !handleVolumeKeyInTalkBack;
+          }
+          passThroughThisKey = volumeUpKeyPressedInPassThroughWindow;
         }
         default -> {}
       }
@@ -1360,6 +1394,13 @@ public class TalkBackService extends AccessibilityServiceCompat
   }
 
   private boolean handleOnGestureById(int displayId, int gestureId) {
+    // A modal history surface owns touches; late framework gestures must not reach the app.
+    if (clipboardHistoryController != null && clipboardHistoryController.isShowing()) {
+      if (gestureId == AccessibilityService.GESTURE_2_FINGER_SWIPE_LEFT) {
+        clipboardHistoryController.dismiss();
+      }
+      return true;
+    }
     if (!isServiceActive() || PauseController.isPaused()) {
       return false;
     }
@@ -1399,6 +1440,18 @@ public class TalkBackService extends AccessibilityServiceCompat
     }
 
     return speechController;
+  }
+
+  public boolean showClipboardHistory() {
+    return clipboardHistoryController != null && isServiceActive() && !PauseController.isPaused()
+        && clipboardHistoryController.show();
+  }
+
+  public void setClipboardHistoryTouchRegion(@Nullable Region region) {
+    passThroughModeActor.setOverlayTouchRegion(region);
+    if (FeatureSupport.supportPassthrough()) {
+      setGestureDetectionPassthroughRegion(Display.DEFAULT_DISPLAY, region == null ? new Region() : region);
+    }
   }
 
   public FeedbackController getFeedbackController() {
@@ -2267,6 +2320,23 @@ public class TalkBackService extends AccessibilityServiceCompat
 
     headphoneStateMonitor = new HeadphoneStateMonitor(this);
 
+    clipboardHistoryController = new ClipboardHistoryController(
+        this, pipeline.getFeedbackReturner(), accessibilityFocusMonitor);
+    ringerModeAndScreenMonitor.addScreenChangedListener((interactive, eventId) -> {
+      if (!interactive && clipboardHistoryController != null) clipboardHistoryController.dismiss();
+    });
+
+    callSpeechVolumeKeyHandler = new CallSpeechVolumeKeyHandler(this, percent ->
+        pipeline.getFeedbackReturner().returnFeedback(EVENT_ID_UNTRACKED,
+            Feedback.speech(getString(R.string.call_speech_volume_announcement, percent),
+                SpeechController.SpeakOptions.create()
+                    .setQueueMode(SpeechController.QUEUE_MODE_INTERRUPT)
+                    .setFlags(FeedbackItem.FLAG_NO_HISTORY
+                        | FeedbackItem.FLAG_SOURCE_IS_VOLUME_CONTROL
+                        | FeedbackItem.FLAG_FORCE_FEEDBACK_EVEN_IF_AUDIO_PLAYBACK_ACTIVE
+                        | FeedbackItem.FLAG_FORCE_FEEDBACK_EVEN_IF_MICROPHONE_ACTIVE
+                        | FeedbackItem.FLAG_FORCE_FEEDBACK_EVEN_IF_PHONE_CALL_ACTIVE))));
+
     ProcessorVolumeStream processorVolumeStream =
         new ProcessorVolumeStream(pipeline.getActorState(), this, touchInteractingIndicator);
     addEventListener(processorVolumeStream);
@@ -2299,6 +2369,7 @@ public class TalkBackService extends AccessibilityServiceCompat
             new PauseController.Host() {
               @Override
               public void stopForPause() {
+                if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
                 if (menuManager != null) {
                   menuManager.dismissAll();
                 }
@@ -2841,6 +2912,7 @@ public class TalkBackService extends AccessibilityServiceCompat
    * {@link #onDestroy}.
    */
   private void suspendInfrastructure() {
+    if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
     if (translationController != null) {
       translationController.stop();
     }

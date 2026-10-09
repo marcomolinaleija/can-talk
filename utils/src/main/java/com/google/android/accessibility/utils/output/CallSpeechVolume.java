@@ -18,8 +18,10 @@ final class CallSpeechVolume {
       return normalGain;
     }
 
-    // Keep headroom for a drop in call volume. Never amplify past the TTS API's maximum of 1.
-    float baseGain = normalGain * Math.max(25, Math.min(100, percent)) / 100f;
+    // Square only the call control: each five-point step attenuates more than a linear scale.
+    // Keep the usual voice gain linear and reserve headroom for call-volume compensation.
+    float level = CallSpeechVolumeController.clampPercent(percent) / 100f;
+    float baseGain = normalGain * level * level;
     if (!Float.isFinite(callDb)) {
       reset();
       return Math.max(0f, Math.min(1f, baseGain));
