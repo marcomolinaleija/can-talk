@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="title_bluetooth_audio_devices">Dispositivos Bluetooth</string>
+  <string name="summary_bluetooth_audio_devices">Elige el tipo de cada dispositivo. Con auriculares, can-talk sigue la salida Bluetooth. Con un altavoz, can-talk suena en el teléfono. Los dispositivos sin configurar mantienen tu ajuste actual de salida de audio.</string>
+  <string name="bluetooth_audio_devices_empty">Conecta un dispositivo de audio Bluetooth para configurarlo.</string>
+  <string name="bluetooth_audio_role_unchanged">Mantener configuración actual</string>
+  <string name="bluetooth_audio_role_headphones">Auriculares: can-talk en Bluetooth</string>
+  <string name="bluetooth_audio_role_speaker">Altavoz: can-talk en el teléfono</string>
+  <string name="bluetooth_audio_device_disconnected">%1$s (desconectado)</string>
+</resources>

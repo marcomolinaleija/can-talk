@@ -18,7 +18,7 @@ android {
         // A separate package and signature permission let local tests coexist with Backtalk.
         manifestPlaceholders = [
             migrationPermission: canTalkTestBuild ? talkbackApplicationId + ".permission.MIGRATE" : "fyi.quin.backtalk.permission.MIGRATE",
-            brailleImeLabel: canTalkTestBuild ? "Teclado braille de Can Talk — prueba" : "@string/braille_ime_service_name"
+            brailleImeLabel: canTalkTestBuild ? "Teclado braille de can-talk — prueba" : "@string/braille_ime_service_name"
         ]
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled = true

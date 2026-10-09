@@ -255,6 +255,26 @@ public class BrailleIme extends InputMethodService {
   private KeyboardView keyboardView;
   private BrailleImeGestureController brailleImeGestureController;
   private BrailleImeActor brailleImeActor;
+  private VoiceInputManager voiceInputManager;
+  private EmojiManager emojiManager;
+  private final VoiceInputManager.Callback voiceInputCallback =
+      new VoiceInputManager.Callback() {
+        @Override
+        public void onSpeechResult(String text) {
+          if (editBuffer != null) {
+            editBuffer.commit(getImeConnection());
+          }
+          InputConnection inputConnection = getCurrentInputConnection();
+          if (inputConnection != null) {
+            inputConnection.commitText(text, 1);
+          }
+          BrailleCommonTalkBackSpeaker.getInstance().speak(text);
+          showOnBrailleDisplay(/* retranslate= */ true);
+        }
+
+        @Override
+        public void onListeningStateChanged(boolean listening) {}
+      };
   private Handler mainHandler;
   private Handler calibrationAnnouncementHandler;
   private boolean brailleDisplayConnectedAndNotSuspended;
@@ -341,6 +361,8 @@ public class BrailleIme extends InputMethodService {
     flatTurnDetector = new FlatTurnDetector(this, this::onTurnedFlat);
     layoutOrientator = new LayoutOrientator(this, layoutOrientatorCallback);
     tabletHeldUpFacesAway = BrailleUserPreferences.readTabletHeldUpFacesAway(this);
+    voiceInputManager = new VoiceInputManager(this, voiceInputCallback);
+    emojiManager = new EmojiManager(this);
 
     if (talkBackForBrailleIme != null) {
       talkBackForBrailleIme.setBrailleImeForTalkBack(brailleImeForTalkBack);
@@ -385,6 +407,9 @@ public class BrailleIme extends InputMethodService {
 
   @Override
   public void onStartInputView(EditorInfo info, boolean restarting) {
+    if (BrailleUserPreferences.readTypingSounds(this)) {
+      BrailleImeTypingSounds.prepare(this);
+    }
     BrailleImeLog.d(TAG, "onStartInputView");
     getWindow().setTitle(Utils.getBrailleKeyboardDisplayName(this));
 
@@ -426,6 +451,12 @@ public class BrailleIme extends InputMethodService {
     super.onFinishInputView(finishingInput);
     // Of the teardown methods, this is the most reliable, so we use it to deactivate.
     BrailleImeLog.d(TAG, "onFinishInputView");
+    if (voiceInputManager != null) {
+      voiceInputManager.cancel();
+    }
+    if (emojiManager != null) {
+      emojiManager.exitEmojiModeSilently();
+    }
     dismissDialogs();
     if (!keyboardView.isViewContainerCreated()) {
       BrailleImeLog.d(TAG, "already deactivated");
@@ -443,6 +474,7 @@ public class BrailleIme extends InputMethodService {
 
   @Override
   public void onDestroy() {
+    BrailleImeTypingSounds.release();
     super.onDestroy();
     BrailleImeLog.d(TAG, "onDestroy");
     instance = null;
@@ -455,6 +487,14 @@ public class BrailleIme extends InputMethodService {
     getContentResolver().unregisterContentObserver(accessibilityServiceStatusChangeObserver);
     keyboardView.tearDown();
     keyboardView = null;
+    if (voiceInputManager != null) {
+      voiceInputManager.destroy();
+      voiceInputManager = null;
+    }
+    if (emojiManager != null) {
+      emojiManager.exitEmojiModeSilently();
+      emojiManager = null;
+    }
     brailleImeAnalytics.sendAllLogs();
   }
 
@@ -733,6 +773,12 @@ public class BrailleIme extends InputMethodService {
   }
 
   private void hideSelf() {
+    if (voiceInputManager != null) {
+      voiceInputManager.cancel();
+    }
+    if (emojiManager != null) {
+      emojiManager.exitEmojiModeSilently();
+    }
     requestHideSelf(0);
   }
 
@@ -1189,6 +1235,20 @@ public class BrailleIme extends InputMethodService {
         }
 
         @Override
+        public void startVoiceInput() {
+          if (voiceInputManager != null) {
+            voiceInputManager.toggleVoiceInput();
+          }
+        }
+
+        @Override
+        public void toggleEmojiMode() {
+          if (emojiManager != null) {
+            emojiManager.toggleEmojiMode(getCurrentInputConnection());
+          }
+        }
+
+        @Override
         public void hideBrailleKeyboard() {
           hideSelf();
           escapeReminder.increaseExitKeyboardCounter();
@@ -1479,6 +1539,12 @@ public class BrailleIme extends InputMethodService {
 
         @Override
         public boolean onSwipeProduced(Swipe swipe) {
+          if (emojiManager != null && emojiManager.isEmojiModeActive()) {
+            if (swipe.getDirection() == Swipe.Direction.LEFT && swipe.getTouchCount() == 1) {
+              emojiManager.exitEmojiMode();
+              return true;
+            }
+          }
           if (brailleImeGestureController.performSwipeAction(swipe)) {
             showOnBrailleDisplay();
             if (!brailleDisplayConnectedAndNotSuspended) {
@@ -1514,6 +1580,14 @@ public class BrailleIme extends InputMethodService {
         @Nullable
         @Override
         public String onBrailleProduced(BrailleCharacter brailleChar) {
+          if (voiceInputManager != null && voiceInputManager.isListening()) {
+            voiceInputManager.cancel();
+          }
+          if (emojiManager != null && emojiManager.isEmojiModeActive()) {
+            emojiManager.onBrailleProduced(brailleChar, getCurrentInputConnection());
+            escapeReminder.restartTimer();
+            return "";
+          }
           String result = brailleImeGestureController.performTyping(brailleChar);
           if (!TextUtils.isEmpty(result)) {
             escapeReminder.restartTimer();
@@ -2176,5 +2250,10 @@ public class BrailleIme extends InputMethodService {
   @VisibleForTesting
   public void testing_setTutorialState(State state) {
     tutorialState = state;
+  }
+
+  @VisibleForTesting
+  public EmojiManager testing_getEmojiManager() {
+    return emojiManager;
   }
 }

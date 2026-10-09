@@ -28,9 +28,11 @@ import androidx.fragment.app.FragmentActivity;
 import android.text.TextUtils;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
 import androidx.preference.TwoStatePreference;
 import com.google.android.accessibility.talkback.R;
 import com.google.android.accessibility.talkback.audio.AudioDeviceRouter;
+import com.google.android.accessibility.talkback.audio.BluetoothAudioDeviceRules;
 import com.google.android.accessibility.utils.FeatureSupport;
 import com.google.android.accessibility.utils.PreferenceSettingsUtils;
 import com.google.android.accessibility.utils.SharedPreferencesUtils;
@@ -81,11 +83,13 @@ public class SoundAndVibrationFragment extends TalkbackBaseFragment {
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
           updateAudioOutputPreference();
+          updateBluetoothDevicePreferences();
         }
 
         @Override
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
           updateAudioOutputPreference();
+          updateBluetoothDevicePreferences();
         }
       };
 
@@ -99,6 +103,14 @@ public class SoundAndVibrationFragment extends TalkbackBaseFragment {
     if (preference instanceof ListPreference) {
       ListPreference listPref = (ListPreference) preference;
       AudioDeviceRouter.updatePreference(listPref, activity);
+    }
+  }
+
+  private void updateBluetoothDevicePreferences() {
+    FragmentActivity activity = getActivity();
+    PreferenceCategory category = findPreference(BluetoothAudioDeviceRules.CATEGORY_KEY);
+    if (activity != null && category != null) {
+      BluetoothAudioDeviceRules.updatePreferences(category, activity);
     }
   }
 
@@ -124,6 +136,7 @@ public class SoundAndVibrationFragment extends TalkbackBaseFragment {
     }
 
     updateAudioOutputPreference();
+    updateBluetoothDevicePreferences();
     Preference audioPref =
         PreferenceSettingsUtils.findPreference(activity, getString(R.string.pref_audio_output_device_key));
     if (audioPref instanceof ListPreference) {

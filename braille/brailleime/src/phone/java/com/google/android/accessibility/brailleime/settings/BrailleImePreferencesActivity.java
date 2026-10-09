@@ -247,6 +247,39 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
       }
 
       {
+        // Voice allow profanity preference.
+        SwitchPreferenceCompat voiceAllowProfanityPref =
+            findPreference(getString(R.string.pref_brailleime_voice_allow_profanity));
+        if (voiceAllowProfanityPref != null) {
+          voiceAllowProfanityPref.setChecked(
+              BrailleUserPreferences.readVoiceAllowProfanity(getContext()));
+          voiceAllowProfanityPref.setOnPreferenceClickListener(
+              preference -> {
+                BrailleUserPreferences.writeVoiceAllowProfanity(
+                    getContext(), ((SwitchPreferenceCompat) preference).isChecked());
+                return true;
+              });
+        }
+      }
+
+      TypingSoundPreferences.configure(this);
+
+      {
+        // System voice input settings shortcut.
+        Preference systemVoiceSettingsPref =
+            findPreference(getString(R.string.pref_brailleime_system_voice_settings));
+        if (systemVoiceSettingsPref != null) {
+          systemVoiceSettingsPref.setOnPreferenceClickListener(
+              preference -> {
+                Intent intent = new Intent(ACTION_INPUT_METHOD_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(intent);
+                return true;
+              });
+        }
+      }
+
+      {
         // Swap top and bottom dots preference.
         SwitchPreferenceCompat flipDotsVerticallyPref =
             findPreference(getString(R.string.pref_brailleime_flip_dots_vertically));
@@ -326,6 +359,7 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
         new OnSharedPreferenceChangeListener() {
           @Override
           public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            TypingSoundPreferences.updateEnabled(BrailleImePrefFragment.this);
             if (key.equals(getString(R.string.pref_braille_contracted_mode))) {
               updateBrailleGradeSummary();
             }

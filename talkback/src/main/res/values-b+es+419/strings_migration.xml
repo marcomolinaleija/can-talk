@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+  <string name="migration_moved_text">Presiona para quitar la app anterior.</string>
+  <string name="migration_moved_title">can-talk se trasladó a una app nueva</string>
+  <string name="update_move_dialog_message">can-talk está cambiando a un nuevo identificador de app para poder instalarse en más teléfonos. Instala el nuevo can-talk; tu configuración se transferirá. Luego actívalo y esta app se desactivará automáticamente.</string>
+  <string name="update_move_installing">can-talk está cambiando a un nuevo identificador de app. Instala el nuevo can-talk; tu configuración se transferirá.</string>
+  <string name="update_move_notification_text">Instala el nuevo can-talk; tu configuración se transferirá. Presiona para instalar.</string>
+  <string name="update_move_title">can-talk se está trasladando a una app nueva</string>
+  <string name="update_move_turn_on">Activa el nuevo can-talk y la app anterior se desactivará automáticamente.</string>
+  <string name="update_wrong_package">La descarga no es una actualización de can-talk, por lo que no se instaló</string>
+
+</resources>

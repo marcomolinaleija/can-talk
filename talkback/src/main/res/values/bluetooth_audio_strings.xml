@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+  <string name="title_bluetooth_audio_devices">Bluetooth devices</string>
+  <string name="summary_bluetooth_audio_devices">Choose a type for each device. For headphones, can-talk follows the Bluetooth output. For speakers, can-talk plays on the phone. Unconfigured devices keep your current audio output setting.</string>
+  <string name="bluetooth_audio_devices_empty">Connect a Bluetooth audio device to configure it.</string>
+  <string name="bluetooth_audio_role_unchanged">Keep current configuration</string>
+  <string name="bluetooth_audio_role_headphones">Headphones: can-talk on Bluetooth</string>
+  <string name="bluetooth_audio_role_speaker">Speaker: can-talk on the phone</string>
+  <string name="bluetooth_audio_device_disconnected">%1$s (disconnected)</string>
+</resources>

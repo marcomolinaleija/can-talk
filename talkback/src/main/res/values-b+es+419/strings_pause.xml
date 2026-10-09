@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+  <string name="backtalk_paused">can-talk en pausa</string>
+  <string name="backtalk_resumed">can-talk reanudado</string>
+  <string name="dialog_button_pause_backtalk">Pausar</string>
+  <string name="dialog_message_pause_backtalk">Mientras can-talk está en pausa, no habla ni responde a los gestos, y la pantalla funciona como si no hubiera ningún lector de pantalla activado.</string>
+  <string name="dialog_title_pause_backtalk">¿Quieres pausar can-talk?</string>
+  <string name="keycombo_menu_global_pause_backtalk">Pausar o reanudar can-talk</string>
+  <string name="message_resume_key_combo">También puedes presionar <xliff:g id="key_combo" example="Alt + P">%1$s</xliff:g>.</string>
+  <string name="message_resume_keyguard">Para reanudar, presiona la notificación de can-talk en pausa, presiona rápidamente 3 veces la tecla de bajar volumen o bloquea y activa el teléfono para que aparezca la pantalla de bloqueo.</string>
+  <string name="message_resume_manual">Para reanudar, presiona la notificación de can-talk en pausa o presiona rápidamente 3 veces la tecla de bajar volumen.</string>
+  <string name="message_resume_screen_on">Para reanudar, presiona la notificación de can-talk en pausa, presiona rápidamente 3 veces la tecla de bajar volumen o apaga y vuelve a encender la pantalla.</string>
+  <string name="notification_message_backtalk_paused">Presiona para reanudar</string>
+  <string name="notification_title_backtalk_paused">can-talk está en pausa</string>
+  <string name="summary_pause_backtalk">Desactivar la voz, los gestos y la exploración táctil hasta que reanudes can-talk</string>
+  <string name="title_pause_backtalk">Pausar can-talk</string>
+  <string name="title_pref_resume_backtalk">Reanudar can-talk</string>
+  <string name="value_resume_keyguard">Cuando aparezca la pantalla de bloqueo</string>
+  <string name="value_resume_manual">Solo desde la notificación o un atajo</string>
+  <string name="value_resume_screen_on">Cuando se encienda la pantalla</string>
+
+</resources>

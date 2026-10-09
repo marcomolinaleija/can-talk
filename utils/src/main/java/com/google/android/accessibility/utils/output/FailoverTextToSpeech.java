@@ -390,6 +390,7 @@ public class FailoverTextToSpeech {
 
   private final AudioManager audioManager;
   private final TelephonyManager telephonyManager;
+  private final CallSpeechVolumeController callSpeechVolume;
 
   private boolean shouldHandleTtsCallbackInHandlerThread = true;
 
@@ -446,6 +447,8 @@ public class FailoverTextToSpeech {
     lowLatencyAudio = prefs.getBoolean(PREF_LOW_LATENCY_AUDIO_KEY, LOW_LATENCY_AUDIO_DEFAULT);
     readLanguageSwitches(prefs);
     prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
+
+    callSpeechVolume = new CallSpeechVolumeController(context);
 
     // Updating the default engine reloads the list of installed engines and
     // the system engine. This also loads the default engine.
@@ -599,6 +602,7 @@ public class FailoverTextToSpeech {
     int result;
 
     volume *= calculateVolumeAdjustment();
+    volume = callSpeechVolume.adjust(volume, stream);
 
     if (preventDeviceSleep && wakeLock != null && !wakeLock.isHeld()) {
       wakeLock.acquire(10 * 60 * 1000L /*10 minutes*/);
@@ -752,6 +756,7 @@ public class FailoverTextToSpeech {
    * made to this object after calling this method.
    */
   public void shutdown() {
+    callSpeechVolume.shutdown();
     // The player outlives this engine, so speech it holds or waits for must not block the next.
     releaseLowLatencyAudio();
     allowDeviceSleep();
@@ -852,7 +857,9 @@ public class FailoverTextToSpeech {
 
     requestRate = effectiveRate;
     synchronized (ttsLock) {
-      locale = localeToSpeak(locale);
+      String translationLocale = params.get(SpeechTextTransformer.FORCE_LOCALE);
+      locale = translationLocale == null
+          ? localeToSpeak(locale) : Locale.forLanguageTag(translationLocale);
       String utteranceId = params.get(Engine.KEY_PARAM_UTTERANCE_ID);
       boolean isLocaleAttached = locale != null;
       Locale previousLocale = getUsedLocale();

@@ -470,6 +470,8 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
         R.string.title_repeat_last_spoken_phrase),
     SPELL_LAST_PHRASE(
         R.string.shortcut_value_spell_last_spoken_phrase, R.string.title_spell_last_spoken_phrase),
+    TOGGLE_TRANSLATION(R.string.shortcut_value_toggle_translation, R.string.translation_toggle),
+    TRANSLATE_LAST(R.string.shortcut_value_translate_last, R.string.translation_last),
     PAUSE_OR_RESUME_FEEDBACK(
         R.string.shortcut_value_pause_or_resume_feedback,
         R.string.shortcut_pause_or_resume_feedback),

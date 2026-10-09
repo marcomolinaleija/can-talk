@@ -275,6 +275,7 @@ public class TalkBackPreferenceFilter {
     ICON_DETECTION(R.string.pref_icon_detection_key, HIDDEN_ON_WATCH | HIDE_ICON_DETECTION),
     // A watch cannot hold an on-device model, so descriptions there use the Gemini API.
     ON_DEVICE_AI(R.string.pref_on_device_ai_key, HIDDEN_ON_WATCH),
+    TRANSLATION(R.string.pref_translation_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV | HIDDEN_ON_XR),
     ROW_COLUMN_SELECTOR(
         R.string.pref_selector_granularity_row_column_key,
         HIDE_FEATURE_TABLE_NAVIGATION_ROW_AND_COLUMN),

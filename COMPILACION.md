@@ -1,4 +1,4 @@
-# Compilar Can Talk
+# Compilar can-talk
 
 Esta guía permite compilar el lector y su teclado braille desde una copia del repositorio. Los comandos de Windows se verificaron con PowerShell 7, Temurin JDK 21 y un Android SDK local. Para empezar a probar en un teléfono que ya tenga BackTalk instalado, usa la compilación independiente.
 
@@ -25,15 +25,21 @@ git remote add upstream git@github.com:trypsynth/backtalk.git
 git fetch upstream
 ```
 
-`origin` es el repositorio de Can Talk y `upstream` es BackTalk. La rama principal es `master`. Para comenzar otro cambio:
+`origin` es el repositorio de can-talk y `upstream` es BackTalk. `codex/desarrollo` reúne los cambios en desarrollo y `master` contiene los cambios aprobados. Crea cada rama nueva desde `codex/desarrollo`:
 
 ```powershell
-git switch master
-git pull --ff-only origin master
+git fetch origin
+# La primera vez: git switch --track origin/codex/desarrollo
+git switch codex/desarrollo
+git pull --ff-only origin codex/desarrollo
 git switch -c codex/nombre-del-cambio
 ```
 
+Después de compilar y probar, integra la rama en `codex/desarrollo` y resuelve allí los conflictos. Cuando los cambios estén aprobados, decide si fusionar `codex/desarrollo` en `master`. No publiques en `master` como parte de la preparación del entorno: un push a esa rama activa la publicación automática descrita al final de esta guía.
+
 ## Preparar Windows
+
+Si ya tienes un entorno para otro proyecto, como RayoAI, usa [Entorno local sin afectar otros proyectos](#entorno-local-sin-afectar-otros-proyectos) en lugar de cambiar sus variables persistentes o actualizar su SDK. Un JDK portátil también puede coexistir con el Java instalado; consulta la [instalación desde archivos de Temurin](https://adoptium.net/installation/archives).
 
 Instala un JDK y el Android SDK mediante Android Studio o sus Command-line Tools. Configura `JAVA_HOME` con la carpeta del JDK y `ANDROID_HOME` con la raíz del SDK. Por ejemplo, para esta sesión, sustituyendo la ruta del JDK por la tuya:
 
@@ -69,6 +75,36 @@ Conserva las demás propiedades que ya tenga ese archivo. No se añade a Git.
 
 ## Compilar en Windows
 
+### Entorno local sin afectar otros proyectos
+
+Para usar un SDK y una caché de Gradle propios de Can Talk, crea `entorno.local.json` en la raíz del repositorio (Git lo ignora). Sustituye las rutas por las de tu equipo:
+
+```json
+{
+  "JAVA_HOME": "C:/ruta/al/jdk",
+  "ANDROID_HOME": "C:/ruta/can-talk/android-sdk",
+  "GRADLE_USER_HOME": "C:/ruta/can-talk/gradle-user-home"
+}
+```
+
+Instala los componentes de la sección Requisitos en ese SDK, usando `sdkmanager --sdk_root="C:/ruta/can-talk/android-sdk"` seguido de los nombres de los paquetes. No ejecutes `--update` sobre el SDK de otro proyecto. Consulta las [opciones oficiales de sdkmanager](https://developer.android.com/tools/sdkmanager).
+
+`compilar.ps1` carga estas rutas sólo durante su ejecución y restaura las variables del proceso al terminar, incluso si falla. No modifica variables de usuario/sistema ni el Gradle global. Sin este archivo, usa la configuración de Java y Android existente. Conserva el wrapper del repositorio: no hace falta instalar Gradle por separado.
+
+Si usas `local.properties`, su `sdk.dir` debe apuntar al mismo SDK local. No pongas claves de API ni contraseñas en `entorno.local.json`.
+
+Si Java falla antes de compilar con `Unable to establish loopback connection` y `UnixDomainSockets.connect0`, también se verificó esta opción local en Windows con JDK 21:
+
+```json
+"JAVA_TOOL_OPTIONS": "-Djdk.net.unixdomain.tmpdir=C:/ruta/can-talk/afunix-disabled/missing"
+```
+
+Añade esa propiedad al objeto JSON sólo si encuentras el fallo. La ruta debe permanecer **inexistente**: provoca que los pipes internos de Java usen TCP local como alternativa a los sockets Unix. No afecta al directorio temporal normal ni cambia firewall, servicios o configuración global. El comportamiento de fallback está en [PipeImpl de OpenJDK](https://github.com/openjdk/jdk21u/blob/master/src/java.base/windows/classes/sun/nio/ch/PipeImpl.java). El script restaura también `JAVA_TOOL_OPTIONS`; si ya usas opciones propias, inclúyelas en el valor local.
+
+### Comandos
+
+También puedes ejecutar `.\compilar.cmd -Prueba` desde CMD o Windows PowerShell 5.1. El lanzador busca primero PowerShell 7 portátil en `%LOCALAPPDATA%\can-talk\powershell\pwsh.exe` y después `pwsh.exe` en el `PATH`. Para preparar esa copia portátil, extrae el ZIP de Windows x64 de las [versiones oficiales de PowerShell](https://github.com/PowerShell/PowerShell/releases) en esa carpeta. No hace falta cambiar el `PATH` global. La política de ejecución se omite sólo en el proceso hijo, no de forma persistente. Para pasar arrays de tareas, usa los comandos de PowerShell 7 que siguen.
+
 Desde la raíz del repositorio:
 
 ```powershell
@@ -79,7 +115,7 @@ Desde la raíz del repositorio:
 .\compilar.ps1 -Prueba
 
 # Pruebas del teclado, compilación de teléfono y análisis estático.
-.\compilar.ps1 -Prueba -Tareas @(':brailleime:testPhoneDebugUnitTest', ':assemblePhoneDebug', ':lintPhoneDebug')
+.\compilar.ps1 -Prueba -Tareas @('testPhoneDebugUnitTest', ':assemblePhoneDebug', ':lintPhoneDebug')
 
 # Compilación para Wear OS.
 .\compilar.ps1 -Tareas @(':assembleWearDebug')
@@ -104,7 +140,7 @@ export JAVA_HOME=/ruta/al/jdk
 export ANDROID_HOME=/ruta/al/Android/Sdk
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
 ./gradlew :assemblePhoneDebug -PcanTalkTestBuild=true --console=plain --max-workers=1 --no-daemon '-Dorg.gradle.jvmargs=-Xms256m -Xmx2g' -Pkotlin.compiler.execution.strategy=in-process
-./gradlew :brailleime:testPhoneDebugUnitTest :lintPhoneDebug -PcanTalkTestBuild=true --console=plain --max-workers=1 '-Dorg.gradle.jvmargs=-Xms256m -Xmx2g'
+./gradlew testPhoneDebugUnitTest :lintPhoneDebug -PcanTalkTestBuild=true --console=plain --max-workers=1 '-Dorg.gradle.jvmargs=-Xms256m -Xmx2g'
 ```
 
 Omite `-PcanTalkTestBuild=true` para compilar el paquete habitual. `build.sh` es otra opción para compilar teléfono y reloj juntos: requiere `ANDROID_SDK` y añade la ruta del SDK a `local.properties` si falta.
@@ -113,8 +149,8 @@ Omite `-PcanTalkTestBuild=true` para compilar el paquete habitual. `build.sh` es
 
 | Compilación | Identificador | Nombre visible |
 | --- | --- | --- |
-| Habitual | `fyi.quin.backtalk` | Backtalk |
-| Con `-Prueba` | `fyi.quin.backtalk.cantalktest` | Can Talk — prueba |
+| Habitual | `fyi.quin.backtalk` | can-talk |
+| Con `-Prueba` | `fyi.quin.backtalk.cantalktest` | can-talk — prueba |
 
 Ambas compilaciones escriben el APK de teléfono en `build/outputs/apk/phone/debug/backtalk-phone-debug.apk`: una sustituye el archivo generado por la otra. El de reloj queda en `build/outputs/apk/wear/debug/backtalk-wear-debug.apk`. Comprueba qué variante compilaste antes de instalar.
 
@@ -150,14 +186,73 @@ Instala el APK, sustituyendo `SERIAL` por el identificador mostrado:
 ## Comprobar el teclado braille
 
 1. Activa el lector de prueba en Accesibilidad y deja solo ese lector activo durante la prueba.
-2. Configura y selecciona «Teclado braille de Can Talk — prueba».
+2. Configura y selecciona «Teclado braille de can-talk — prueba».
 3. En los ajustes del teclado braille, activa «Mantener el teclado abierto al enviar mensajes». Está activada por defecto.
 4. En WhatsApp, escribe y envía varios mensajes seguidos, sin añadir un espacio final. El teclado debe permanecer abierto y el texto del mensaje anterior no debe reaparecer.
 5. Desactiva la opción y comprueba que el teclado se cierre al enviar. El gesto de ocultarlo debe funcionar en ambos modos.
 
 La opción se aplica cuando la aplicación declara `IME_ACTION_SEND`. Las demás acciones conservan el cierre habitual. La memoria braille se confirma y limpia antes de enviar en ambos modos; la aplicación receptora vacía su campo. El anuncio de activación en español es «can-talk está activo».
 
-Las pruebas del módulo braille están en `braille/brailleime/build/reports/tests/testPhoneDebugUnitTest/index.html`; el informe de lint está en `build/reports/lint-results-phoneDebug.html`. Los APKs, `local.properties`, las claves y los registros locales no deben añadirse a Git.
+Las pruebas de teléfono incluyen los módulos `talkback`, `utils` y `brailleime`. Cada módulo genera su informe en `build/reports/tests/testPhoneDebugUnitTest/index.html` dentro de su carpeta; por ejemplo, `braille/brailleime/build/reports/tests/testPhoneDebugUnitTest/index.html`. El informe de lint está en `build/reports/lint-results-phoneDebug.html`. Los APKs, `local.properties`, las claves y los registros locales no deben añadirse a Git.
+
+## Comprobar las reglas de audio Bluetooth
+
+En los ajustes de can-talk, entra en **Sonido y vibración → Dispositivos Bluetooth**. Conecta cada accesorio una vez para que aparezca y selecciona su tipo:
+
+- **Mantener configuración actual:** usa el ajuste general «Dispositivo de salida de audio».
+- **Auriculares: can-talk en Bluetooth:** libera la salida forzada del lector y deja que Android lo dirija al dispositivo Bluetooth activo.
+- **Altavoz: can-talk en el teléfono:** usa el mecanismo existente para mantener la voz y los sonidos del lector en el teléfono.
+
+La elección se conserva al reiniciar can-talk. Los dispositivos configurados siguen apareciendo como desconectados y permiten cambiar o desactivar su regla. No se lee ni se deduce el tipo configurado en Samsung. Cuando no hay una regla aplicable, se recupera el ajuste general anterior.
+
+Para validar en el teléfono:
+
+1. Comprueba primero que un accesorio sin configurar conserva el comportamiento anterior.
+2. Marca el altavoz como «Altavoz», reproduce música por Bluetooth y comprueba que voz y sonidos del lector salgan por el teléfono.
+3. Marca los auriculares como «Auriculares» y comprueba que música, voz y sonidos del lector salgan por ellos.
+4. Desconecta y vuelve a conectar cada accesorio; comprueba que se recupere su regla sin elegir de nuevo.
+5. Cambia un dispositivo a «Mantener configuración actual» y comprueba que vuelva a obedecer el ajuste general.
+6. Comprueba que las llamadas conserven su propia salida: el lector suspende su salida forzada durante una llamada.
+
+Las reglas se asocian a la dirección del dispositivo cuando Android la expone. En sistemas que solo ofrecen el nombre, ese nombre identifica la regla; dos accesorios con el mismo nombre compartirían esa identificación. En Android 13 o posterior se consulta la salida multimedia para evitar aplicar la regla de un accesorio conectado pero inactivo. Si hay varias salidas o dispositivos y no se puede elegir uno con certeza, se conserva el ajuste general.
+
+La separación efectiva depende del enrutamiento de accesibilidad del teléfono y del motor de voz. Estas pruebas de escucha complementan las pruebas unitarias de persistencia y selección; no deben darse por superadas solo porque el APK compile.
+
+## Probar el volumen de voz en llamadas
+
+En **Texto a voz** (o **Conversión de texto a voz**, según la variante de español), activa
+**Estabilizar voz durante llamadas (experimental)**.
+Está desactivado por defecto. **Volumen de voz durante llamadas (%)** empieza en 50 % del
+volumen de voz habitual y permite elegir entre 25 y 100 %. Bajar ese porcentaje deja margen
+para compensar una bajada de volumen de la llamada.
+
+La compensación se calcula antes de cada frase, tanto para TTS directo como para voz en caché
+y reproducción de baja latencia. Toma el nivel de llamada de la primera frase como referencia
+e intenta contrarrestar sus cambios con la curva de volumen que ofrece Android. Al cambiar
+la salida de llamada o terminar la llamada se descarta la referencia. Incluye los modos
+de llamada telefónica y de comunicación, usados por llamadas de aplicaciones.
+
+Para validar en el teléfono:
+
+1. Activa la opción, deja 50 % y empieza una llamada. Comprueba que puedes escuchar al lector.
+2. Haz que lea una frase corta. Sube solo la llamada un paso y vuelve a leer la misma frase.
+3. Baja la llamada un paso y repite. El lector debería variar menos que con la opción apagada.
+4. Cambia el porcentaje de voz durante la llamada; debe cambiar el lector desde la siguiente frase.
+5. Termina la llamada. Debe volver el volumen de voz habitual.
+6. Repite con la opción apagada y, si es posible, con auricular, altavoz y Bluetooth.
+
+Para aislar el control de llamada se puede usar `adb shell cmd media_session volume --stream 0 --adj raise`
+y consultar por separado `--stream 0 --get` y `--stream 10 --get`. Las teclas pueden controlar
+accesibilidad cuando el lector está hablando. Restaura el índice inicial de llamada al terminar.
+
+Esta función no modifica los volúmenes del sistema ni la salida de la llamada. Es experimental:
+el procesamiento del fabricante puede no coincidir con la curva publicada y la separación
+total no está garantizada. No aumenta la ganancia digital por encima de 1; si se agota el margen,
+el lector aún puede bajar de intensidad con la llamada. Una frase que ya está sonando conserva
+su ganancia hasta la siguiente frase. En Android 8 no hay curva pública y solo se aplica el
+porcentaje de voz en llamadas. En Android 9 a 11, las llamadas de aplicaciones sin ninguna
+frase fuera de llamada entre dos llamadas consecutivas pueden conservar la referencia anterior;
+Android 12 o posterior también escucha los cambios de modo de audio.
 
 ## Automatización en GitHub
 

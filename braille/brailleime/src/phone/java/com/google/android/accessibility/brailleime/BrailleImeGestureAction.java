@@ -49,6 +49,8 @@ import static com.google.android.accessibility.braille.common.BrailleImeAction.S
 import static com.google.android.accessibility.braille.common.BrailleImeAction.SUBMIT_TEXT;
 import static com.google.android.accessibility.braille.common.BrailleImeAction.SWITCH_KEYBOARD;
 import static com.google.android.accessibility.braille.common.BrailleImeAction.TOGGLE_ORIENTATION_LOCK;
+import static com.google.android.accessibility.braille.common.BrailleImeAction.TOGGLE_EMOJI_MODE;
+import static com.google.android.accessibility.braille.common.BrailleImeAction.VOICE_INPUT;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
@@ -174,6 +176,14 @@ public final class BrailleImeGestureAction {
               TOGGLE_ORIENTATION_LOCK,
               new DotHoldSwipe(
                   new Swipe(Direction.UP, /* touchCount= */ 1), new BrailleCharacter(4, 5, 6)))
+          .put(
+              VOICE_INPUT,
+              new DotHoldSwipe(
+                  new Swipe(Direction.DOWN, /* touchCount= */ 1), new BrailleCharacter(4, 5, 6)))
+          .put(
+              TOGGLE_EMOJI_MODE,
+              new DotHoldSwipe(
+                  new Swipe(Direction.RIGHT, /* touchCount= */ 1), new BrailleCharacter(4, 5, 6)))
           .buildOrThrow();
 
   private static final ImmutableMap<BrailleImeAction, ImmutableList<Gesture>>
@@ -276,6 +286,9 @@ public final class BrailleImeGestureAction {
   /** Returns true if the gesture is valid. */
   public static boolean isValid(Gesture gesture) {
     if (gesture instanceof Swipe swipe && swipe.getTouchCount() <= MAX_SWIPE_TOUCH_POINT) {
+      if (swipe.hasSwipedDot()) {
+        return swipe.getSwipedDot() >= 1 && swipe.getSwipedDot() <= 8;
+      }
       return true;
     }
     return gesture instanceof DotHoldSwipe dotHoldSwipe

@@ -19,6 +19,7 @@ dependencies {
     implementation libs.litertlm
     testImplementation libs.junit
     testImplementation libs.json
+    testImplementation libs.robolectric
 }
 
 // Gemini settings come from local.properties, which is not committed, so each builder uses their own key.
@@ -29,13 +30,17 @@ if (localPropertiesFile.exists()) {
 }
 def geminiApiKey = localProperties.getProperty('gemini.api.key', '')
 def geminiModel = localProperties.getProperty('gemini.model', 'gemini-flash-latest')
+// Experimental web service credential: injected locally, never stored in tracked source.
+def translationInstantKey = System.getenv('CANTALK_TRANSLATION_INSTANT_KEY') ?: ''
 
 android {
     namespace = "com.google.android.accessibility.talkback"
+    testOptions.unitTests.includeAndroidResources = true
     defaultConfig {
         buildConfigField("String", "APPLICATION_ID", '"' + talkbackApplicationId + '"')
         buildConfigField("String", "GEMINI_API_KEY", '"' + geminiApiKey + '"')
         buildConfigField("String", "GEMINI_MODEL", '"' + geminiModel + '"')
+        buildConfigField("String", "TRANSLATION_INSTANT_KEY", groovy.json.JsonOutput.toJson(translationInstantKey))
         // Used by the updater to compare this build with the latest development build.
         buildConfigField("String", "COMMIT_HASH", '"' + rootProject.gitCommitHash + '"')
         buildConfigField("int", "COMMIT_COUNT", String.valueOf(rootProject.gitCommitCount))

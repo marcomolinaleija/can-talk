@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+  <string name="braille_sound_profile_title">Sonidos del teclado</string>
+  <string name="braille_sound_theme">Tema de sonidos actual</string>
+  <string name="braille_sound_android">Android predeterminado</string>
+  <string name="braille_sound_samsung">Samsung habitual</string>
+  <string name="braille_sound_calm">Samsung Calm</string>
+  <string name="braille_sound_fun">Samsung Fun</string>
+  <string name="braille_sound_retro">Samsung Retro</string>
+  <string name="braille_sound_follow_title">Seguir el volumen del lector</string>
+  <string name="braille_sound_follow_summary">Los sonidos al escribir siguen el volumen y la salida de audio del lector. Desactiva para ajustar su intensidad por separado.</string>
+  <string name="braille_sound_volume_title">Volumen de sonidos al escribir (%)</string>
+  <string name="braille_sound_volume_summary">Ajusta la intensidad de los sonidos sin cambiar la voz. También se aplica el volumen de la salida de audio.</string>
+  <string name="braille_sound_preview_title">Escuchar muestra del teclado</string>
+</resources>
