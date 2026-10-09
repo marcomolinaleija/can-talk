@@ -1519,6 +1519,9 @@
     <bool name="pref_show_context_menu_typo_suggestions_default">true</bool>
     <bool name="pref_show_context_menu_braille_display_settings_default">false</bool>
     <bool name="pref_show_context_menu_text_formatting_default">false</bool>
+    <bool name="pref_show_context_menu_clipboard_history_default">true</bool>
+    <bool name="pref_show_context_menu_toggle_translation_default">true</bool>
+    <bool name="pref_show_context_menu_translate_last_default">true</bool>
 
     <bool name="pref_show_navigation_menu_characters_default">true</bool>
     <bool name="pref_show_navigation_menu_words_default">true</bool>
@@ -1718,6 +1721,9 @@
     <string name="pref_show_context_menu_typo_suggestions_setting_key" translatable="false">pref_show_context_menu_typo_suggestions_setting_key</string>
     <string name="pref_show_context_menu_braille_display_settings_setting_key" translatable="false">pref_braille_dispaly_settings_menu_setting_key</string>
     <string name="pref_show_context_menu_text_formatting_setting_key" translatable="false">pref_text_formatting_menu_setting_key</string>
+    <string name="pref_show_context_menu_clipboard_history_setting_key" translatable="false">pref_clipboard_history_menu_setting_key</string>
+    <string name="pref_show_context_menu_toggle_translation_setting_key" translatable="false">pref_toggle_translation_menu_setting_key</string>
+    <string name="pref_show_context_menu_translate_last_setting_key" translatable="false">pref_translate_last_menu_setting_key</string>
 
     <!-- Navigation options Menu preferences -->
     <string name="pref_show_navigation_menu_characters_setting_key" translatable="false">pref_characters_navigation_menu_setting_key</string>

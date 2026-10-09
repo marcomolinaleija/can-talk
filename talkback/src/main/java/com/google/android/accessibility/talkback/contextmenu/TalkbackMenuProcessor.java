@@ -216,8 +216,11 @@ public class TalkbackMenuProcessor {
       menu.removeItem(R.id.toggle_translation);
       menu.removeItem(R.id.translate_last);
     } else if (service.getTranslationController() != null) {
-      menu.findItem(R.id.toggle_translation).setTitle(service.getTranslationController().getContinuous()
-          ? R.string.translation_stop : R.string.translation_start);
+      @Nullable ContextMenuItem toggleItem = menu.findItem(R.id.toggle_translation);
+      if (toggleItem != null) {
+        toggleItem.setTitle(service.getTranslationController().getContinuous()
+            ? R.string.translation_stop : R.string.translation_start);
+      }
     }
     setSkipRefocusAndWindowAnnounce(menu, R.id.copy_last_utterance_to_clipboard, true);
     setSkipRefocusAndWindowAnnounce(menu, R.id.audio_ducking, true);
@@ -277,6 +280,24 @@ public class TalkbackMenuProcessor {
         R.string.pref_show_context_menu_repeat_last_spoken_phrase_setting_key,
         R.bool.pref_show_context_menu_repeat_last_spoken_phrase_default)) {
       menu.removeItem(R.id.repeat_last_utterance);
+    }
+
+    if (!showMenuItem(
+        R.string.pref_show_context_menu_clipboard_history_setting_key,
+        R.bool.pref_show_context_menu_clipboard_history_default)) {
+      menu.removeItem(R.id.clipboard_history);
+    }
+
+    if (!showMenuItem(
+        R.string.pref_show_context_menu_toggle_translation_setting_key,
+        R.bool.pref_show_context_menu_toggle_translation_default)) {
+      menu.removeItem(R.id.toggle_translation);
+    }
+
+    if (!showMenuItem(
+        R.string.pref_show_context_menu_translate_last_setting_key,
+        R.bool.pref_show_context_menu_translate_last_default)) {
+      menu.removeItem(R.id.translate_last);
     }
 
     // Removes screen search if this is watch or uncheck show item.

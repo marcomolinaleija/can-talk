@@ -113,6 +113,14 @@
             android:summary="@string/summary_copy_last_spoken_phrase"/>
         <com.google.android.accessibility.material.preference.AccessibilitySuiteCheckBoxPreference
             android:layout="@layout/listitem_2texts"
+            android:defaultValue="@bool/pref_show_context_menu_clipboard_history_default"
+            android:key="@string/pref_show_context_menu_clipboard_history_setting_key"
+            android:order="10"
+            android:title="@string/clipboard_history_title"
+            app:singleLineTitle="false"
+            android:summary="@string/summary_clipboard_history"/>
+        <com.google.android.accessibility.material.preference.AccessibilitySuiteCheckBoxPreference
+            android:layout="@layout/listitem_2texts"
             android:defaultValue="@bool/pref_show_context_menu_spell_last_spoken_phrase_default"
             android:key="@string/pref_show_context_menu_spell_last_spoken_phrase_setting_key"
             android:order="11"
@@ -127,6 +135,22 @@
             android:title="@string/title_repeat_last_spoken_phrase"
             app:singleLineTitle="false"
             android:summary="@string/summary_repeat_last_spoken_phrase"/>
+        <com.google.android.accessibility.material.preference.AccessibilitySuiteCheckBoxPreference
+            android:layout="@layout/listitem_2texts"
+            android:defaultValue="@bool/pref_show_context_menu_toggle_translation_default"
+            android:key="@string/pref_show_context_menu_toggle_translation_setting_key"
+            android:order="12"
+            android:title="@string/translation_toggle"
+            app:singleLineTitle="false"
+            android:summary="@string/summary_toggle_translation"/>
+        <com.google.android.accessibility.material.preference.AccessibilitySuiteCheckBoxPreference
+            android:layout="@layout/listitem_2texts"
+            android:defaultValue="@bool/pref_show_context_menu_translate_last_default"
+            android:key="@string/pref_show_context_menu_translate_last_setting_key"
+            android:order="12"
+            android:title="@string/translation_last"
+            app:singleLineTitle="false"
+            android:summary="@string/summary_translate_last"/>
         <com.google.android.accessibility.material.preference.AccessibilitySuiteCheckBoxPreference
             android:layout="@layout/listitem_2texts"
             android:defaultValue="@bool/pref_show_context_menu_verbosity_default"

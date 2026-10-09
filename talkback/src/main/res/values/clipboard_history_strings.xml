@@ -20,4 +20,5 @@
   <string name="clipboard_history_copy_failed">Could not copy</string>
   <string name="clipboard_history_paste_failed">This field could not paste the text</string>
   <string name="clipboard_history_unavailable">Unlock the phone to open clipboard history. This interface requires Android 11 or later.</string>
+  <string name="summary_clipboard_history">Open clipboard history to copy or paste saved items</string>
 </resources>

@@ -39,4 +39,6 @@
   <string name="translation_too_long">This phrase is too long to translate safely.</string>
   <string name="translation_cache_cleared">Translation cache cleared</string>
   <string name="translation_failed">Translation unavailable. Reading the original text.</string>
+  <string name="summary_toggle_translation">Translate speech continuously until turned off</string>
+  <string name="summary_translate_last">Translate the last phrase spoken by the reader</string>
 </resources>
