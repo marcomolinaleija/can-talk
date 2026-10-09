@@ -115,6 +115,11 @@ public class BrailleInputView extends View
       return true;
     }
 
+    /** Independent braille surfaces can supply their own orientation without taking the IME monitor. */
+    default OrientationMonitor.Orientation getScreenAwayOrientation() {
+      return OrientationMonitor.getInstance().getCurrentOrientation();
+    }
+
     /** Signals that hold has been produced. Returns true if the action is consumed. */
     @CanIgnoreReturnValue
     boolean onHoldProduced(int pointersHeldCount);
@@ -716,7 +721,7 @@ public class BrailleInputView extends View
     if (!isPortrait()) {
       return layoutExpectsPortOnRight();
     }
-    return DotsOrientation.heldPortOnRight(OrientationMonitor.getInstance().getCurrentOrientation());
+    return DotsOrientation.heldPortOnRight(callback.getScreenAwayOrientation());
   }
 
   /** Calibrates dots positions. */
