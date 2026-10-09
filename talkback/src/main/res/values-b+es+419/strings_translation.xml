@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="translation_title">Traducción</string>
+  <string name="translation_provider">Proveedor de traducción</string>
+  <string name="translation_provider_description">Google Translate web con el método de InstantTranslate (experimental). Esta compilación de prueba incluye una credencial del servicio web, no una clave personal de Cloud. Este servicio no oficial puede cambiar o dejar de funcionar. Traducciones de Google Translate.</string>
+  <string name="translation_allow_network">Permitir traducción en línea</string>
+  <string name="translation_privacy">Al solicitar una traducción, el texto verbalizado se envía a Google. Puede incluir mensajes, nombres, notificaciones o información financiera. No se traducen contraseñas, campos marcados como sensibles por Android, apps excluidas ni la pantalla bloqueada. Estas comprobaciones no identifican todos los textos privados. Activa la traducción solo cuando sepas qué se va a leer. No se envía nada mientras está desactivada, salvo cuando solicitas una traducción única. El texto en caché permanece solo en memoria.</string>
+  <string name="translation_agree">Permitir</string>
+  <string name="translation_continuous">Traducción continua</string>
+  <string name="translation_continuous_description">Traduce la voz hasta desactivarla. Se desactiva al reiniciar o deshabilitar el lector. Se pausa al bloquear la pantalla. No cambia el dictado, el braille ni el texto de las apps.</string>
+  <string name="translation_toggle">Activar o desactivar traducción continua</string>
+  <string name="translation_start">Activar traducción continua</string>
+  <string name="translation_stop">Desactivar traducción continua</string>
+  <string name="translation_last">Traducir la última frase verbalizada</string>
+  <string name="translation_gestures_description">Asigna ambas acciones en Gestos, dentro de Controles de lectura. No se modifica ningún gesto existente. También puedes usar el menú de can-talk.</string>
+  <string name="translation_target">Traducir al</string>
+  <string name="translation_source">Traducir del</string>
+  <string name="translation_system">Idioma del sistema</string>
+  <string name="translation_auto">Detectar automáticamente</string>
+  <string name="translation_cache">Alcance de la caché de traducción</string>
+  <string name="translation_cache_app">Separada para cada app</string>
+  <string name="translation_cache_global">Compartida entre apps</string>
+  <string name="translation_cache_off">Sin caché</string>
+  <string name="translation_cache_info">Retención de la caché</string>
+  <string name="translation_cache_description">Solo en memoria, hasta 500 entradas y 512,000 caracteres; caduca a las 24 horas. Se borra al detener el lector o cambiar la configuración de traducción. Solo guarda resultados correctos; se excluyen los campos protegidos.</string>
+  <string name="translation_clear_app">Borrar caché de la última app</string>
+  <string name="translation_clear_app_description">Borra la de la última app fuera de can-talk. En modo compartido borra toda la caché compartida.</string>
+  <string name="translation_clear_all">Borrar toda la caché de traducción</string>
+  <string name="translation_excluded">Apps que nunca se traducen</string>
+  <string name="translation_excluded_description">Las apps seleccionadas se excluyen de ambos modos de traducción. Android puede limitar cuáles aparecen en esta lista.</string>
+  <string name="translation_enabled">Traducción continua activada</string>
+  <string name="translation_disabled">Traducción continua desactivada</string>
+  <string name="translation_consent_required">Primero permite la traducción en línea en su configuración.</string>
+  <string name="translation_no_history">No hay una frase verbalizada para traducir.</string>
+  <string name="translation_protected">Esta frase está excluida de la traducción.</string>
+  <string name="translation_too_long">Esta frase es demasiado larga para traducirla de forma segura.</string>
+  <string name="translation_cache_cleared">Caché de traducción borrada</string>
+  <string name="translation_failed">Traducción no disponible. Se lee el texto original.</string>
+</resources>

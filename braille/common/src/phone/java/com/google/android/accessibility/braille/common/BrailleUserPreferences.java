@@ -76,6 +76,7 @@ public class BrailleUserPreferences {
   private static final boolean FLIP_DOTS_VERTICALLY_DEFAULT = false;
   private static final boolean TABLET_HELD_UP_FACES_AWAY_DEFAULT = true;
   private static final boolean TYPING_SOUNDS_DEFAULT = false;
+  private static final boolean VOICE_ALLOW_PROFANITY_DEFAULT = true;
   private static final int KEYBOARD_ECHO_DEFAULT = PREF_ECHO_CHARACTERS_AND_WORDS;
   private static final boolean LAUNCH_TUTORIAL_DEFAULT = true;
   private static final int EXIT_KEYBOARD_DEFAULT = 0;
@@ -338,6 +339,23 @@ public class BrailleUserPreferences {
     getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
         .edit()
         .putBoolean(context.getString(R.string.pref_brailleime_typing_sounds), typingSounds)
+        .apply();
+  }
+
+  /** Reads whether voice input allows offensive/explicit words. */
+  public static boolean readVoiceAllowProfanity(Context context) {
+    return getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
+        .getBoolean(
+            context.getString(R.string.pref_brailleime_voice_allow_profanity),
+            VOICE_ALLOW_PROFANITY_DEFAULT);
+  }
+
+  /** Writes whether voice input allows offensive/explicit words. */
+  public static void writeVoiceAllowProfanity(Context context, boolean allowProfanity) {
+    getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
+        .edit()
+        .putBoolean(
+            context.getString(R.string.pref_brailleime_voice_allow_profanity), allowProfanity)
         .apply();
   }
 

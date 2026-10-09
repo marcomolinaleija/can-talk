@@ -30,11 +30,12 @@ import java.util.regex.Pattern;
  * Describes a user-initiated swipe on the touch screen.
  *
  * <p>A swipe has both a {@link Direction} and a touch count, which is the number of fingers that
- * were touching the screen while the swipe was occurring.
+ * were touching the screen while the swipe was occurring. It may also optionally specify a
+ * {@code swipedDot} if the swipe originated from a particular braille dot.
  */
 public class Swipe implements Gesture {
   private static final Pattern REGEX_PATTERN =
-      Pattern.compile("swipe_(?<direction>[A-Za-z]+)_(?<touchpoints>\\d+)");
+      Pattern.compile("swipe_(?:dot(?<dot>\\d+)_)?(?<direction>[A-Za-z]+)_(?<touchpoints>\\d+)");
 
   /** The direction in which the swipe occurred. */
   public enum Direction {
@@ -57,15 +58,22 @@ public class Swipe implements Gesture {
 
   private final Direction direction;
   private final int touchCount;
+  private final int swipedDot;
 
   public Swipe(Direction direction, int touchCount) {
+    this(direction, touchCount, 0);
+  }
+
+  public Swipe(Direction direction, int touchCount, int swipedDot) {
     this.direction = direction;
     this.touchCount = touchCount;
+    this.swipedDot = swipedDot;
   }
 
   public Swipe(Swipe swipe) {
     this.direction = swipe.direction;
     this.touchCount = swipe.touchCount;
+    this.swipedDot = swipe.swipedDot;
   }
 
   public Swipe(String id) {
@@ -75,18 +83,20 @@ public class Swipe implements Gesture {
     }
     this.direction = Direction.valueOf(matcher.group("direction").toUpperCase(Locale.ENGLISH));
     this.touchCount = Integer.parseInt(matcher.group("touchpoints"));
+    String dotStr = matcher.group("dot");
+    this.swipedDot = dotStr != null ? Integer.parseInt(dotStr) : 0;
   }
 
   static Swipe createFromRotation90(Swipe swipe) {
-    return new Swipe(rotate90Degrees(swipe.direction), swipe.touchCount);
+    return new Swipe(rotate90Degrees(swipe.direction), swipe.touchCount, swipe.swipedDot);
   }
 
   static Swipe createFromUpSideDown(Swipe swipe) {
-    return new Swipe(turnDirectionUpsideDown(swipe.direction), swipe.touchCount);
+    return new Swipe(turnDirectionUpsideDown(swipe.direction), swipe.touchCount, swipe.swipedDot);
   }
 
   static Swipe createFromMirror(Swipe swipe) {
-    return new Swipe(turnDirectionMirror(swipe.direction), swipe.touchCount);
+    return new Swipe(turnDirectionMirror(swipe.direction), swipe.touchCount, swipe.swipedDot);
   }
 
   public Direction getDirection() {
@@ -95,6 +105,18 @@ public class Swipe implements Gesture {
 
   public int getTouchCount() {
     return touchCount;
+  }
+
+  public boolean hasSwipedDot() {
+    return swipedDot > 0;
+  }
+
+  public int getSwipedDot() {
+    return swipedDot;
+  }
+
+  public Swipe withoutDot() {
+    return new Swipe(direction, touchCount, 0);
   }
 
   @Override
@@ -109,11 +131,25 @@ public class Swipe implements Gesture {
 
   @Override
   public Gesture mirrorDots() {
+    if (hasSwipedDot()) {
+      return new Swipe(direction, touchCount, mirrorDot(swipedDot));
+    }
     return new Swipe(this);
   }
 
   @Override
   public String getDescription(Resources resources) {
+    if (hasSwipedDot()) {
+      if (touchCount > 1) {
+        return resources.getString(
+            R.string.gesture_swipe_dot_multiple_fingers,
+            swipedDot,
+            direction.getDescription(resources),
+            NumberFormat.getNumberInstance(Locale.getDefault()).format(touchCount));
+      }
+      return resources.getString(
+          R.string.gesture_swipe_dot, swipedDot, direction.getDescription(resources));
+    }
     if (touchCount > 1) {
       return resources.getString(
           R.string.gesture_swipe_multiple_fingers,
@@ -126,7 +162,23 @@ public class Swipe implements Gesture {
 
   @Override
   public String getId() {
-    return "swipe_" + direction.toString().toLowerCase(Locale.ENGLISH) + "_" + touchCount;
+    return hasSwipedDot()
+        ? "swipe_dot" + swipedDot + "_" + direction.toString().toLowerCase(Locale.ENGLISH) + "_" + touchCount
+        : "swipe_" + direction.toString().toLowerCase(Locale.ENGLISH) + "_" + touchCount;
+  }
+
+  private static int mirrorDot(int dot) {
+    return switch (dot) {
+      case 1 -> 4;
+      case 2 -> 5;
+      case 3 -> 6;
+      case 4 -> 1;
+      case 5 -> 2;
+      case 6 -> 3;
+      case 7 -> 8;
+      case 8 -> 7;
+      default -> dot;
+    };
   }
 
   private static Direction rotate90Degrees(Direction oldDirection) {
@@ -162,7 +214,9 @@ public class Swipe implements Gesture {
 
   @Override
   public String toString() {
-    return "Swipe{direction=" + direction + ", touchCount=" + touchCount + "}";
+    return hasSwipedDot()
+        ? "Swipe{dot=" + swipedDot + ", direction=" + direction + ", touchCount=" + touchCount + "}"
+        : "Swipe{direction=" + direction + ", touchCount=" + touchCount + "}";
   }
 
   @Override
@@ -170,7 +224,9 @@ public class Swipe implements Gesture {
     if (!(obj instanceof Swipe that)) {
       return false;
     }
-    return direction.equals(that.direction) && touchCount == that.touchCount;
+    return direction.equals(that.direction)
+        && touchCount == that.touchCount
+        && swipedDot == that.swipedDot;
   }
 
   @Override
@@ -184,6 +240,7 @@ public class Swipe implements Gesture {
     int result = 13;
     result = 37 * result + (direction == null ? 0 : direction.hashCode());
     result = 37 * result + touchCount;
+    result = 37 * result + swipedDot;
     return result;
   }
 }

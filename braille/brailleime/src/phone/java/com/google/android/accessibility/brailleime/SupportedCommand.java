@@ -54,8 +54,10 @@ import static com.google.android.accessibility.braille.common.BrailleImeAction.S
 import static com.google.android.accessibility.braille.common.BrailleImeAction.SELECT_PREVIOUS_WORD;
 import static com.google.android.accessibility.braille.common.BrailleImeAction.SUBMIT_TEXT;
 import static com.google.android.accessibility.braille.common.BrailleImeAction.SWITCH_KEYBOARD;
+import static com.google.android.accessibility.braille.common.BrailleImeAction.TOGGLE_EMOJI_MODE;
 import static com.google.android.accessibility.braille.common.BrailleImeAction.TOGGLE_ORIENTATION_LOCK;
 import static com.google.android.accessibility.braille.common.BrailleImeAction.UNDO_SPELLING_SUGGESTION;
+import static com.google.android.accessibility.braille.common.BrailleImeAction.VOICE_INPUT;
 import static com.google.android.accessibility.brailleime.SupportedCommand.Category.BASIC;
 import static com.google.android.accessibility.brailleime.SupportedCommand.Category.CURSOR_MOVEMENT;
 import static com.google.android.accessibility.brailleime.SupportedCommand.Category.SPELL_CHECK;
@@ -94,6 +96,8 @@ public class SupportedCommand {
           .add(new SupportedCommand(HIDE_KEYBOARD, BASIC, KEYBOARD, /* editable= */ false))
           .add(new SupportedCommand(SWITCH_KEYBOARD, BASIC, KEYBOARD, /* editable= */ false))
           .add(new SupportedCommand(SUBMIT_TEXT, BASIC, TYPING))
+          .add(new SupportedCommand(VOICE_INPUT, BASIC, TYPING))
+          .add(new SupportedCommand(TOGGLE_EMOJI_MODE, BASIC, TYPING))
           .add(new SupportedCommand(HELP_AND_OTHER_ACTIONS, BASIC, KEYBOARD, /* editable= */ false))
           .add(new SupportedCommand(TOGGLE_ORIENTATION_LOCK, BASIC, KEYBOARD))
           .add(new SupportedCommand(PREVIOUS_CHARACTER, CURSOR_MOVEMENT, CHARACTER))

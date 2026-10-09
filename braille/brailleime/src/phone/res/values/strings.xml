@@ -224,6 +224,10 @@
   <string name="gesture_swipe_one_finger">Swipe <xliff:g id="direction">%1$s</xliff:g></string>
   <!-- Basic gestures: swipe left/right/up/down with 2/3/4 fingers. [CHAR_LIMIT=100] -->
   <string name="gesture_swipe_multiple_fingers">Swipe <xliff:g id="direction">%1$s</xliff:g> with <xliff:g id="number">%2$s</xliff:g> fingers</string>
+  <!-- Single dot swipe gesture: swipe dot X left/right/up/down. [CHAR_LIMIT=100] -->
+  <string name="gesture_swipe_dot">Swipe dot <xliff:g id="dot">%1$d</xliff:g> <xliff:g id="direction">%2$s</xliff:g></string>
+  <!-- Single dot swipe gesture with multiple fingers. [CHAR_LIMIT=100] -->
+  <string name="gesture_swipe_dot_multiple_fingers">Swipe dot <xliff:g id="dot">%1$d</xliff:g> <xliff:g id="direction">%2$s</xliff:g> with <xliff:g id="number">%3$s</xliff:g> fingers</string>
   <!-- Hold and swipe gestures: hold dot combination and swipe left/right/up/down with one finger. [CHAR_LIMIT=100] -->
   <string name="gesture_hold_and_swipe_one_finger">Hold <xliff:g id="dot_combo">%1$s</xliff:g>, then swipe <xliff:g id="direction">%2$s</xliff:g> anywhere with another finger</string>
   <!-- Hold and swipe gestures: hold dot combination and swipe left/right/up/down with 2/3/4 fingers. [CHAR_LIMIT=100] -->
@@ -535,4 +539,44 @@
   <string name="custom_gesture_no_match">Gestures didn\'t match</string>
   <!-- Announced to perform the gesture again. [CHAR_LIMIT=100] -->
   <string name="custom_gesture_perform_again">Perform the gesture you want to use again. <xliff:g id="cancel">%s</xliff:g></string>
+  <!-- Audial announcement when voice input is listening. [CHAR_LIMIT=100] -->
+  <string name="voice_input_listening">Listening…</string>
+  <!-- Audial announcement when no speech was detected in voice input. [CHAR_LIMIT=100] -->
+  <string name="voice_input_no_speech">No speech heard</string>
+  <!-- Audial announcement when voice input is not available. [CHAR_LIMIT=100] -->
+  <string name="voice_input_not_available">Voice input is not available</string>
+  <!-- Audial announcement when microphone permission is required for voice input. [CHAR_LIMIT=100] -->
+  <string name="voice_input_permission_required">Microphone permission required for voice input</string>
+
+  <!-- Emoji categories -->
+  <string name="emoji_category_smileys">Smileys</string>
+  <string name="emoji_category_animals">Animals and nature</string>
+  <string name="emoji_category_food">Food and drinks</string>
+  <string name="emoji_category_activities">Activities</string>
+  <string name="emoji_category_travel">Travel and places</string>
+  <string name="emoji_category_objects">Objects</string>
+  <string name="emoji_category_symbols">Symbols</string>
+  <string name="emoji_category_people_1">People 1</string>
+  <string name="emoji_category_people_2">People 2</string>
+  <string name="emoji_category_other">Other</string>
+  <string name="emoji_category_flags_1">Flags 1</string>
+  <string name="emoji_category_flags_2">Flags 2</string>
+  <string name="emoji_category_favorites">Favorites</string>
+
+  <!-- Emoji announcements -->
+  <string name="emoji_mode_switched_on">Switched to emoji mode. %1$s. Row %2$c: %3$s</string>
+  <string name="emoji_mode_switched_off">Text mode</string>
+  <string name="emoji_category_switched">%1$s. Row %2$c: %3$s</string>
+  <string name="emoji_row_switched">Row %1$c: %2$s</string>
+  <string name="emoji_item_focused">%1$s, row %2$c, position %3$d</string>
+  <string name="emoji_added_to_favorites">%s added to favorites</string>
+  <string name="emoji_removed_from_favorites">%s removed from favorites</string>
+  <string name="emoji_favorites_empty">No favorites saved. Use dots 3 and 6 to add.</string>
+  <string name="emoji_inserted">%s inserted</string>
+
+  <!-- Voice input preferences -->
+  <string name="title_pref_voice_allow_profanity">Allow explicit words in voice dictation</string>
+  <string name="summary_pref_voice_allow_profanity">Do not censor offensive words during voice dictation</string>
+  <string name="title_pref_system_voice_settings">System voice input settings</string>
+  <string name="summary_pref_system_voice_settings">Open keyboard settings to configure Google voice typing offensive word filter</string>
 </resources>

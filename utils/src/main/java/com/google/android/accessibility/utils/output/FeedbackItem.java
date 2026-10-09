@@ -111,6 +111,25 @@ public class FeedbackItem {
   /** Flag to indicate that the speech rate is absolute, not a multiplier of the system rate. */
   public static final int FLAG_RATE_IS_ABSOLUTE = 0x10000;
 
+  /** Sensitive text and translation controls must never enter a translation provider. */
+  public static final int FLAG_NO_TRANSLATION = 0x20000;
+  /** Translate this item once even when continuous translation is off. */
+  public static final int FLAG_TRANSLATE_ONCE = 0x40000;
+
+  private String translationSource;
+  private String translationPackage = "";
+  private boolean translationProtected;
+  private boolean translationApplied;
+
+  public String getTranslationSource() { return translationSource; }
+  public void setTranslationSource(String text) { translationSource = text; }
+  public String getTranslationPackage() { return translationPackage; }
+  public void setTranslationPackage(String value) { translationPackage = value; }
+  public boolean isTranslationProtected() { return translationProtected; }
+  public void setTranslationProtected(boolean value) { translationProtected = value; }
+  public boolean isTranslationApplied() { return translationApplied; }
+  public void setTranslationApplied(boolean value) { translationApplied = value; }
+
   /** Unique ID defining this generated feedback */
   private String mUtteranceId = "";
 
@@ -179,6 +198,10 @@ public class FeedbackItem {
     mStartAction = item.getStartAction();
     mCompletedAction = item.getCompletedAction();
     mRangeStartCallback = item.getRangeStartCallback();
+    translationSource = item.translationSource;
+    translationPackage = item.translationPackage;
+    translationProtected = item.translationProtected;
+    translationApplied = item.translationApplied;
     for (FeedbackFragment fragment : item.getFragments()) {
       mFragments.add(new FeedbackFragment(fragment));
     }

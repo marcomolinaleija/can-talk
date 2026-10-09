@@ -35,6 +35,10 @@
       android:key="@string/pref_category_controls_key"
       android:title="@string/title_pref_category_controls">
     <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
+        android:fragment="com.google.android.accessibility.talkback.translation.TranslationFragment"
+        android:key="@string/pref_translation_key"
+        android:title="@string/translation_title" />
+    <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
         android:fragment="com.google.android.accessibility.talkback.preference.base.TalkBackGestureShortcutPreferenceFragment"
         android:key="@string/pref_category_manage_gestures_key"
         android:title="@string/title_pref_category_manage_gestures" />

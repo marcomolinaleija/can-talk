@@ -4,6 +4,7 @@ import static com.google.android.accessibility.brailleime.BrailleImeGestureActio
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
@@ -203,10 +204,11 @@ public class CustomGestureView extends FrameLayout
   @ColorInt
   private int getTextColor(boolean warning) {
     Context themeContext = new ContextThemeWrapper(getContext(), R.style.CustomGestureView);
+    int defaultColor = warning ? Color.RED : Color.WHITE;
     return MaterialColors.getColor(
         themeContext,
         warning ? R.attr.colorErrorContainer : R.attr.colorTertiaryFixed,
-        "Unsupported color palette");
+        defaultColor);
   }
 
   @VisibleForTesting
