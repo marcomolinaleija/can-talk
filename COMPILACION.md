@@ -184,6 +184,42 @@ Las reglas se asocian a la dirección del dispositivo cuando Android la expone. 
 
 La separación efectiva depende del enrutamiento de accesibilidad del teléfono y del motor de voz. Estas pruebas de escucha complementan las pruebas unitarias de persistencia y selección; no deben darse por superadas solo porque el APK compile.
 
+## Probar el volumen de voz en llamadas
+
+En **Texto a voz** (o **Conversión de texto a voz**, según la variante de español), activa
+**Estabilizar voz durante llamadas (experimental)**.
+Está desactivado por defecto. **Volumen de voz durante llamadas (%)** empieza en 50 % del
+volumen de voz habitual y permite elegir entre 25 y 100 %. Bajar ese porcentaje deja margen
+para compensar una bajada de volumen de la llamada.
+
+La compensación se calcula antes de cada frase, tanto para TTS directo como para voz en caché
+y reproducción de baja latencia. Toma el nivel de llamada de la primera frase como referencia
+e intenta contrarrestar sus cambios con la curva de volumen que ofrece Android. Al cambiar
+la salida de llamada o terminar la llamada se descarta la referencia. Incluye los modos
+de llamada telefónica y de comunicación, usados por llamadas de aplicaciones.
+
+Para validar en el teléfono:
+
+1. Activa la opción, deja 50 % y empieza una llamada. Comprueba que puedes escuchar al lector.
+2. Haz que lea una frase corta. Sube solo la llamada un paso y vuelve a leer la misma frase.
+3. Baja la llamada un paso y repite. El lector debería variar menos que con la opción apagada.
+4. Cambia el porcentaje de voz durante la llamada; debe cambiar el lector desde la siguiente frase.
+5. Termina la llamada. Debe volver el volumen de voz habitual.
+6. Repite con la opción apagada y, si es posible, con auricular, altavoz y Bluetooth.
+
+Para aislar el control de llamada se puede usar `adb shell cmd media_session volume --stream 0 --adj raise`
+y consultar por separado `--stream 0 --get` y `--stream 10 --get`. Las teclas pueden controlar
+accesibilidad cuando el lector está hablando. Restaura el índice inicial de llamada al terminar.
+
+Esta función no modifica los volúmenes del sistema ni la salida de la llamada. Es experimental:
+el procesamiento del fabricante puede no coincidir con la curva publicada y la separación
+total no está garantizada. No aumenta la ganancia digital por encima de 1; si se agota el margen,
+el lector aún puede bajar de intensidad con la llamada. Una frase que ya está sonando conserva
+su ganancia hasta la siguiente frase. En Android 8 no hay curva pública y solo se aplica el
+porcentaje de voz en llamadas. En Android 9 a 11, las llamadas de aplicaciones sin ninguna
+frase fuera de llamada entre dos llamadas consecutivas pueden conservar la referencia anterior;
+Android 12 o posterior también escucha los cambios de modo de audio.
+
 ## Automatización en GitHub
 
 El workflow `.github/workflows/build.yml` compila teléfono y reloj, ejecuta las pruebas de teléfono y lint. En un push a `master`, también publica el prerelease `dev` de este repositorio si las verificaciones terminan correctamente. Para que los APKs de ese workflow conserven una firma estable, configura su secreto `DEBUG_KEYSTORE_BASE64` con una clave de firma controlada por el proyecto. Sin ese secreto, el runner genera una clave nueva.
