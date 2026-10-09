@@ -3313,6 +3313,7 @@ public class TalkBackService extends AccessibilityServiceCompat
     pipeline.setUseAudioFocus(useAudioFocus);
 
     pipeline.setSpeechVolume(userSpeechVolume());
+    ThemeSounds.setSpeechVolume(userSpeechVolume());
 
     // Reload feedback preferences.
     int adjustment =
