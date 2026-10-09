@@ -302,6 +302,8 @@
   <string name="bk_gesture_toggle_orientation_lock">Lock or unlock orientation</string>
   <!-- Braille keyboard gesture to start voice dictation input. [CHAR_LIMIT=50] -->
   <string name="bk_gesture_voice_input">Voice input</string>
+  <!-- Braille keyboard gesture to toggle emoji mode. [CHAR_LIMIT=50] -->
+  <string name="bk_gesture_toggle_emoji_mode">Toggle emoji mode</string>
   <!-- Spell check -->
   <!-- Spell check gesture of previous misspelled word. [CHAR_LIMIT=NONE] -->
   <string name="bk_gesture_previous_misspelled_word">Move to previous typo</string>

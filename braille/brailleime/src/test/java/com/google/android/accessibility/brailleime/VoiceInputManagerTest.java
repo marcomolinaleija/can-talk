@@ -136,4 +136,21 @@ public class VoiceInputManagerTest {
                     new com.google.android.accessibility.braille.interfaces.BrailleCharacter(4, 5, 6)))
             .contains(BrailleImeAction.VOICE_INPUT));
   }
+
+  @Test
+  public void createRecognizerIntent_respectsAllowProfanity() {
+    com.google.android.accessibility.braille.common.BrailleUserPreferences.writeVoiceAllowProfanity(
+        context, true);
+    Intent intentAllowed = voiceInputManager.createRecognizerIntent();
+    assertFalse(intentAllowed.getBooleanExtra("android.speech.extra.MASK_OFFENSIVE_WORDS", true));
+    assertFalse(intentAllowed.getBooleanExtra("com.google.recognition.extra.MASK_OFFENSIVE_WORDS", true));
+    assertFalse(intentAllowed.getBooleanExtra("android.speech.extra.PROFANITY_FILTER", true));
+
+    com.google.android.accessibility.braille.common.BrailleUserPreferences.writeVoiceAllowProfanity(
+        context, false);
+    Intent intentMasked = voiceInputManager.createRecognizerIntent();
+    assertTrue(intentMasked.getBooleanExtra("android.speech.extra.MASK_OFFENSIVE_WORDS", false));
+    assertTrue(intentMasked.getBooleanExtra("com.google.recognition.extra.MASK_OFFENSIVE_WORDS", false));
+    assertTrue(intentMasked.getBooleanExtra("android.speech.extra.PROFANITY_FILTER", false));
+  }
 }

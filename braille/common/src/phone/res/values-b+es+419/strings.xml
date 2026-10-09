@@ -152,4 +152,5 @@
   <string name="bk_gesture_undo_spelling_suggestion">Deshacer sugerencia</string>
   <string name="bk_gesture_toggle_orientation_lock">Bloquear o desbloquear la orientación</string>
   <string name="bk_gesture_voice_input">Entrada por voz</string>
+  <string name="bk_gesture_toggle_emoji_mode">Modo emojis</string>
 </resources>

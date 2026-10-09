@@ -69,6 +69,8 @@
   <string name="gesture_direction_down">abajo</string>
   <string name="gesture_swipe_one_finger">Deslizar hacia %1$s</string>
   <string name="gesture_swipe_multiple_fingers">Deslizar hacia %1$s con %2$s dedos</string>
+  <string name="gesture_swipe_dot">Deslizar punto %1$d hacia %2$s</string>
+  <string name="gesture_swipe_dot_multiple_fingers">Deslizar punto %1$d hacia %2$s con %3$s dedos</string>
   <string name="gesture_hold_and_swipe_one_finger">Mantener presionado %1$s y deslizar hacia %2$s en cualquier parte con otro dedo</string>
   <string name="gesture_hold_and_swipe_multiple_finger">Mantener presionado %1$s y deslizar hacia %2$s en cualquier parte con %3$s dedos</string>
   <string name="gesture1_or_gesture2">%1$s o %2$s</string>
@@ -244,4 +246,36 @@
   <string name="voice_input_no_speech">No se detectó voz</string>
   <string name="voice_input_not_available">La entrada por voz no está disponible</string>
   <string name="voice_input_permission_required">Se necesita permiso de micrófono para la entrada por voz</string>
+
+  <!-- Emoji categories -->
+  <string name="emoji_category_smileys">Caras</string>
+  <string name="emoji_category_animals">Animales y naturaleza</string>
+  <string name="emoji_category_food">Comida y bebida</string>
+  <string name="emoji_category_activities">Actividades</string>
+  <string name="emoji_category_travel">Viajes y lugares</string>
+  <string name="emoji_category_objects">Objetos</string>
+  <string name="emoji_category_symbols">Símbolos</string>
+  <string name="emoji_category_people_1">Gente 1</string>
+  <string name="emoji_category_people_2">Gente 2</string>
+  <string name="emoji_category_other">Otros</string>
+  <string name="emoji_category_flags_1">Banderas 1</string>
+  <string name="emoji_category_flags_2">Banderas 2</string>
+  <string name="emoji_category_favorites">Favoritos</string>
+
+  <!-- Emoji announcements -->
+  <string name="emoji_mode_switched_on">Modo emojis activado. %1$s. Fila %2$c: %3$s</string>
+  <string name="emoji_mode_switched_off">Modo texto</string>
+  <string name="emoji_category_switched">%1$s. Fila %2$c: %3$s</string>
+  <string name="emoji_row_switched">Fila %1$c: %2$s</string>
+  <string name="emoji_item_focused">%1$s, fila %2$c, posición %3$d</string>
+  <string name="emoji_added_to_favorites">%s se agregó a favoritos</string>
+  <string name="emoji_removed_from_favorites">%s se eliminó de favoritos</string>
+  <string name="emoji_favorites_empty">Sin contenido en favoritos. Usa los puntos 3 y 6 para añadir el emoji actual.</string>
+  <string name="emoji_inserted">%s insertado</string>
+
+  <!-- Voice input preferences -->
+  <string name="title_pref_voice_allow_profanity">Permitir palabras explícitas en dictado por voz</string>
+  <string name="summary_pref_voice_allow_profanity">No censurar malas palabras durante el dictado por voz</string>
+  <string name="title_pref_system_voice_settings">Ajustes de dictado por voz del sistema</string>
+  <string name="summary_pref_system_voice_settings">Abre los ajustes de teclado para configurar el filtro de palabras ofensivas de Google</string>
 </resources>

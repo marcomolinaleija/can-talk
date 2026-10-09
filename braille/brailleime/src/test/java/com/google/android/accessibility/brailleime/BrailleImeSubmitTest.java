@@ -171,6 +171,9 @@ public class BrailleImeSubmitTest {
 
     @Override
     public void startVoiceInput() {}
+
+    @Override
+    public void toggleEmojiMode() {}
   }
 
   /** Deterministic letters keep the test independent of the native translation library. */

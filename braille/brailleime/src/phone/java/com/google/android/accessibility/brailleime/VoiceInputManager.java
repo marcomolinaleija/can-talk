@@ -29,6 +29,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import com.google.android.accessibility.braille.common.BrailleCommonTalkBackSpeaker;
+import com.google.android.accessibility.braille.common.BrailleUserPreferences;
 import com.google.android.accessibility.braille.common.TalkBackSpeaker.AnnounceType;
 import java.util.ArrayList;
 
@@ -158,6 +159,14 @@ public class VoiceInputManager {
         RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
     intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
     intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+    boolean allowProfanity = BrailleUserPreferences.readVoiceAllowProfanity(context);
+    boolean maskOffensiveWords = !allowProfanity;
+    intent.putExtra("android.speech.extra.MASK_OFFENSIVE_WORDS", maskOffensiveWords);
+    intent.putExtra("com.google.recognition.extra.MASK_OFFENSIVE_WORDS", maskOffensiveWords);
+    intent.putExtra("android.speech.extra.PROFANITY_FILTER", maskOffensiveWords);
+    intent.putExtra("profanity_filter", maskOffensiveWords);
+    intent.putExtra("maskOffensiveWords", maskOffensiveWords);
+    intent.putExtra("android.speech.extra.DICTATION_MODE", true);
     return intent;
   }
 

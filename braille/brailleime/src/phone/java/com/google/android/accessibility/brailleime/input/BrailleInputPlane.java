@@ -427,7 +427,18 @@ public abstract class BrailleInputPlane {
                     new BrailleCharacter(matchTouchToTargetNumbers(touchResult.releasedPoints)))));
       }
       case MultitouchResult.TYPE_SWIPE -> {
-        return customOnGestureListener.detect(Optional.of(createSwipe(touchResult.swipe)));
+        Swipe swipe = touchResult.swipe;
+        if (swipe != null
+            && swipe.getTouchCount() == 1
+            && touchResult.releasedPoints != null
+            && !touchResult.releasedPoints.isEmpty()) {
+          Set<Integer> dots = matchTouchToTargetNumbers(touchResult.releasedPoints);
+          if (!dots.isEmpty()) {
+            int swipedDot = dots.iterator().next();
+            swipe = new Swipe(swipe.getDirection(), 1, swipedDot);
+          }
+        }
+        return customOnGestureListener.detect(Optional.of(createSwipe(swipe)));
       }
       case MultitouchResult.TYPE_HOLD -> {
         return customOnGestureListener.detect(
