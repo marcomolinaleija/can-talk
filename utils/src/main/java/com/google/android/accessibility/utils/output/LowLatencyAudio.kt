@@ -128,12 +128,24 @@ class LowLatencyAudio private constructor(context: Context, private val attribut
 
   /** Plays [clip] at [left] and [right] volumes from 0 to 1, and [rate], 1 for its own speed. */
   fun play(clip: Clip, left: Float, right: Float, rate: Float) {
+    enqueueClip(clip, left, right, rate)
+  }
+
+  /** Amplifies a short sound up to twice its amplitude, before the mixer's sample limiter. */
+  fun playAmplified(clip: Clip, gain: Float): Boolean {
+    if (!gain.isFinite() || gain <= 0f) return false
+    val boundedGain = gain.coerceAtMost(2f)
+    return enqueueClip(clip, boundedGain, boundedGain, 1f)
+  }
+
+  private fun enqueueClip(clip: Clip, left: Float, right: Float, rate: Float): Boolean {
     // A clip made for a player at another rate, before this one replaced it, still plays in tune.
     val step = rate.toDouble().coerceIn(0.25, 4.0) * clip.rate / sampleRate
     synchronized(lock) {
-      if (released || broken) return
+      if (released || broken) return false
       clips += PlayingClip(clip, left, right, step)
       wake()
+      return true
     }
   }
 

@@ -48,6 +48,7 @@ import com.google.android.accessibility.braille.common.settings.BrailleLanguages
 import com.google.android.accessibility.braille.interfaces.TalkBackForBrailleIme;
 import com.google.android.accessibility.braille.interfaces.TalkBackForBrailleIme.ServiceStatus;
 import com.google.android.accessibility.brailleime.FeatureFlagReader;
+import com.google.android.accessibility.brailleime.BrailleImeTypingSounds;
 import com.google.android.accessibility.brailleime.R;
 import com.google.android.accessibility.brailleime.Utils;
 import com.google.android.accessibility.utils.AccessibilityServiceCompatUtils.Constants;
@@ -147,6 +148,12 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
       getPreferenceManager()
           .getSharedPreferences()
           .unregisterOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
+    }
+
+    @Override
+    public void onPause() {
+      BrailleImeTypingSounds.cancelPendingPreview();
+      super.onPause();
     }
 
     private void configurePrefs() {

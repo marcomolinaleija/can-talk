@@ -91,7 +91,7 @@
     <SeekBarPreference
         android:key="pref_brailleime_sound_volume"
         android:defaultValue="50"
-        android:max="100"
+        android:max="200"
         app:min="0"
         app:showSeekBarValue="true"
         android:title="@string/braille_sound_volume_title"

@@ -33,7 +33,8 @@ object TypingSoundPreferences {
     fragment.findPreference<SwitchPreferenceCompat>(TypingSoundSettings.FOLLOW_KEY)?.isChecked =
       TypingSoundSettings.prefs(context).getBoolean(TypingSoundSettings.FOLLOW_KEY, true)
     fragment.findPreference<SeekBarPreference>(TypingSoundSettings.VOLUME_KEY)?.value =
-      TypingSoundSettings.prefs(context).getInt(TypingSoundSettings.VOLUME_KEY, 50).coerceIn(0, 100)
+      TypingSoundSettings.prefs(context).getInt(TypingSoundSettings.VOLUME_KEY, 50)
+        .coerceIn(0, TypingSoundSettings.MAX_VOLUME_PERCENT)
     fragment.findPreference<Preference>("pref_brailleime_sound_preview")
       ?.setOnPreferenceClickListener {
         BrailleImeTypingSounds.play(context, BrailleImeTypingSounds.Key.CHARACTER, true)
@@ -49,5 +50,6 @@ object TypingSoundPreferences {
     fragment.findPreference<SeekBarPreference>(TypingSoundSettings.VOLUME_KEY)?.isEnabled =
       BrailleUserPreferences.readTypingSounds(context) &&
         !TypingSoundSettings.prefs(context).getBoolean(TypingSoundSettings.FOLLOW_KEY, true)
+    BrailleImeTypingSounds.prepare(context)
   }
 }

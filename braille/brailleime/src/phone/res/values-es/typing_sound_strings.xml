@@ -10,6 +10,6 @@
   <string name="braille_sound_follow_title">Seguir el volumen del lector</string>
   <string name="braille_sound_follow_summary">Los sonidos al escribir siguen el volumen y la salida de audio del lector. Desactiva para ajustar su intensidad por separado.</string>
   <string name="braille_sound_volume_title">Volumen de sonidos al escribir (%)</string>
-  <string name="braille_sound_volume_summary">Ajusta la intensidad de los sonidos sin cambiar la voz. También se aplica el volumen de la salida de audio.</string>
+  <string name="braille_sound_volume_summary" formatted="false">Ajusta los sonidos al escribir de 0 a 200% sin cambiar la voz. Por encima de 100% se amplifica el sonido. También se aplica el volumen de la salida de audio.</string>
   <string name="braille_sound_preview_title">Escuchar muestra del teclado</string>
 </resources>

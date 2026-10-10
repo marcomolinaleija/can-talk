@@ -20,10 +20,17 @@ import android.content.Context
 import android.media.AudioManager
 import android.media.AudioAttributes
 import android.media.SoundPool
+import android.os.Handler
+import android.os.Looper
 import com.google.android.accessibility.braille.common.BrailleUserPreferences
 import com.google.android.accessibility.utils.output.FailoverTextToSpeech
 import com.google.android.accessibility.utils.output.FeedbackController
 import com.google.android.accessibility.utils.output.ThemeSounds
+import com.google.android.accessibility.utils.output.AudioDecoder
+import com.google.android.accessibility.utils.output.LowLatencyAudio
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Plays the chosen keyboard sounds using the reader's audio stream, with a system-effect fallback
@@ -46,6 +53,12 @@ object BrailleImeTypingSounds {
   private val ready = mutableSetOf<Int>()
   private val failed = mutableSetOf<Int>()
   private var pendingPreview: Key? = null
+  private var boost: TypingSoundBoost<LowLatencyAudio.Clip>? = null
+  private val boostWorker by lazy {
+    ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, LinkedBlockingQueue<Runnable>()) {
+      Thread(it, "Braille typing sound preload")
+    }.apply { allowCoreThreadTimeOut(true) }
+  }
 
   @JvmStatic
   @Synchronized
@@ -59,7 +72,10 @@ object BrailleImeTypingSounds {
     val profile = TypingSoundSettings.profile(context)
     val selectedAttributes = FeedbackController.feedbackAttributes(
       FailoverTextToSpeech.shouldUseAccessibilityStream(context))
-    if (preparedProfile == profile && attributes == selectedAttributes) return
+    if (preparedProfile == profile && attributes == selectedAttributes) {
+      prepareBoost(context, profile, selectedAttributes)
+      return
+    }
     val selectedPaths = Key.entries.mapNotNull { key ->
       (resolve(profile, key)
         ?: resolve(TypingSoundSettings.Profile.ANDROID, key))?.let { key to it }
@@ -68,6 +84,7 @@ object BrailleImeTypingSounds {
     preparedProfile = profile
     paths = selectedPaths
     attributes = selectedAttributes
+    prepareBoost(context, profile, selectedAttributes)
     if (paths.isEmpty()) return
     val appContext = context.applicationContext
     val newPool = SoundPool.Builder().setMaxStreams(4)
@@ -83,7 +100,7 @@ object BrailleImeTypingSounds {
           pendingPreview = null
           val gain = TypingSoundSettings.volume(appContext)
           if (BrailleUserPreferences.readTypingSounds(appContext) && gain > 0f) {
-            if (status == 0) loadedPool.play(id, gain, gain, 1, 0, 1f)
+            if (status == 0) play(appContext, preview, true)
             else systemEffect(appContext, preview, gain)
           }
         }
@@ -95,7 +112,16 @@ object BrailleImeTypingSounds {
 
   @JvmStatic
   @Synchronized
+  fun cancelPendingPreview() {
+    pendingPreview = null
+    boost?.cancelPreview()
+  }
+
+  @JvmStatic
+  @Synchronized
   fun release() {
+    boost?.clear()
+    boost = null
     pool?.release()
     pool = null
     preparedProfile = null
@@ -115,14 +141,23 @@ object BrailleImeTypingSounds {
     }
     val volume = TypingSoundSettings.volume(context)
     if (volume <= 0f) return
+    if (volume > 1f) {
+      prepare(context)
+      val path = if (TypingSoundSettings.profile(context) == TypingSoundSettings.Profile.THEME)
+        ThemeSounds.pathFor(key.themeName) ?: paths[key] else paths[key]
+      if (path != null && boost?.play(path, volume,
+          if (preview) ({ play(context.applicationContext, key, true) }) else null) == true) return
+    }
+    // SoundPool and Android effects accept at most unity gain. Amplification uses PCM above.
+    val poolVolume = volume.coerceAtMost(1f)
     if (TypingSoundSettings.profile(context) == TypingSoundSettings.Profile.THEME &&
-      ThemeSounds.play(key.themeName, volume)) {
+      ThemeSounds.play(key.themeName, poolVolume)) {
       return
     }
     prepare(context)
     val id = ids[key]
     if (id != null && id != 0 && id !in failed) {
-      if (id in ready) pool?.play(id, volume, volume, 1, 0, 1f)
+      if (id in ready) pool?.play(id, poolVolume, poolVolume, 1, 0, 1f)
       else if (preview) pendingPreview = key
       return
     }
@@ -131,6 +166,32 @@ object BrailleImeTypingSounds {
 
   private fun systemEffect(context: Context, key: Key, volume: Float) {
     // This final fallback is routed by Android rather than the reader's audio attributes.
-    context.getSystemService(AudioManager::class.java)?.playSoundEffect(key.effect, volume)
+    context.getSystemService(AudioManager::class.java)?.playSoundEffect(key.effect, volume.coerceIn(0f, 1f))
+  }
+
+  private fun prepareBoost(context: Context, profile: TypingSoundSettings.Profile,
+    selectedAttributes: AudioAttributes) {
+    if (!BrailleUserPreferences.readTypingSounds(context) || TypingSoundSettings.volume(context) <= 1f) {
+      boost?.clear()
+      return
+    }
+    val appContext = context.applicationContext
+    val loader = boost ?: run {
+      val handler = Handler(Looper.getMainLooper())
+      TypingSoundBoost<LowLatencyAudio.Clip>(
+        load = { path -> AudioDecoder.decode(path)?.let { decoded ->
+          LowLatencyAudio.get(appContext, selectedAttributes)?.prepare(decoded)
+        } },
+        playSample = { clip, gain ->
+          LowLatencyAudio.get(appContext, selectedAttributes)?.playAmplified(clip, gain) == true
+        },
+        background = { task -> boostWorker.execute { task() } },
+        main = { task -> handler.post { task() } },
+      ).also { boost = it }
+    }
+    loader.prepare(Key.entries.mapNotNull { key ->
+      if (profile == TypingSoundSettings.Profile.THEME)
+        ThemeSounds.pathFor(key.themeName) ?: paths[key] else paths[key]
+    }.toSet())
   }
 }
