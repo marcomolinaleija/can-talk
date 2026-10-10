@@ -480,6 +480,7 @@ public class FeedbackController {
     @Nullable String path = customSoundPath(resId);
     float callScale = callSoundScale(leftVolume, rightVolume);
     if (mLowLatencyAudio
+        && !LowLatencyAudio.isMicrophoneInUse()
         && playLowLatency(
             resId, path, rate, leftVolume * callScale, rightVolume * callScale)) {
       return;

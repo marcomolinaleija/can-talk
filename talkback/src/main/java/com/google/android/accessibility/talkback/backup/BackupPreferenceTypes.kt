@@ -6,6 +6,10 @@ import android.content.Context
 /** Persisted types derived from the preference owners' typed getters, not preference widget guesses. */
 internal object BackupPreferenceTypes {
   fun expected(context: Context, store: BackupStore, key: String): TalkBackBackup.PrefType? {
+    // The direct-touch owner uses a literal key instead of a string resource.
+    if (store == BackupStore.READER && key == "pref_speak_nav_bar_buttons") {
+      return TalkBackBackup.PrefType.BOOLEAN
+    }
     val definitions = when (store) {
       BackupStore.READER -> reader
       BackupStore.BRAILLE -> braille
@@ -38,6 +42,8 @@ internal object BackupPreferenceTypes {
     "pref_gemini_repeat_opt_in_count_key" to TalkBackBackup.PrefType.INT,
     "pref_gemini_repeat_opt_in_pop_key" to TalkBackBackup.PrefType.INT,
     "pref_gesture_set_key" to TalkBackBackup.PrefType.STRING,
+    "pref_interrupt_enter_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_interrupt_typing_key" to TalkBackBackup.PrefType.STRING,
     "pref_lift_to_activate_key" to TalkBackBackup.PrefType.STRING,
     "pref_log_overlay_key" to TalkBackBackup.PrefType.BOOLEAN,
     "pref_multiple_gesture_set_key" to TalkBackBackup.PrefType.BOOLEAN,
@@ -48,6 +54,7 @@ internal object BackupPreferenceTypes {
     "pref_punctuation_key" to TalkBackBackup.PrefType.BOOLEAN,
     "pref_punctuation_verbosity" to TalkBackBackup.PrefType.STRING,
     "pref_reduce_window_delay_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_reserve_vibration_watch_gestures_key" to TalkBackBackup.PrefType.BOOLEAN,
     "pref_rotor_step_degrees_key" to TalkBackBackup.PrefType.STRING,
     "pref_select_keymap_key" to TalkBackBackup.PrefType.STRING,
     "pref_shake_to_read_threshold_key" to TalkBackBackup.PrefType.STRING,
@@ -79,6 +86,8 @@ internal object BackupPreferenceTypes {
     "pref_speech_pitch_key" to TalkBackBackup.PrefType.STRING,
     "pref_speech_rate_key" to TalkBackBackup.PrefType.STRING,
     "pref_speech_volume_key" to TalkBackBackup.PrefType.STRING,
+    "pref_table_column_headers_key" to TalkBackBackup.PrefType.STRING,
+    "pref_table_speak_row_column_numbers_key" to TalkBackBackup.PrefType.BOOLEAN,
     "pref_talkback_gesture_detection_key" to TalkBackBackup.PrefType.BOOLEAN,
     "pref_text_formatting_announcement_mode_key" to TalkBackBackup.PrefType.STRING,
     "pref_text_formatting_option_bold_key" to TalkBackBackup.PrefType.BOOLEAN,

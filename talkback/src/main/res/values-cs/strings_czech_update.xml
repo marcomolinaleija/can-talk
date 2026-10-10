@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <!-- Table reading. -->
+    <string name="pref_table_headers_category_title">Čtení tabulek</string>
+    <string name="pref_table_column_headers_title">Číst záhlaví sloupců</string>
+    <string name="pref_table_column_headers_entry_after">Po obsahu buňky</string>
+    <string name="pref_table_column_headers_entry_before">Před obsahem buňky</string>
+    <string name="pref_table_column_headers_entry_off">Nečíst</string>
+    <string name="pref_table_speak_row_column_numbers_title">Oznamovat čísla řádků a sloupců</string>
+    <string name="pref_table_speak_row_column_numbers_summary">Oznamovat čísla řádků a sloupců u buněk tabulky</string>
+
+    <!-- Gemini API consent text whose upstream meaning changed. -->
+    <string name="dialog_message_detailed_ai_description">Vybrané obrázky jsou odesílány do rozhraní Gemini API společnosti Google, aby byly popsány. Když je zapnutá AI v zařízení, obrázky se místo toho popisují v tomto telefonu a nikam se neodesílají.\n\nPři použití bezplatného klíče API může Google přijatá data uchovávat, používat je ke zlepšování svých produktů a nechat je kontrolovat lidmi. Generativní AI je experimentální, takže bude dělat chyby. Platí <xliff:g id="Gemini API terms" example="Další smluvní podmínky Gemini API">%1$s</xliff:g>.</string>
+    <string name="dialog_message_detailed_ai_promotion">Podrobné popisy obrázků využívají generativní AI. Vybrané obrázky jsou odesílány do rozhraní Gemini API společnosti Google, aby byly popsány. Když je zapnutá AI v zařízení, obrázky se místo toho popisují v tomto telefonu a nikam se neodesílají.\n\nPři použití bezplatného klíče API může Google přijatá data uchovávat, používat je ke zlepšování svých produktů a nechat je kontrolovat lidmi. Generativní AI je experimentální, takže bude dělat chyby. Podrobné popisy obrázků můžete kdykoli vypnout v nastavení Backtalku.\n\nPlatí <xliff:g id="Gemini API terms" example="Další smluvní podmínky Gemini API">%1$s</xliff:g>.</string>
+    <string name="dialog_message_screen_overview_promotion">Snímek obrazovky je odeslán do rozhraní Gemini API společnosti Google, aby byl popsán, což trvá několik sekund. Když je zapnutá AI v zařízení, snímek se místo toho popíše v tomto telefonu a nikam se neodesílá.\n\nPři použití bezplatného klíče API může Google přijatá data uchovávat, používat je ke zlepšování svých produktů a nechat je kontrolovat lidmi. Generativní AI je experimentální, takže bude dělat chyby. Platí <xliff:g id="Gemini API terms" example="Další smluvní podmínky Gemini API">%1$s</xliff:g>.</string>
+    <string name="gemini_api_terms_link">Další smluvní podmínky Gemini API</string>
+</resources>

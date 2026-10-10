@@ -155,6 +155,9 @@ public class VerbosityPrefFragment extends TalkbackBaseFragment {
                 getString(R.string.pref_speak_container_element_positions_key),
                 getResources().getBoolean(R.bool.pref_speak_container_element_positions_default))
             .put(
+                getString(R.string.pref_table_speak_row_column_numbers_key),
+                getResources().getBoolean(R.bool.pref_table_speak_row_column_numbers_default))
+            .put(
                 getString(R.string.pref_verbose_scroll_announcement_key),
                 getResources().getBoolean(R.bool.pref_verbose_scroll_announcement_default))
             .put(
@@ -310,6 +313,11 @@ public class VerbosityPrefFragment extends TalkbackBaseFragment {
             getString(R.string.pref_verbosity_preset_key),
             getString(R.string.pref_verbosity_preset_value_default));
     updateFragment(verbosityValueString);
+
+    Preference itemDetailsOrder = findPreference(R.string.pref_node_desc_order_key);
+    if (itemDetailsOrder != null) {
+      itemDetailsOrder.setSummary(ItemDetailsOrderFragment.getSummary(getContext()));
+    }
 
     // Attach listeners after verbosity values are copied to active, so that copying verbosity does
     // not invoke preference-change listener.
