@@ -146,7 +146,7 @@ the verified per-run override is:
 ```
 
 The override does not change project configuration or another application's Java
-environment. APK output is `build/outputs/apk/phone/debug/backtalk-phone-debug.apk`;
+environment. APK output is `build/outputs/apk/phone/debug/cantalk-phone-debug.apk`;
 test package is `fyi.quin.backtalk.cantalktest`. Verify metadata/signature and record
 the artifact hash after assembly. Do not infer installation or screen-reader
 activation authorization from build authorization.

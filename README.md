@@ -1,4 +1,14 @@
-# Backtalk
+# CAN Talk
+
+This repository is the CAN Talk fork. Its local APKs are named
+`cantalk-phone-debug.apk` and `cantalk-wear-debug.apk`; its GitHub release assets
+are `cantalk.apk` and `cantalk-wear.apk`. See [COMPILACION.md](COMPILACION.md) for
+the fork's build and installation instructions. The Android package IDs and
+signing configuration are unchanged. The upstream documentation below describes
+Backtalk, including its own releases and updater; CAN Talk's upstream update
+checks are disabled.
+
+## Upstream Backtalk documentation
 
 Backtalk is a fork of [Google's TalkBack](https://github.com/google/talkback), the screen reader for blind and visually-impaired users of Android. It adds fixes and features on top of Google's source releases. It is not affiliated with Google.
 

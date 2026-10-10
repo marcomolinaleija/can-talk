@@ -152,7 +152,9 @@ Omite `-PcanTalkTestBuild=true` para compilar el paquete habitual. `build.sh` es
 | Habitual | `fyi.quin.backtalk` | can-talk |
 | Con `-Prueba` | `fyi.quin.backtalk.cantalktest` | can-talk — prueba |
 
-Ambas compilaciones escriben el APK de teléfono en `build/outputs/apk/phone/debug/backtalk-phone-debug.apk`: una sustituye el archivo generado por la otra. El de reloj queda en `build/outputs/apk/wear/debug/backtalk-wear-debug.apk`. Comprueba qué variante compilaste antes de instalar.
+Ambas compilaciones escriben el APK de teléfono en `build/outputs/apk/phone/debug/cantalk-phone-debug.apk`: una sustituye el archivo generado por la otra. El de reloj queda en `build/outputs/apk/wear/debug/cantalk-wear-debug.apk`. Comprueba qué variante compilaste antes de instalar.
+
+El nombre del archivo proviene de `rootProject.name = 'cantalk'` en `settings.gradle`; no cambia el identificador Android ni la firma. El workflow de GitHub publica estos archivos como `cantalk.apk` y `cantalk-wear.apk`. Los APKs antiguos con prefijo `backtalk` no se renombran automáticamente: usa el archivo de la nueva compilación.
 
 Los APKs se firman con la clave debug local de Android, normalmente en `$HOME/.android/debug.keystore`. El tipo de build se llama `debug`, aunque el proyecto desactiva `debuggable` para mejorar el rendimiento del lector. El número de versión depende del número de commits y el nombre incluye la fecha de compilación.
 
@@ -161,7 +163,7 @@ Android solo permite actualizar un paquete con la misma firma. Conserva la clave
 Para comprobar la firma en Windows:
 
 ```powershell
-& "$env:ANDROID_HOME\build-tools\36.0.0\apksigner.bat" verify --verbose .\build\outputs\apk\phone\debug\backtalk-phone-debug.apk
+& "$env:ANDROID_HOME\build-tools\36.0.0\apksigner.bat" verify --verbose .\build\outputs\apk\phone\debug\cantalk-phone-debug.apk
 ```
 
 ## Instalar por ADB
@@ -177,7 +179,7 @@ Debe aparecer como `device`. Si aparece `unauthorized`, falta aceptar la autoriz
 Instala el APK, sustituyendo `SERIAL` por el identificador mostrado:
 
 ```powershell
-& "$env:ANDROID_HOME\platform-tools\adb.exe" -s SERIAL install -r .\build\outputs\apk\phone\debug\backtalk-phone-debug.apk
+& "$env:ANDROID_HOME\platform-tools\adb.exe" -s SERIAL install -r .\build\outputs\apk\phone\debug\cantalk-phone-debug.apk
 & "$env:ANDROID_HOME\platform-tools\adb.exe" -s SERIAL shell dumpsys package fyi.quin.backtalk.cantalktest
 ```
 
