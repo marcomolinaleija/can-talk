@@ -90,6 +90,7 @@
     <string name="pref_emoji_repeat_count_key" translatable="false">pref_emoji_repeat_count</string>
     <string name="pref_capital_letters_key">pref_capital_letters</string>
     <string name="pref_a11y_hints_key">pref_a11y_hints</string>
+    <string name="pref_speak_passwords_key">pref_speak_passwords</string>
     <string name="pref_speak_container_element_positions_key">pref_speak_container_element_positions_key</string>
     <string name="pref_speak_time_key">pref_speak_time_key</string>
     <string name="pref_on_device_ai_key" translatable="false">pref_on_device_ai</string>
@@ -1409,6 +1410,7 @@
     <string name="pref_touch_focus_time_out_default">@string/touch_focus_time_out_default</string>
     <bool name="pref_phonetic_letters_default">true</bool>
     <bool name="pref_a11y_hints_default">true</bool>
+    <bool name="pref_speak_passwords_default">true</bool>
     <bool name="pref_speak_container_element_positions_default">true</bool>
     <bool name="pref_tell_time_default">true</bool>
     <bool name="pref_speak_roles_default">true</bool>

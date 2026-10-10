@@ -34,6 +34,7 @@ import com.google.android.accessibility.braille.interfaces.BrailleCharacter;
 import com.google.android.accessibility.braille.interfaces.BrailleDisplayForBrailleIme.ResultForDisplay.HoldingsInfo;
 import com.google.android.accessibility.braille.interfaces.BrailleWord;
 import com.google.android.accessibility.braille.translate.BrailleTranslator;
+import com.google.android.accessibility.utils.input.PasswordCharacterTracker;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.nio.ByteBuffer;
 import java.util.Optional;
@@ -127,7 +128,15 @@ public class EditBufferUnContracted implements EditBuffer {
       lastCommitIndexOfHoldings = holdings.size();
     }
 
-    if (TextUtils.isEmpty(result) || !BrailleTranslateUtils.isPronounceable(result)) {
+    if (BrailleCommonUtils.isPasswordField(imeConnection.editorInfo)
+        && imeConnection.speakPasswords
+        && !TextUtils.isEmpty(result)
+        && BrailleTranslateUtils.isPronounceable(result)) {
+      if (EditBufferUtils.shouldEmitPerCharacterFeedback(imeConnection)) {
+        talkBack.speak(result, TalkBackSpeaker.AnnounceType.INTERRUPT);
+        PasswordCharacterTracker.getInstance().recordBrailleHandled();
+      }
+    } else if (TextUtils.isEmpty(result) || !BrailleTranslateUtils.isPronounceable(result)) {
       String textToSpeak =
           getAppendBrailleTextToSpeak(context.getResources(), brailleCharacter).orElse(null);
       if (TextUtils.isEmpty(textToSpeak)) {

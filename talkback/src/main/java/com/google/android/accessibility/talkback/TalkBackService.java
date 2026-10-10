@@ -256,6 +256,7 @@ import com.google.android.accessibility.utils.PackageManagerUtils;
 import com.google.android.accessibility.utils.Performance;
 import com.google.android.accessibility.utils.Performance.EventId;
 import com.google.android.accessibility.utils.Performance.StageId;
+import com.google.android.accessibility.utils.Role;
 import com.google.android.accessibility.utils.ServiceKeyEventListener;
 import com.google.android.accessibility.utils.ServiceStateListener;
 import com.google.android.accessibility.utils.SettingsUtils;
@@ -269,6 +270,7 @@ import com.google.android.accessibility.utils.gestures.GestureManifold.TapToTouc
 import com.google.android.accessibility.utils.gestures.MultiTap.MultiTapAnalyticsEvent;
 import com.google.android.accessibility.utils.input.HeadsUpNotificationEventInterpreter;
 import com.google.android.accessibility.utils.input.NonmodalAlertEventInterpreter;
+import com.google.android.accessibility.utils.input.PasswordCharacterTracker;
 import com.google.android.accessibility.utils.input.ScrollEventInterpreter;
 import com.google.android.accessibility.utils.input.SelectionEventInterpreter;
 import com.google.android.accessibility.utils.input.TextCursorTracker;
@@ -1129,6 +1131,8 @@ public class TalkBackService extends AccessibilityServiceCompat
           touchInteractionMonitor.onHoverEntered();
         }
       }
+    } else if (eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+      trackPasswordCharacterFromClick(event);
     }
 
     accessibilityEventProcessor.onAccessibilityEvent(event, eventId);
@@ -1144,6 +1148,27 @@ public class TalkBackService extends AccessibilityServiceCompat
 
     if (diagnosticOverlayController != null) {
       diagnosticOverlayController.displayEvent(event);
+    }
+  }
+
+  private void trackPasswordCharacterFromClick(AccessibilityEvent event) {
+    AccessibilityNodeInfoCompat node = AccessibilityEventUtils.sourceCompat(event);
+    if (node != null) {
+      if (Role.getRole(node) == Role.ROLE_TEXT_ENTRY_KEY) {
+        CharSequence text = node.getText();
+        if (TextUtils.isEmpty(text)) {
+          text = node.getContentDescription();
+        }
+        PasswordCharacterTracker.getInstance().recordTypedChar(text);
+        return;
+      }
+    }
+    List<CharSequence> texts = event.getText();
+    if (texts != null && texts.size() == 1) {
+      CharSequence text = texts.get(0);
+      if (text != null && text.length() == 1) {
+        PasswordCharacterTracker.getInstance().recordTypedChar(text);
+      }
     }
   }
 
@@ -1372,6 +1397,10 @@ public class TalkBackService extends AccessibilityServiceCompat
 
     if (keyAction == KeyEvent.ACTION_DOWN) {
       textEventInterpreter.setLastKeyDown(keyCode, keyEvent.getModifiers());
+      int unicode = keyEvent.getUnicodeChar();
+      if (unicode != 0 && !Character.isISOControl(unicode)) {
+        PasswordCharacterTracker.getInstance().recordTypedChar((char) unicode);
+      }
     }
 
     return false;
@@ -3531,6 +3560,12 @@ public class TalkBackService extends AccessibilityServiceCompat
               res,
               res.getString(R.string.pref_verbose_scroll_announcement_key),
               res.getBoolean(R.bool.pref_verbose_scroll_announcement_default)));
+    }
+
+    if (textEventInterpreter != null) {
+      boolean speakPasswords =
+          VerbosityPreferences.shouldSpeakPasswords(prefs, res);
+      textEventInterpreter.setSpeakPasswords(speakPasswords);
     }
 
     boolean isFingerprintGestureAssigned =

@@ -410,6 +410,17 @@
     <string name="summary_pref_a11y_hints">After an item is described, say how to use it</string>
 
     <!--
+      Source: Preference for speaking passwords in password fields.
+      Description: The user can check or not check this. [CHAR LIMIT=40]
+    -->
+    <string name="title_pref_speak_passwords">Speak passwords</string>
+    <!--
+      Source: Summary subtext for the speak passwords setting.
+      Description: Explains when passwords will be spoken. [CHAR LIMIT=NONE]
+    -->
+    <string name="summary_pref_speak_passwords">Always speak passwords in password fields</string>
+
+    <!--
       Source: Preference for speaking positions of element in lists or grids or containers when moving accessibility focus.
       Description: The user can check or not check this. [CHAR LIMIT=40]
     -->

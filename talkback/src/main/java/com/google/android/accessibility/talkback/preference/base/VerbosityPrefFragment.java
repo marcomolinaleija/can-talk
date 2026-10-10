@@ -140,6 +140,9 @@ public class VerbosityPrefFragment extends TalkbackBaseFragment {
                 getString(R.string.pref_a11y_hints_key),
                 getResources().getBoolean(R.bool.pref_a11y_hints_default))
             .put(
+                getString(R.string.pref_speak_passwords_key),
+                getResources().getBoolean(R.bool.pref_speak_passwords_default))
+            .put(
                 getString(R.string.pref_intonation_key),
                 getResources().getBoolean(R.bool.pref_intonation_default))
             .put(

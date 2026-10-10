@@ -23,6 +23,13 @@
         android:summary="@string/summary_pref_a11y_hints"
         android:title="@string/title_pref_a11y_hints" />
 
+    <!-- Speak passwords -->
+    <com.google.android.accessibility.material.preference.AccessibilitySuiteSwitchPreference
+        android:defaultValue="@bool/pref_speak_passwords_default"
+        android:key="@string/pref_speak_passwords_key"
+        android:summary="@string/summary_pref_speak_passwords"
+        android:title="@string/title_pref_speak_passwords" />
+
     <!-- Container positions -->
     <com.google.android.accessibility.material.preference.AccessibilitySuiteSwitchPreference
         android:defaultValue="@bool/pref_speak_container_element_positions_default"

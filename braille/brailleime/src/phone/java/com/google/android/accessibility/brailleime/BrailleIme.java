@@ -1855,8 +1855,13 @@ public class BrailleIme extends InputMethodService {
     if (talkBackForBrailleIme != null && shouldAnnounceCharacter) {
       announceType = NORMAL;
     }
+    boolean speakPasswords =
+        talkBackForBrailleIme == null || talkBackForBrailleIme.shouldSpeakPasswords();
     return new ImeConnection(
-        getCurrentInputConnection(), getCurrentInputEditorInfo(), announceType);
+        getCurrentInputConnection(),
+        getCurrentInputEditorInfo(),
+        announceType,
+        speakPasswords);
   }
 
   private final OnSharedPreferenceChangeListener onSharedPreferenceChangeListener =

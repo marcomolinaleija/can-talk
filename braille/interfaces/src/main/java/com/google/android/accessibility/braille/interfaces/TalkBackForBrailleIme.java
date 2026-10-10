@@ -99,6 +99,11 @@ public interface TalkBackForBrailleIme {
   /** Checks should braille keyboard announce character when physical mode. */
   boolean shouldAnnounceCharacterForPhysicalKeyboard();
 
+  /** Checks whether passwords should be spoken aloud in password fields. */
+  default boolean shouldSpeakPasswords() {
+    return true;
+  }
+
   /** Whether use character granularity to be the moving granularity. */
   boolean shouldUseCharacterGranularity();
 

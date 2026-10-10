@@ -56,6 +56,8 @@
   <string name="capital_letters_sound_feedback">Reproducir sonido</string>
   <string name="title_pref_a11y_hints">Enunciar sugerencias de uso</string>
   <string name="summary_pref_a11y_hints">Después de describir el contenido, sugiere qué hacer</string>
+  <string name="title_pref_speak_passwords">Verbalizar contraseñas</string>
+  <string name="summary_pref_speak_passwords">Verbalizar los caracteres al escribir en campos de contraseña</string>
   <string name="pref_speak_container_element_positions_title">Información de lectura de contenedores</string>
   <string name="pref_speak_time_title">Decir la hora</string>
   <string name="pref_speak_time_summary">Al encender la pantalla</string>

@@ -30,11 +30,21 @@ public class ImeConnection {
   public final InputConnection inputConnection;
   public final EditorInfo editorInfo;
   public final AnnounceType announceType;
+  public final boolean speakPasswords;
 
   public ImeConnection(
       InputConnection inputConnection, EditorInfo editorInfo, AnnounceType announceType) {
+    this(inputConnection, editorInfo, announceType, /* speakPasswords= */ true);
+  }
+
+  public ImeConnection(
+      InputConnection inputConnection,
+      EditorInfo editorInfo,
+      AnnounceType announceType,
+      boolean speakPasswords) {
     this.inputConnection = inputConnection;
     this.editorInfo = editorInfo;
     this.announceType = announceType;
+    this.speakPasswords = speakPasswords;
   }
 }

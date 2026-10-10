@@ -32,6 +32,7 @@ import static com.google.android.accessibility.utils.Performance.EVENT_ID_UNTRAC
 import android.content.Context;
 import android.os.Message;
 import android.os.SystemClock;
+import android.text.TextUtils;
 import android.view.ViewConfiguration;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
@@ -51,6 +52,7 @@ import com.google.android.accessibility.utils.Performance.EventId;
 import com.google.android.accessibility.utils.Role;
 import com.google.android.accessibility.utils.SharedPreferencesUtils;
 import com.google.android.accessibility.utils.WeakReferenceHandler;
+import com.google.android.accessibility.utils.input.PasswordCharacterTracker;
 
 /** Event interpreter to handle accessibility focus during touch interaction. */
 public class FocusProcessorForTapAndTouchExploration {
@@ -369,6 +371,7 @@ public class FocusProcessorForTapAndTouchExploration {
         && ((isEnableLiftToType() && supportsLiftToType(lastFocusableNodeBeingTouched))
             || shouldLiftToActivate(lastFocusableNodeBeingTouched))) {
       // Perform click action for lift-to-type mode.
+      trackKeyCharacter(lastFocusableNodeBeingTouched);
       analytics.onGesture(GESTURE_LIFT_TO_TYPE);
       result =
           interpretationReceiver.input(
@@ -379,6 +382,7 @@ public class FocusProcessorForTapAndTouchExploration {
         && mayBeSingleTap
         && (currentTime - touchInteractionStartTime < TAP_TIMEOUT_MS)) {
       // Perform click for single-tap mode.
+      trackKeyCharacter(lastFocusableNodeBeingTouched);
       result =
           interpretationReceiver.input(
               eventId,
@@ -407,6 +411,7 @@ public class FocusProcessorForTapAndTouchExploration {
                       AccessibilityNodeInfoUtils.getWindow(lastFocusableNodeBeingTouched))
                   == TYPE_INPUT_METHOD)) {
         // Perform click action for lift-to-type mode.
+        trackKeyCharacter(lastFocusableNodeBeingTouched);
         interpretationReceiver.input(
             eventId,
             /* event= */ null,
@@ -416,6 +421,16 @@ public class FocusProcessorForTapAndTouchExploration {
       }
     }
     return false;
+  }
+
+  private static void trackKeyCharacter(@Nullable AccessibilityNodeInfoCompat node) {
+    if (node != null && Role.getRole(node) == Role.ROLE_TEXT_ENTRY_KEY) {
+      CharSequence text = node.getText();
+      if (TextUtils.isEmpty(text)) {
+        text = node.getContentDescription();
+      }
+      PasswordCharacterTracker.getInstance().recordTypedChar(text);
+    }
   }
 
   private boolean touchFocusedNode(AccessibilityNodeInfoCompat node, @Nullable EventId eventId) {
