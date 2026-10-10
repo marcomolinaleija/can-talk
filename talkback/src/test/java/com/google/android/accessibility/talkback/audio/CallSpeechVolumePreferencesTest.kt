@@ -49,7 +49,9 @@ class CallSpeechVolumePreferencesTest {
     val screen = screen()
     val switch = screen.findPreference<SwitchPreferenceCompat>(CallSpeechVolumeController.ENABLED_KEY)!!
     val slider = screen.findPreference<SeekBarPreference>(CallSpeechVolumeController.PERCENT_KEY)!!
-    assertEquals("Estabilizar voz durante llamadas (experimental)", switch.title)
+    assertEquals("Estabilizar audio durante llamadas (experimental)", switch.title)
+    assertEquals("Volumen del lector durante llamadas (%)", slider.title)
+    assertTrue(slider.summary.toString().contains("voz y sonidos del lector"))
     assertFalse(switch.isChecked)
     assertFalse(slider.isEnabled)
     assertEquals(5, slider.min)
