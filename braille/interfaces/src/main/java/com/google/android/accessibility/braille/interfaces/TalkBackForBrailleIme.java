@@ -104,6 +104,18 @@ public interface TalkBackForBrailleIme {
 
   boolean isCurrentGranularityTypoCorrection();
 
+  /** Whether the keyboard's app-suggestion control is selected. */
+  default boolean isCurrentGranularitySuggestions() { return false; }
+
+  /** Reads the previous/next app suggestion without moving input focus. */
+  default boolean navigateSuggestion(boolean forward) { return false; }
+
+  /** Activates the explicitly selected suggestion; never submits the editor. */
+  default boolean confirmSuggestion() { return false; }
+
+  /** Cancels selection and any pending suggestion navigation. */
+  default void cancelSuggestionMode() {}
+
   /** Checks the status of the screen. */
   boolean isHideScreenMode();
 

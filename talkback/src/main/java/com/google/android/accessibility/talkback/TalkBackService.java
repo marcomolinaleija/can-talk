@@ -145,6 +145,7 @@ import com.google.android.accessibility.talkback.braille.BrailleHelper;
 import com.google.android.accessibility.talkback.braille.TalkBackForBrailleCommonImpl;
 import com.google.android.accessibility.talkback.braille.TalkBackForBrailleDisplayImpl;
 import com.google.android.accessibility.talkback.braille.TalkBackForBrailleImeImpl;
+import com.google.android.accessibility.talkback.braille.BrailleSuggestionsController;
 import com.google.android.accessibility.talkback.braille.TalkBackForBrailleImeImpl.TalkBackPrivateMethodProvider;
 import com.google.android.accessibility.talkback.compositor.Compositor;
 import com.google.android.accessibility.talkback.compositor.CompositorUtils;
@@ -677,6 +678,11 @@ public class TalkBackService extends AccessibilityServiceCompat
   private LocalMediaVolumeKeyHandler localMediaVolumeKeyHandler;
   private ClipboardHistoryController clipboardHistoryController;
   private BrailleAppSearchController brailleAppSearchController;
+  private BrailleSuggestionsController brailleSuggestionsController;
+
+  public BrailleSuggestionsController getBrailleSuggestionsController() {
+    return brailleSuggestionsController;
+  }
 
   /** {@link android.content.BroadcastReceiver} for tracking battery status changes. */
   private BatteryMonitor batteryMonitor;
@@ -916,6 +922,10 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onDestroy() {
+    if (brailleSuggestionsController != null) {
+      brailleSuggestionsController.clear();
+      brailleSuggestionsController = null;
+    }
     if (clipboardHistoryController != null) {
       clipboardHistoryController.shutdown();
       clipboardHistoryController = null;
@@ -1074,6 +1084,10 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onAccessibilityEvent(AccessibilityEvent event) {
+    if (brailleSuggestionsController != null &&
+        (PauseController.isPaused() || event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)) {
+      brailleSuggestionsController.clear();
+    }
     if (clipboardHistoryController != null) clipboardHistoryController.onAccessibilityEvent(event);
     if (brailleAppSearchController != null) brailleAppSearchController.onAccessibilityEvent(event);
     // Paused Backtalk drops events, except the end of a touch that started before the pause, so
@@ -2366,9 +2380,11 @@ public class TalkBackService extends AccessibilityServiceCompat
     clipboardHistoryController = new ClipboardHistoryController(
         this, pipeline.getFeedbackReturner(), accessibilityFocusMonitor);
     brailleAppSearchController = new BrailleAppSearchController(this, pipeline.getFeedbackReturner());
+    brailleSuggestionsController = BrailleSuggestionsController.forService(this, pipeline.getFeedbackReturner());
     ringerModeAndScreenMonitor.addScreenChangedListener((interactive, eventId) -> {
       if (!interactive && clipboardHistoryController != null) clipboardHistoryController.dismiss();
       if (!interactive && brailleAppSearchController != null) brailleAppSearchController.dismiss();
+      if (!interactive && brailleSuggestionsController != null) brailleSuggestionsController.clear();
     });
 
     callSpeechVolumeKeyHandler = new CallSpeechVolumeKeyHandler(this, percent ->
@@ -2416,6 +2432,7 @@ public class TalkBackService extends AccessibilityServiceCompat
             new PauseController.Host() {
               @Override
               public void stopForPause() {
+                if (brailleSuggestionsController != null) brailleSuggestionsController.clear();
                 if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
                 if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
                 if (menuManager != null) {
