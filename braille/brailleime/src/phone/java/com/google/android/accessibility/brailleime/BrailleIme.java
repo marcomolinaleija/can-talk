@@ -458,6 +458,7 @@ public class BrailleIme extends InputMethodService {
   @Override
   public void onFinishInputView(boolean finishingInput) {
     super.onFinishInputView(finishingInput);
+    BrailleImeTypingSounds.cancelPendingPreview();
     // Of the teardown methods, this is the most reliable, so we use it to deactivate.
     BrailleImeLog.d(TAG, "onFinishInputView");
     if (voiceInputManager != null) {
@@ -651,6 +652,7 @@ public class BrailleIme extends InputMethodService {
 
   private void deactivateBrailleIme() {
     BrailleImeLog.d(TAG, "deactivateBrailleIme");
+    BrailleImeTypingSounds.cancelPendingPreview();
     if (talkBackForBrailleIme != null) {
       talkBackForBrailleIme.onBrailleImeInactivated(Utils.useImeSuppliedInputWindow());
     }

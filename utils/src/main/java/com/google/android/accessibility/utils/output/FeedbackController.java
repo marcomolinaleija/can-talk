@@ -90,6 +90,9 @@ public class FeedbackController {
   /** The resources for this context. */
   private final Resources mResources;
 
+  /** Applies the reader's call adjustment to sounds without changing system volume. */
+  private final CallSpeechVolumeController mCallSoundVolume;
+
   /** The SoundPool instance for loading sounds and playing previously loaded sounds. */
   private SoundPool mSoundPool;
 
@@ -197,6 +200,7 @@ public class FeedbackController {
   public FeedbackController(Context context, SoundPool soundPool, Vibrator vibrator) {
     mContext = context;
     mResources = context.getResources();
+    mCallSoundVolume = new CallSpeechVolumeController(context);
     mSoundPool = soundPool;
     mVibrator = vibrator;
     parser = new HapticPatternParser(mVibrator);
@@ -459,7 +463,8 @@ public class FeedbackController {
       if (mSpatialSoundPlayer == null) {
         mSpatialSoundPlayer = new SpatialSoundPlayer(mContext);
       }
-      mSpatialSoundPlayer.play(resId, customSoundPath(resId), x, y, adjustedVolume);
+      mSpatialSoundPlayer.play(
+          resId, customSoundPath(resId), x, y, adjustCallSoundVolume(adjustedVolume));
     } else {
       // Full volume in the middle, fading out of the far speaker towards either edge.
       float pan = Math.max(-1f, Math.min(1f, (x - 0.5f) * 2));
@@ -473,7 +478,10 @@ public class FeedbackController {
 
   private void playFromPool(int resId, float rate, float leftVolume, float rightVolume) {
     @Nullable String path = customSoundPath(resId);
-    if (mLowLatencyAudio && playLowLatency(resId, path, rate, leftVolume, rightVolume)) {
+    float callScale = callSoundScale(leftVolume, rightVolume);
+    if (mLowLatencyAudio
+        && playLowLatency(
+            resId, path, rate, leftVolume * callScale, rightVolume * callScale)) {
       return;
     }
     int soundId = mSoundIds.get(resId);
@@ -485,20 +493,37 @@ public class FeedbackController {
     }
 
     if (soundId != 0) {
-      new EarconsPlayTask(mSoundPool, soundId, leftVolume, rightVolume, rate).execute();
+      new EarconsPlayTask(
+          mSoundPool, soundId, leftVolume * callScale, rightVolume * callScale, rate).execute();
     } else {
       // The sound could not be played from the cache. Start loading the sound into the
       // SoundPool for future use, and use a listener to play the sound ASAP.
       mSoundPool.setOnLoadCompleteListener(
           (soundPool, sampleId, status) -> {
             if (mAuditoryEnabled && sampleId != 0) {
-              new EarconsPlayTask(mSoundPool, sampleId, leftVolume, rightVolume, rate).execute();
+              // A load can finish after the call or its percentage has changed.
+              float currentScale = callSoundScale(leftVolume, rightVolume);
+              new EarconsPlayTask(
+                  mSoundPool, sampleId, leftVolume * currentScale, rightVolume * currentScale, rate)
+                  .execute();
             }
           });
       mSoundIds.put(
           resId, path != null ? mSoundPool.load(path, 1) : mSoundPool.load(mContext, resId, 1));
       mLoadedPaths.put(resId, path);
     }
+  }
+
+  private float adjustCallSoundVolume(float volume) {
+    int stream = sFeedbackAttributes.getUsage() == AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY
+        ? AudioManager.STREAM_ACCESSIBILITY : AudioManager.STREAM_MUSIC;
+    return mCallSoundVolume.adjust(volume, stream);
+  }
+
+  /** Uses a common scale for both channels so that call adjustment preserves panning. */
+  private float callSoundScale(float leftVolume, float rightVolume) {
+    float loudest = Math.max(leftVolume, rightVolume);
+    return loudest > 0f ? adjustCallSoundVolume(loudest) / loudest : 1f;
   }
 
   /**
@@ -641,6 +666,7 @@ public class FeedbackController {
    * should be made to this instance after calling this method.
    */
   public void shutdown() {
+    mCallSoundVolume.shutdown();
     mHapticFeedbackListeners.clear();
     mLowLatencyAudio = false;
     mDecoder.shutdownNow();

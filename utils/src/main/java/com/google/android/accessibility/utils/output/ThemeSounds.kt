@@ -79,4 +79,8 @@ object ThemeSounds {
       return true
     }
   }
+
+  /** The current file for a named sound, for players that need to amplify its PCM samples. */
+  @JvmStatic
+  fun pathFor(name: String): String? = synchronized(lock) { paths[name] }
 }

@@ -15,7 +15,7 @@ import androidx.core.content.ContextCompat;
 import com.google.android.accessibility.utils.SharedPreferencesUtils;
 import com.google.android.libraries.accessibility.utils.log.LogUtils;
 
-/** Adjusts only speech gain. Does not change any system stream, mode or audio route. */
+/** Adjusts reader audio gain. Does not change any system stream, mode or audio route. */
 public final class CallSpeechVolumeController {
   public static final String ENABLED_KEY = "pref_call_speech_volume_enabled";
   public static final String PERCENT_KEY = "pref_call_speech_volume_percent";
@@ -84,7 +84,7 @@ public final class CallSpeechVolumeController {
     return listener;
   }
 
-  /** Recomputed before each utterance, for engines, cached speech and low-latency playback alike. */
+  /** Recomputed for each utterance or sound, independently of the playback backend. */
   public float adjust(float normalGain, int speechStream) {
     if (!enabled || audioManager == null) {
       compensation.reset();

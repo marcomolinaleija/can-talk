@@ -3,9 +3,9 @@
   <string name="pref_call_speech_volume_enabled_key" translatable="false">pref_call_speech_volume_enabled</string>
   <string name="pref_call_speech_volume_percent_key" translatable="false">pref_call_speech_volume_percent</string>
   <integer name="pref_call_speech_volume_default">50</integer>
-  <string name="title_call_speech_volume_enabled">Stabilize voice during calls (experimental)</string>
-  <string name="summary_call_speech_volume_enabled">Tries to keep can-talk at a steady level when you change call volume. Voice starts quieter to leave room for compensation. Results depend on your phone and voice engine.</string>
-  <string name="title_call_speech_volume_percent">Voice volume during calls (%)</string>
-  <string name="summary_call_speech_volume_percent">Voice level during calls, from 5 to 100 %. Each 5-point step reduces voice more noticeably. During a call, hold a finger on the screen and press the volume buttons to adjust it. Changes apply to the next spoken phrase.</string>
-  <string name="call_speech_volume_announcement">Voice volume during the call: %1$d percent</string>
+  <string name="title_call_speech_volume_enabled">Stabilize audio during calls (experimental)</string>
+  <string name="summary_call_speech_volume_enabled">Tries to keep can-talk voice and feedback sounds at a steady level when you change call volume. Audio starts quieter to leave room for compensation. Results depend on your phone and voice engine.</string>
+  <string name="title_call_speech_volume_percent">Reader volume during calls (%)</string>
+  <string name="summary_call_speech_volume_percent">Voice and feedback sound level during calls, from 5 to 100 %. Each 5-point step reduces audio more noticeably. During a call, hold a finger on the screen and press the volume buttons to adjust it. Changes apply to the next spoken phrase and feedback sound.</string>
+  <string name="call_speech_volume_announcement">Reader volume during the call: %1$d percent</string>
 </resources>
