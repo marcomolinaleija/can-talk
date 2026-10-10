@@ -157,26 +157,61 @@ public class BrailleImeActor {
     return result;
   }
 
+  public boolean isCorrectionContext() {
+    return talkBackForBrailleIme.isCurrentGranularityTypoCorrection()
+        || talkBackForBrailleIme.isCurrentGranularitySuggestions();
+  }
+
   public boolean performAction(BrailleImeAction action) {
+    // Direct commands from a braille display retain their contextual meaning. Touch gestures
+    // instead call performAssignedAction so changing one assignment cannot change another action.
+    if (action != null && action == action.getRootAction() && isCorrectionContext()) {
+      for (BrailleImeAction candidate : BrailleImeAction.values()) {
+        if (candidate != action && candidate.getRootAction() == action) {
+          return performAssignedAction(candidate);
+        }
+      }
+    }
+    return performAssignedAction(action);
+  }
+
+  public boolean performAssignedAction(BrailleImeAction action) {
     if (action == null || !callback.isConnectionValid()) {
       return false;
     }
+    BrailleImeAction requestedAction = action;
     if (SupportedCommand.getSupportedCommands(context).stream()
-        .noneMatch(supportedCommand -> supportedCommand.getBrailleImeAction().equals(action))) {
+        .noneMatch(command -> command.getBrailleImeAction().equals(requestedAction))) {
       return false;
     }
     talkBackForBrailleIme.interruptSpeak();
-    // Consume suggestion commands before cursor/newline actions, including a vanished list.
-    if (talkBackForBrailleIme.isCurrentGranularitySuggestions()) {
-      if (action == MOVE_CURSOR_FORWARD || action == MOVE_CURSOR_BACKWARD) {
-        return talkBackForBrailleIme.navigateSuggestion(action == MOVE_CURSOR_FORWARD);
+    if (action != action.getRootAction()) {
+      if (!isCorrectionContext()) {
+        return false;
       }
-      if (action == ADD_NEWLINE) {
-        return talkBackForBrailleIme.confirmSuggestion();
+      BrailleImeAction correction = action.getRootAction();
+      if (talkBackForBrailleIme.isCurrentGranularitySuggestions()) {
+        return switch (correction) {
+          case MOVE_CURSOR_FORWARD, ADD_SPACE_OR_NEXT_ITEM ->
+              talkBackForBrailleIme.navigateSuggestion(true);
+          case MOVE_CURSOR_BACKWARD, DELETE_CHARACTER_OR_PREVIOUS_ITEM ->
+              talkBackForBrailleIme.navigateSuggestion(false);
+          case ADD_NEWLINE -> talkBackForBrailleIme.confirmSuggestion();
+          default -> false;
+        };
       }
-      if (action != NEXT_GRANULARITY && action != PREVIOUS_GRANULARITY) {
-        talkBackForBrailleIme.resetGranularity();
+      if (correction != MOVE_CURSOR_FORWARD && correction != MOVE_CURSOR_BACKWARD) {
+        talkBackForBrailleIme.focusInputField();
+        return performSpellingAction(correction);
       }
+      // Misspelled-word navigation uses the existing reading-control cursor path below,
+      // but only after selecting the independently assigned correction action.
+      action = correction;
+    } else if (isCorrectionContext()
+        && (BrailleImeGestureAction.hasCorrectionCounterpart(action)
+            || (talkBackForBrailleIme.isCurrentGranularitySuggestions()
+                && action != NEXT_GRANULARITY && action != PREVIOUS_GRANULARITY))) {
+      talkBackForBrailleIme.resetGranularity();
     }
     // Before the granularity checks below, which also depend on the focused node.
     talkBackForBrailleIme.focusInputField();
@@ -200,74 +235,38 @@ public class BrailleImeActor {
       case COPY -> performTextAction(imeConnection, ScreenReaderAction.COPY);
       case SUBMIT_TEXT -> submitText(imeConnection);
       case ADD_SPACE_OR_NEXT_ITEM -> {
-        if (talkBackForBrailleIme.isCurrentGranularityTypoCorrection()) {
-          if (!typoHandler.nextSuggestion()) {
-            BrailleCommonTalkBackSpeaker.getInstance()
-                .speak(
-                    context.getString(
-                        typoHandler.isGrammarMistake()
-                            ? R.string.no_grammar_suggestion_available_announcement
-                            : R.string.no_spelling_suggestion_available_announcement));
-          }
-        } else {
-          justAutoCapitalized = false;
-          callback.getEditBuffer().appendSpace(imeConnection);
-          if (BrailleUserPreferences.readAutoCapitalize(context)) {
-            CharSequence textBefore =
-                imeConnection.inputConnection != null
-                    ? imeConnection.inputConnection.getTextBeforeCursor(4, 0)
-                    : null;
-            if (textBefore != null && textBefore.toString().matches(".*\\.[ ]+$")) {
-              shouldCapitalize = true;
-            } else {
-              shouldCapitalize = false;
-            }
+        justAutoCapitalized = false;
+        callback.getEditBuffer().appendSpace(imeConnection);
+        if (BrailleUserPreferences.readAutoCapitalize(context)) {
+          CharSequence textBefore =
+              imeConnection.inputConnection != null
+                  ? imeConnection.inputConnection.getTextBeforeCursor(4, 0)
+                  : null;
+          if (textBefore != null && textBefore.toString().matches(".*\\.[ ]+$")) {
+            shouldCapitalize = true;
+          } else {
+            shouldCapitalize = false;
           }
         }
       }
       case ADD_NEWLINE -> {
-        if (talkBackForBrailleIme.isCurrentGranularityTypoCorrection()) {
-          result = typoHandler.confirmSuggestion();
-          if (!result) {
-            feedbackManager.emitFeedback(FeedbackManager.Type.NAVIGATE_OUT_OF_BOUNDS);
-          }
-        } else {
-          justAutoCapitalized = false;
-          callback.getEditBuffer().appendNewline(imeConnection);
-          if (BrailleUserPreferences.readAutoCapitalize(context)) {
-            shouldCapitalize = true;
-          }
+        justAutoCapitalized = false;
+        callback.getEditBuffer().appendNewline(imeConnection);
+        if (BrailleUserPreferences.readAutoCapitalize(context)) {
+          shouldCapitalize = true;
         }
       }
       case DELETE_CHARACTER_OR_PREVIOUS_ITEM -> {
-        if (talkBackForBrailleIme.isCurrentGranularityTypoCorrection()) {
-          if (!typoHandler.previousSuggestion()) {
-            BrailleCommonTalkBackSpeaker.getInstance()
-                .speak(
-                    context.getString(
-                        typoHandler.isGrammarMistake()
-                            ? R.string.no_grammar_suggestion_available_announcement
-                            : R.string.no_spelling_suggestion_available_announcement));
-          }
-        } else {
-          if (justAutoCapitalized) {
-            shouldCapitalize = false;
-            justAutoCapitalized = false;
-          }
-          callback.getEditBuffer().deleteCharacterBackward(imeConnection);
+        if (justAutoCapitalized) {
+          shouldCapitalize = false;
+          justAutoCapitalized = false;
         }
+        callback.getEditBuffer().deleteCharacterBackward(imeConnection);
       }
       case DELETE_WORD -> {
         justAutoCapitalized = false;
         shouldCapitalize = false;
-        if (talkBackForBrailleIme.isCurrentGranularityTypoCorrection()) {
-          result = typoHandler.undoConfirmSuggestion();
-          if (!result) {
-            feedbackManager.emitFeedback(FeedbackManager.Type.NAVIGATE_OUT_OF_BOUNDS);
-          }
-        } else {
-          callback.getEditBuffer().deleteWord(imeConnection);
-        }
+        callback.getEditBuffer().deleteWord(imeConnection);
       }
       case MOVE_CURSOR_FORWARD -> {
         justAutoCapitalized = false;
@@ -368,6 +367,29 @@ public class BrailleImeActor {
     return result;
   }
 
+  private boolean performSpellingAction(BrailleImeAction action) {
+    if (action == ADD_SPACE_OR_NEXT_ITEM || action == DELETE_CHARACTER_OR_PREVIOUS_ITEM) {
+      boolean moved = action == ADD_SPACE_OR_NEXT_ITEM
+          ? typoHandler.nextSuggestion() : typoHandler.previousSuggestion();
+      if (!moved) {
+        BrailleCommonTalkBackSpeaker.getInstance().speak(context.getString(
+            typoHandler.isGrammarMistake()
+                ? R.string.no_grammar_suggestion_available_announcement
+                : R.string.no_spelling_suggestion_available_announcement));
+      }
+      return true;
+    }
+    boolean result = switch (action) {
+      case ADD_NEWLINE -> typoHandler.confirmSuggestion();
+      case DELETE_WORD -> typoHandler.undoConfirmSuggestion();
+      default -> false;
+    };
+    if (!result) {
+      feedbackManager.emitFeedback(FeedbackManager.Type.NAVIGATE_OUT_OF_BOUNDS);
+    }
+    return result;
+  }
+
   /** Returns whether a backward delete would have no text to remove. */
   public boolean isNothingToDelete() {
     if (!callback.isConnectionValid()
@@ -405,9 +427,16 @@ public class BrailleImeActor {
 
   private void performTextAction(ImeConnection imeConnection, Runnable runnable) {
     EditBuffer editBuffer = callback.getEditBuffer();
-    if (editBuffer != null
-        && editBuffer.getHoldingsInfo(imeConnection).holdings().array().length != 0) {
+    boolean hasPendingHoldings = editBuffer != null
+        && editBuffer.getHoldingsInfo(imeConnection).holdings().array().length != 0;
+    // Uncontracted braille can retain a composing word even with no pending holdings.
+    // Finish it before selection, clipboard operations, hiding or changing the keyboard.
+    if (editBuffer != null) {
       editBuffer.commit(imeConnection);
+    } else {
+      imeConnection.inputConnection.finishComposingText();
+    }
+    if (hasPendingHoldings) {
       handler.post(runnable);
     } else {
       runnable.run();

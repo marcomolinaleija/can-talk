@@ -266,6 +266,7 @@ public abstract class BrailleInputPlane {
   abstract Size getInputViewCaptionScreenSize(Size screenSize);
 
   public void setTableTopMode(boolean isTableTopMode) {
+    cancelTouch();
     this.isTableTopMode = isTableTopMode;
     calibrationFailCount = 0;
     refresh();
@@ -281,6 +282,7 @@ public abstract class BrailleInputPlane {
   }
 
   public void setOptions(BrailleInputOptions options) {
+    cancelTouch();
     this.options = options;
     refresh();
   }
@@ -318,7 +320,10 @@ public abstract class BrailleInputPlane {
     if (!options.tutorialMode()) {
       dotCenters = readLayoutPoints(screenSize);
     }
-    if (dotCenters.isEmpty()) {
+    if (dotCenters.size() != options.brailleType().getDotCount()
+        || dotCenters.stream().anyMatch(point ->
+            point == null || !Float.isFinite(point.x) || !Float.isFinite(point.y))) {
+      // A damaged or mismatched saved calibration must not crash dot indexing/gesture capture.
       dotCenters = buildDotTargetCenters(screenSize);
       sortDotCenters(dotCenters);
     }
@@ -400,6 +405,7 @@ public abstract class BrailleInputPlane {
    * @param screenSize used as the height and width of the canvas
    */
   public void setOrientation(int orientation, Size screenSize) {
+    cancelTouch();
     this.orientation = orientation;
     this.sizeInPixels = screenSize;
     dotTargets = buildDotTargets(screenSize);
@@ -413,6 +419,12 @@ public abstract class BrailleInputPlane {
   /** Get the accumulation mode. See {@link MultitouchHandler#isAccumulationMode()}. */
   boolean isAccumulationMode() {
     return multitouchHandler.isAccumulationMode();
+  }
+
+  /** Drops touch history and pending callbacks before replacing or removing the input surface. */
+  void cancelTouch() {
+    multitouchHandler.cancel();
+    currentlyPressedDots.clear();
   }
 
   /**
@@ -494,10 +506,18 @@ public abstract class BrailleInputPlane {
         }
       }
       case MultitouchResult.TYPE_HOLD_AND_SWIPE -> {
+        Swipe swipe = touchResult.swipe;
+        if (swipe != null && swipe.getTouchCount() == 1
+            && touchResult.releasedPoints != null && !touchResult.releasedPoints.isEmpty()) {
+          Set<Integer> dots = matchTouchToTargetNumbers(touchResult.releasedPoints);
+          if (dots.size() == 1) {
+            swipe = new Swipe(swipe.getDirection(), 1, dots.iterator().next());
+          }
+        }
         return customOnGestureListener.detect(
             Optional.of(
                 createDotHoldAndSwipe(
-                    touchResult.swipe,
+                    swipe,
                     new BrailleCharacter(matchTouchToTargetNumbers(touchResult.heldPoints)))));
       }
       case MultitouchResult.TYPE_INVALID -> {
@@ -521,12 +541,14 @@ public abstract class BrailleInputPlane {
 
   /** Calibrates dots positions by two steps. */
   void calibrateByTwoSteps() {
+    cancelTouch();
     twoStepCalibrationState = STEP1;
     calibrationFailCount = 0;
   }
 
   /** Starts sequential dot calibration (dots 1 through 6). */
   public void startSequentialCalibration(@Nullable SequentialCalibrationListener listener) {
+    cancelTouch();
     this.sequentialCalibrationListener = listener;
     this.sequentialCalibrationDot = 1;
     this.sequentialCalibratedDots.clear();

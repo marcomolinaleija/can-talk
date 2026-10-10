@@ -218,6 +218,7 @@ public class BrailleInputView extends View
   private AutoPerformer autoPerformer;
   private BrailleInputOptions options;
   private boolean touchInteracting;
+  @Nullable private Boolean pendingTabletopMode;
   private CalibrationTriggeredType calibrationType;
 
   /**
@@ -303,6 +304,8 @@ public class BrailleInputView extends View
 
   @Override
   public void onViewDetachedFromWindow(View view) {
+    inputPlane.cancelTouch();
+    touchInteracting = false;
     if (inTwoStepCalibration()) {
       callback.onCalibrationFailed(calibrationType);
     }
@@ -318,6 +321,11 @@ public class BrailleInputView extends View
 
   /** Sets keyboard to table layout. */
   public void setTabletopMode(boolean enabled) {
+    if (touchInteracting) {
+      pendingTabletopMode = enabled;
+      return;
+    }
+    pendingTabletopMode = null;
     if (tabletopMode != enabled) {
       inputPlane.setTableTopMode(enabled);
       tabletopMode = enabled;
@@ -424,9 +432,12 @@ public class BrailleInputView extends View
   @Override
   @SuppressWarnings("ClickableViewAccessibility")
   public boolean onTouchEvent(MotionEvent event) {
-    updateTouchAction(event);
     // Decide at the start of each gesture, so a gesture is never turned partway through.
     if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+      touchInteracting = false;
+      if (pendingTabletopMode != null) {
+        setTabletopMode(pendingTabletopMode);
+      }
       updateTurnedAround();
       if (isPhone() && tabletopMode) {
         phoneTabletop.onTabletopTouch();
@@ -434,6 +445,10 @@ public class BrailleInputView extends View
         phoneTabletop.onScreenAwayTouch(
             layoutExpectsPortOnRight() != turnedAround, callback.wasHeldUprightInScreenAway());
       }
+    }
+    // Keep orientation frozen through processing ACTION_UP, not just through ACTION_MOVE.
+    if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+      touchInteracting = true;
     }
     boolean result;
     Matrix layoutToScreen = layoutToScreen();
@@ -447,6 +462,10 @@ public class BrailleInputView extends View
       result = inputPlane.onTouchEvent(turned);
       turned.recycle();
     }
+    if (event.getActionMasked() == MotionEvent.ACTION_UP
+        || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+      touchInteracting = false;
+    }
     invalidate();
     return result;
   }
@@ -459,6 +478,9 @@ public class BrailleInputView extends View
    * #updateQuarterTurns}.
    */
   private void updateTurnedAround() {
+    if (touchInteracting) {
+      return;
+    }
     if (!isPhone()) {
       turnedAround = false;
       updateQuarterTurns();
@@ -748,14 +770,6 @@ public class BrailleInputView extends View
   /** Whether sequential dot calibration is currently active. */
   public boolean isSequentialCalibrationActive() {
     return inputPlane.isSequentialCalibrationActive();
-  }
-
-  private void updateTouchAction(MotionEvent event) {
-    switch (event.getAction()) {
-      case MotionEvent.ACTION_DOWN -> touchInteracting = true;
-      case MotionEvent.ACTION_UP -> touchInteracting = false;
-      default -> {}
-    }
   }
 
   private boolean shouldPerformCalibrationAnimation(int type, int heldCount) {

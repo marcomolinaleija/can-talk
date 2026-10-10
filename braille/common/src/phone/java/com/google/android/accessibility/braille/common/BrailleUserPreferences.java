@@ -42,6 +42,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Ints;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.text.ParseException;
@@ -1200,8 +1201,19 @@ public class BrailleUserPreferences {
         getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
             .getString(context.getString(R.string.pref_bd_gesture_action_key), "");
     Type type = new TypeToken<HashMap<BrailleImeAction, List<String>>>() {}.getType();
-    Map<BrailleImeAction, List<String>> map = new Gson().fromJson(raw, type);
-    return map == null ? new HashMap<>() : map;
+    try {
+      Map<BrailleImeAction, List<String>> map = new Gson().fromJson(raw, type);
+      if (map == null) {
+        return new HashMap<>();
+      }
+      // Gson represents unknown enum names as null. Never pass them to gesture routing/UI.
+      map.entrySet().removeIf(entry -> entry.getKey() == null || entry.getValue() == null);
+      map.values().forEach(ids -> ids.removeIf(id -> id == null));
+      return map;
+    } catch (JsonParseException exception) {
+      // Keep the stored value untouched; damaged imports must not take down the keyboard.
+      return new HashMap<>();
+    }
   }
 
   /** Writes whether to show change gesture intro again. */

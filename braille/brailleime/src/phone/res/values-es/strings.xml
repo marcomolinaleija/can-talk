@@ -72,6 +72,7 @@
   <string name="gesture_swipe_dot">Deslizar punto %1$d hacia %2$s</string>
   <string name="gesture_swipe_dot_multiple_fingers">Deslizar punto %1$d hacia %2$s con %3$s dedos</string>
   <string name="gesture_hold_and_swipe_one_finger">Mantén pulsado %1$s y, después, desliza hacia %2$s con otro dedo desde cualquier lugar</string>
+  <string name="gesture_hold_and_swipe_dot">Mantén pulsado %1$s y desliza el punto %2$s hacia %3$s</string>
   <string name="gesture_hold_and_swipe_multiple_finger">Mantén pulsado %1$s y, después, desliza hacia %2$s con %3$s dedo desde cualquier punto</string>
   <string name="gesture1_or_gesture2">%1$s o %2$s</string>
   <string name="review_gesture_format">%1$s: %2$s</string>

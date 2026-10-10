@@ -438,6 +438,15 @@ public class Utils {
    * <p>If the list contains multiple gestures, the first gesture will be returned.
    */
   public static String getCombinedGestureDescription(Context context, List<Gesture> gestures) {
+    if (gestures.size() > 1 && gestures.get(0) instanceof DotHoldSwipe
+        && gestures.stream().anyMatch(gesture -> gesture.getSwipe().hasSwipedDot())) {
+      // Mirroring also changes the moving dot; merging only the held dots would describe
+      // combinations that were never assigned.
+      return context.getString(
+          R.string.gesture1_or_gesture2,
+          gestures.get(0).getDescription(context.getResources()),
+          gestures.get(1).getDescription(context.getResources()));
+    }
     StringBuilder sb = new StringBuilder();
     if (gestures.size() > 1 && gestures.get(0) instanceof DotHoldSwipe) {
       Collections.sort(gestures, Comparator.comparingInt(lhs -> lhs.getHeldDots().toInt()));
