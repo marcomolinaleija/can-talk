@@ -1566,9 +1566,9 @@ No uses lenguaje de marcado en tu respuesta.</string>
   <string name="title_pref_backup_restore">Copia de seguridad y restauración</string>
   <string name="summary_pref_backup_restore">Crea o restaura una copia de seguridad de la configuración y los gestos</string>
   <string name="title_pref_backup_export">Crear copia de seguridad</string>
-  <string name="summary_pref_backup_export">Exportar toda la configuración y los gestos a un archivo</string>
+  <string name="summary_pref_backup_export">Elegir qué ajustes, gestos y datos guardar en un archivo</string>
   <string name="title_pref_backup_import">Restaurar copia de seguridad</string>
-  <string name="summary_pref_backup_import">Importar la configuración y los gestos desde un archivo</string>
+  <string name="summary_pref_backup_import">Elegir qué áreas encontradas en una copia quieres restaurar</string>
   <string name="dialog_title_confirm_restore">¿Restaurar configuración y gestos?</string>
   <string name="dialog_message_confirm_restore">La configuración actual y los gestos asignados se reemplazarán con los datos de la copia de seguridad. Los cambios se aplicarán de inmediato.</string>
   <string name="dialog_button_restore">Restaurar</string>

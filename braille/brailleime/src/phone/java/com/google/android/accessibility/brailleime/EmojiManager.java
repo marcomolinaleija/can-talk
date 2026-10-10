@@ -162,6 +162,11 @@ public class EmojiManager {
     return list;
   }
 
+  public void reloadAfterBackup() {
+    exitEmojiModeSilently();
+    loadFavorites();
+  }
+
   private void loadFavorites() {
     favorites.clear();
     SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);

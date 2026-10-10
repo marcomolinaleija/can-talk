@@ -46,12 +46,24 @@ class ClipboardHistoryController(
   private var ownCopy: String? = null
   private var originWindowId: Int? = null
   private var backCaptured = false
+  private var restoringBackup = false
   private val listener = ClipboardManager.OnPrimaryClipChangedListener { capture() }
   val isShowing: Boolean get() = view != null
 
   init {
     clipboard.addPrimaryClipChangedListener(listener)
     capture()
+  }
+
+  fun beginBackupRestore() {
+    restoringBackup = true
+    dismiss()
+  }
+
+  fun finishBackupRestore() {
+    store = null
+    items = emptyList()
+    restoringBackup = false
   }
 
   private fun history(): ClipboardHistoryStore? {
@@ -63,6 +75,7 @@ class ClipboardHistoryController(
   }
 
   private fun capture() {
+    if (restoringBackup) return
     if (ScreenMonitor.isDeviceLocked(service)) return
     val history = history() ?: return
     try {

@@ -4178,9 +4178,9 @@ Do not use any markdown in your response."</string>
   <string name="title_pref_backup_restore">Backup and restore</string>
   <string name="summary_pref_backup_restore">Back up or restore all settings and gestures</string>
   <string name="title_pref_backup_export">Create backup</string>
-  <string name="summary_pref_backup_export">Export all TalkBack settings and gestures to a file</string>
+  <string name="summary_pref_backup_export">Choose which settings, gestures and data to save to a file</string>
   <string name="title_pref_backup_import">Restore backup</string>
-  <string name="summary_pref_backup_import">Import TalkBack settings and gestures from a file</string>
+  <string name="summary_pref_backup_import">Choose which areas found in a copy to restore</string>
   <string name="dialog_title_confirm_restore">Restore settings and gestures?</string>
   <string name="dialog_message_confirm_restore">Your current settings and gestures will be replaced with the data from the selected backup file. TalkBack will apply the restored configuration immediately.</string>
   <string name="dialog_button_restore">Restore</string>

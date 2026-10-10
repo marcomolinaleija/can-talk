@@ -17,6 +17,9 @@
 package com.google.android.accessibility.talkback.labeling;
 
 import android.content.ContentProvider;
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
+import android.content.OperationApplicationException;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
@@ -32,6 +35,7 @@ import com.google.android.accessibility.talkback.BuildConfig;
 import com.google.android.accessibility.utils.labeling.LabelsTable;
 import com.google.android.libraries.accessibility.utils.log.LogUtils;
 import java.util.Locale;
+import java.util.ArrayList;
 
 /**
  * A content provider for accessing TalkBack custom label data.
@@ -77,6 +81,24 @@ public class LabelProvider extends ContentProvider {
   @Override
   public boolean onCreate() {
     return true;
+  }
+
+  /** A backup's label merge is one transaction, including expected-row-count failures. */
+  @Override
+  public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations)
+      throws OperationApplicationException {
+    if (!UserManagerCompat.isUserUnlocked(getContext())) {
+      throw new OperationApplicationException("User storage is locked");
+    }
+    initializeDatabaseIfNull();
+    database.beginTransaction();
+    try {
+      ContentProviderResult[] results = super.applyBatch(operations);
+      database.setTransactionSuccessful();
+      return results;
+    } finally {
+      database.endTransaction();
+    }
   }
 
   @Override
@@ -343,7 +365,7 @@ public class LabelProvider extends ContentProvider {
    *
    * <p>Note: the database is automatically cleaned up by the kernel when the process terminates.
    */
-  private void initializeDatabaseIfNull() {
+  private synchronized void initializeDatabaseIfNull() {
     if (database == null) {
       database = new LabelsDatabaseOpenHelper(getContext()).getWritableDatabase();
     }

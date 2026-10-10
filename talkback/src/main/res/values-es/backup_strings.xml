@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 can-talk contributors. SPDX-License-Identifier: Apache-2.0 -->
+<resources>
+  <string name="backup_export_selection_info">Elige las áreas que quieres guardar. Solo se exportarán las marcadas. La contraseña es opcional, salvo si incluyes la clave de API o el historial del portapapeles.</string>
+  <string name="backup_import_selection_info">Elige qué áreas restaurar. Solo los valores presentes en las áreas marcadas reemplazarán los valores correspondientes; se conserva lo que no aparece o no seleccionaste. El lector puede reiniciarse brevemente para aplicar ajustes de inicio.</string>
+  <string name="backup_exclusions">Las copias no incluyen permisos de Android, servicios habilitados, el teclado predeterminado, motores de voz instalados, modelos de IA descargados ni cachés temporales. Instala los motores y descarga los modelos por separado.</string>
+  <string name="backup_legacy_warning">Esta copia antigua solo contiene preferencias del lector, no los ajustes braille guardados por separado. Puede contener una clave de API sin protección. Solo se pueden restaurar las áreas encontradas abajo.</string>
+  <string name="backup_sensitive_warning">La clave de API y el portapapeles no se marcan de forma predeterminada y requieren contraseña al exportarse. Otros ajustes, instrucciones de IA y etiquetas también pueden incluir textos privados. Protege las copias que compartas. No se puede recuperar una contraseña olvidada.</string>
+  <string name="backup_calibration_warning">La calibración de puntos no se marca de forma predeterminada. Restáurala solo en el mismo dispositivo y disposición; en otra pantalla, vuelve a calibrar los puntos.</string>
+  <string name="backup_select_all">Seleccionar todo</string>
+  <string name="backup_encrypt">Proteger toda la copia con una contraseña</string>
+  <string name="backup_password">Contraseña de la copia</string>
+  <string name="backup_password_confirm">Confirmar contraseña</string>
+  <string name="backup_password_length">Usa una contraseña de entre 8 y 256 caracteres.</string>
+  <string name="backup_password_mismatch">Las contraseñas no coinciden.</string>
+  <string name="backup_password_import_info">Introduce la contraseña con la que protegiste esta copia. No se importará nada hasta desbloquearla, elegir las áreas y confirmar.</string>
+  <string name="backup_unlock">Desbloquear copia</string>
+  <string name="backup_export_button">Exportar áreas seleccionadas</string>
+  <string name="backup_choose_one">Selecciona al menos un área.</string>
+  <string name="backup_nothing">No hay datos portátiles para guardar.</string>
+  <string name="backup_item_count">%1$s (%2$d elementos guardados)</string>
+  <string name="backup_error_interrupted">La operación se interrumpió. Vuelve a elegir las áreas; no se escribió una copia diferente.</string>
+  <string name="backup_error_too_large">La copia supera el límite de tamaño o de memoria disponible. Selecciona menos áreas. Límites: 128 MB por copia, 64 MB de archivos de temas y 5 MB por archivo de sonido.</string>
+  <string name="backup_error_password_required">Esta copia necesita protección con contraseña para sus datos privados.</string>
+  <string name="backup_error_password_wrong">Contraseña incorrecta o copia cifrada dañada. No se importó nada.</string>
+  <string name="backup_error_type_mismatch">Un ajuste tiene un tipo de datos incompatible. No se importó nada.</string>
+  <string name="backup_error_locked">Desbloquea el dispositivo antes de guardar o restaurar datos privados.</string>
+  <string name="backup_error_recovery">No se pudo terminar la recuperación. No desinstales la app ni borres sus datos. Reintenta desde Copia de seguridad y restauración; los datos anteriores se conservan en un registro privado de recuperación.</string>
+  <string name="backup_restarting">Restauración terminada. Reiniciando el lector para aplicar ajustes de inicio. La voz puede detenerse brevemente.</string>
+  <string name="backup_runtime_failed">Se restauró la copia, pero no se pudieron recargar todos los componentes activos. Reinicia el lector para aplicar todos los cambios.</string>
+  <string name="backup_category_settings">Ajustes del lector, voz, audio, traducción e IA</string>
+  <string name="backup_category_reader_gestures">Gestos táctiles y del sensor de huellas del lector</string>
+  <string name="backup_category_keyboard_shortcuts">Atajos del teclado físico</string>
+  <string name="backup_category_braille_settings">Ajustes del teclado y de la línea braille</string>
+  <string name="backup_category_braille_gestures">Gestos del teclado braille</string>
+  <string name="backup_category_calibration">Calibración de los puntos braille</string>
+  <string name="backup_category_api_keys">Clave personal de API de Gemini</string>
+  <string name="backup_category_emoji">Emojis favoritos</string>
+  <string name="backup_category_clipboard">Historial y favoritos del portapapeles</string>
+  <string name="backup_category_labels">Etiquetas de accesibilidad personalizadas</string>
+  <string name="backup_category_themes">Temas de sonido, archivos de audio y licencias</string>
+</resources>

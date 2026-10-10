@@ -791,6 +791,7 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   private @Nullable SpeechCacheController speechCacheController;
   private @Nullable Boolean useServiceGestureDetection;
+  private boolean backupRestoreInProgress;
   private LanguageActor languageActor;
   // In general, volume key should work as pass through mode, unless the touch interaction is
   // ongoing or in continuous reading mode. isTouchInteracting denotes the occurrence of key
@@ -1765,6 +1766,7 @@ public class TalkBackService extends AccessibilityServiceCompat
     primesController.startTimer(TimerAction.START_UP);
 
     SharedPreferencesUtils.migrateSharedPreferences(this);
+    recoverInterruptedBackup();
     prefs = SharedPreferencesUtils.getSharedPreferences(this);
 
     if (FeatureFlagReader.usePeriodAsSeparator(getBaseContext())) {
@@ -3250,6 +3252,25 @@ public class TalkBackService extends AccessibilityServiceCompat
     reloadPreferences(null);
   }
 
+  /** Suppresses reader reconfiguration between a restore commit and its possible rollback. */
+  public void beginBackupRestore() {
+    backupRestoreInProgress = true;
+    if (clipboardHistoryController != null) clipboardHistoryController.beginBackupRestore();
+  }
+
+  /** Reloads live owners; startup-only settings are applied by the controlled process restart. */
+  public void finishBackupRestore() {
+    backupRestoreInProgress = false;
+    if (clipboardHistoryController != null) clipboardHistoryController.finishBackupRestore();
+    if (!isServiceActive()) return;
+    PreparedFocusSpeech.clear();
+    reloadPreferences();
+    if (keyComboManager != null) keyComboManager.refreshKeyComboModel();
+    Intent labelsChanged = new Intent(CustomLabelManager.ACTION_REFRESH_LABEL_CACHE);
+    labelsChanged.setPackage(getPackageName());
+    sendBroadcast(labelsChanged);
+  }
+
   // TODO: handle the needed preference changes for the specified keys.
   /**
    * Reloads service preferences by the specified key change. If the key is null, it would reload
@@ -4001,6 +4022,7 @@ public class TalkBackService extends AccessibilityServiceCompat
   /** Reloads preferences whenever their values change. */
   private final OnSharedPreferenceChangeListener sharedPreferenceChangeListener =
       (prefs, key) -> {
+        if (backupRestoreInProgress) return;
         LogUtils.d(TAG, "A shared preference changed: %s", key);
         // The prepared announcements may have been worked out with the setting as it was, such as
         // a verbosity setting changed from the reading controls.
@@ -4037,6 +4059,10 @@ public class TalkBackService extends AccessibilityServiceCompat
   }
 
   public void onUnlockedBootCompleted() {
+    if (recoverInterruptedBackup() && prefs != null) {
+      reloadPreferences();
+      if (keyComboManager != null) keyComboManager.refreshKeyComboModel();
+    }
     // Update TTS and allow announcement.
     // If the TTS changes here, it is probably a non-FBE TTS that is available after the user
     // unlocks their phone. In this case, the user heard Google TTS at the lock screen, so we
@@ -4053,6 +4079,17 @@ public class TalkBackService extends AccessibilityServiceCompat
 
     if (imageCaptioner != null) {
       imageCaptioner.onUnlockedBoot();
+    }
+  }
+
+  /** Recovery precedes configuration reads, and never disables accessibility to restart the app. */
+  private boolean recoverInterruptedBackup() {
+    try {
+      return com.google.android.accessibility.talkback.backup.SelectiveBackup.recoverPending(this);
+    } catch (Exception exception) {
+      // Do not log journal contents or exception messages containing private preference values.
+      LogUtils.e(TAG, "Interrupted backup recovery could not finish; retry from backup settings.");
+      return false;
     }
   }
 
