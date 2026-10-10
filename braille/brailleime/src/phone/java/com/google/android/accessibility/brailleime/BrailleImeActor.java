@@ -140,6 +140,9 @@ public class BrailleImeActor {
       return null;
     }
     talkBackForBrailleIme.interruptSpeak();
+    if (talkBackForBrailleIme.isCurrentGranularitySuggestions()) {
+      talkBackForBrailleIme.resetGranularity();
+    }
     if (talkBackForBrailleIme.isCurrentGranularityTypoCorrection()) {
       talkBackForBrailleIme.resetGranularity();
     }
@@ -163,6 +166,18 @@ public class BrailleImeActor {
       return false;
     }
     talkBackForBrailleIme.interruptSpeak();
+    // Consume suggestion commands before cursor/newline actions, including a vanished list.
+    if (talkBackForBrailleIme.isCurrentGranularitySuggestions()) {
+      if (action == MOVE_CURSOR_FORWARD || action == MOVE_CURSOR_BACKWARD) {
+        return talkBackForBrailleIme.navigateSuggestion(action == MOVE_CURSOR_FORWARD);
+      }
+      if (action == ADD_NEWLINE) {
+        return talkBackForBrailleIme.confirmSuggestion();
+      }
+      if (action != NEXT_GRANULARITY && action != PREVIOUS_GRANULARITY) {
+        talkBackForBrailleIme.resetGranularity();
+      }
+    }
     // Before the granularity checks below, which also depend on the focused node.
     talkBackForBrailleIme.focusInputField();
     ImeConnection imeConnection = callback.getImeConnection();
@@ -174,10 +189,12 @@ public class BrailleImeActor {
       case TOGGLE_ORIENTATION_LOCK -> callback.toggleOrientationLock();
       case VOICE_INPUT -> callback.startVoiceInput();
       case TOGGLE_EMOJI_MODE -> callback.toggleEmojiMode();
-      case NEXT_GRANULARITY ->
-          performTextAction(imeConnection, ScreenReaderAction.NEXT_READING_CONTROL);
-      case PREVIOUS_GRANULARITY ->
-          performTextAction(imeConnection, ScreenReaderAction.PREVIOUS_READING_CONTROL);
+      case NEXT_GRANULARITY, PREVIOUS_GRANULARITY -> {
+        // Clear even an uncontracted composing word before WhatsApp inserts its own mention.
+        callback.getEditBuffer().commit(imeConnection);
+        performTextAction(imeConnection, action == NEXT_GRANULARITY
+            ? ScreenReaderAction.NEXT_READING_CONTROL : ScreenReaderAction.PREVIOUS_READING_CONTROL);
+      }
       case PASTE -> performTextAction(imeConnection, ScreenReaderAction.PASTE);
       case CUT -> performTextAction(imeConnection, ScreenReaderAction.CUT);
       case COPY -> performTextAction(imeConnection, ScreenReaderAction.COPY);

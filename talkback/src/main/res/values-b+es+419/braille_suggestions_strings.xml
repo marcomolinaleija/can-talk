@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="braille_suggestions_control">Sugerencias</string>
+  <string name="braille_suggestions_result">%1$s. %2$d de %3$d sugerencias visibles</string>
+  <string name="braille_suggestions_unavailable">La sugerencia ya no está disponible</string>
+  <string name="braille_suggestions_choose">Primero elige una sugerencia</string>
+  <string name="braille_suggestions_failed">No se pudo insertar la mención</string>
+  <string name="braille_suggestions_edge">No hay más sugerencias en esta dirección</string>
+  <string name="braille_suggestions_inserted">Mención insertada</string>
+</resources>

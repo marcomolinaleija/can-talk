@@ -123,6 +123,64 @@ public class BrailleImeSubmitTest {
     assertEquals("a. B", fixture.editor.getText().toString());
   }
 
+  @Test
+  public void suggestionNavigationAndConfirmationDoNotEditOrSendTheDraft() {
+    Fixture fixture = new Fixture(false);
+    fixture.editor.setText("@");
+    fixture.suggestions = true;
+    assertTrue(fixture.actor.performAction(BrailleImeAction.MOVE_CURSOR_FORWARD));
+    assertTrue(fixture.actor.performAction(BrailleImeAction.MOVE_CURSOR_BACKWARD));
+    assertEquals(Arrays.asList(true, false), fixture.suggestionMoves);
+    assertTrue(fixture.actor.performAction(BrailleImeAction.ADD_NEWLINE));
+    shadowOf(Looper.getMainLooper()).idle();
+    assertEquals(1, fixture.confirmationCount);
+    assertEquals("@", fixture.editor.getText().toString());
+    assertTrue(fixture.sent.isEmpty());
+    assertEquals(0, fixture.hideCount);
+  }
+
+  @Test
+  public void typingLeavesSuggestionsAndAppendsToTheDraft() {
+    Fixture fixture = new Fixture(false);
+    fixture.editor.setText("@");
+    fixture.editor.setSelection(1);
+    fixture.suggestions = true;
+    fixture.actor.performTyping(new BrailleCharacter("1"));
+    assertTrue(!fixture.suggestions);
+    assertEquals("@a", fixture.editor.getText().toString());
+    assertEquals(0, fixture.confirmationCount);
+    assertTrue(fixture.sent.isEmpty());
+  }
+
+  @Test
+  public void submitKeepsItsUsualActionAndLeavesSuggestions() {
+    Fixture fixture = new Fixture(false);
+    fixture.editor.setText("Draft");
+    fixture.suggestions = true;
+    assertTrue(fixture.actor.performAction(BrailleImeAction.SUBMIT_TEXT));
+    shadowOf(Looper.getMainLooper()).idle();
+    assertTrue(!fixture.suggestions);
+    assertEquals(Arrays.asList("Draft"), fixture.sent);
+    assertEquals(0, fixture.confirmationCount);
+  }
+
+  @Test
+  public void enteringControlsClearsComposingWordBeforeExternalMentionInsertion() {
+    Fixture fixture = new Fixture(false);
+    fixture.editor.setText("@");
+    fixture.editor.setSelection(1);
+    fixture.actor.performTyping(new BrailleCharacter("1"));
+    assertEquals("@a", fixture.editor.getText().toString());
+    fixture.actor.performAction(BrailleImeAction.NEXT_GRANULARITY);
+    shadowOf(Looper.getMainLooper()).idle();
+    // Simulate the editor's own mention insertion after its row was activated.
+    fixture.editor.setText("@Ana ");
+    fixture.editor.setSelection(fixture.editor.length());
+    fixture.actor.performTyping(new BrailleCharacter("12"));
+    assertEquals("@Ana b", fixture.editor.getText().toString());
+    assertTrue(fixture.sent.isEmpty());
+  }
+
   private static final class Fixture implements BrailleImeActor.Callback {
     final EditText editor;
     final ImeConnection imeConnection;
@@ -131,6 +189,9 @@ public class BrailleImeSubmitTest {
     final List<String> sent = new ArrayList<>();
     boolean acceptSend = true;
     int hideCount;
+    boolean suggestions;
+    int confirmationCount;
+    final List<Boolean> suggestionMoves = new ArrayList<>();
 
     Fixture(boolean contracted) {
       this(contracted, false);
@@ -167,7 +228,15 @@ public class BrailleImeSubmitTest {
               Proxy.newProxyInstance(
                   TalkBackForBrailleIme.class.getClassLoader(),
                   new Class<?>[] {TalkBackForBrailleIme.class},
-                  (proxy, method, args) -> method.getReturnType() == boolean.class ? false : null);
+                  (proxy, method, args) -> {
+                    switch (method.getName()) {
+                      case "isCurrentGranularitySuggestions": return suggestions;
+                      case "navigateSuggestion": suggestionMoves.add((Boolean) args[0]); return true;
+                      case "confirmSuggestion": confirmationCount++; suggestions = false; return true;
+                      case "resetGranularity": suggestions = false; return null;
+                      default: return method.getReturnType() == boolean.class ? false : null;
+                    }
+                  });
       actor = new BrailleImeActor(context, this, talkBack, null);
     }
 

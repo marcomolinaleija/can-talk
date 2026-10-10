@@ -1502,6 +1502,20 @@ public class SelectorController implements UserInputEventListener {
     return getFilteredSettings().contains(setting);
   }
 
+  /** Available keyboard controls in the same order as the reader's selector. */
+  public List<Setting> getAvailableBrailleKeyboardSettings(java.util.Set<Setting> validSettings) {
+    List<Setting> settings = new java.util.ArrayList<>();
+    for (Setting setting : getFilteredSettings()) {
+      if (validSettings.contains(setting)) settings.add(setting);
+    }
+    return settings;
+  }
+
+  /** Selects a keyboard control with its name, without a visual overlay or gesture hint. */
+  public boolean selectBrailleKeyboardSetting(Setting setting) {
+    return selectSetting(setting, AnnounceType.DESCRIPTION, false);
+  }
+
   /**
    * Filter settings based on device and the focused node. Filter out the settings turned off by
    * users in selector preferences.
