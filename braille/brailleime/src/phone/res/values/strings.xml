@@ -569,6 +569,7 @@
   <string name="emoji_mode_switched_off">Text mode</string>
   <string name="emoji_category_switched">%1$s. Row %2$c: %3$s</string>
   <string name="emoji_row_switched">Row %1$c: %2$s</string>
+  <string name="emoji_row_empty">Row %1$c empty</string>
   <string name="emoji_item_focused">%1$s, row %2$c, position %3$d</string>
   <string name="emoji_added_to_favorites">%s added to favorites</string>
   <string name="emoji_removed_from_favorites">%s removed from favorites</string>

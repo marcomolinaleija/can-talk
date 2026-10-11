@@ -234,6 +234,7 @@
   <string name="emoji_mode_switched_off">Modo texto</string>
   <string name="emoji_category_switched">%1$s. Fila %2$c: %3$s</string>
   <string name="emoji_row_switched">Fila %1$c: %2$s</string>
+  <string name="emoji_row_empty">Fila %1$c vacía</string>
   <string name="emoji_item_focused">%1$s, fila %2$c, posición %3$d</string>
   <string name="emoji_added_to_favorites">%s se agregó a favoritos</string>
   <string name="emoji_removed_from_favorites">%s se eliminó de favoritos</string>

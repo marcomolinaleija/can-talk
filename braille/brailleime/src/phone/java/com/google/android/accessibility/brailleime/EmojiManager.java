@@ -481,18 +481,24 @@ public class EmojiManager {
       return "";
     }
     int end = Math.min(start + MAX_COLUMNS, list.size());
+    char rowLetter = getRowLetter(row);
     StringBuilder sb = new StringBuilder();
     for (int i = start; i < end; i++) {
       if (sb.length() > 0) {
-        sb.append(", ");
+        sb.append(". ");
       }
-      sb.append(list.get(i));
+      int pos = (i - start) + 1;
+      sb.append(context.getString(R.string.emoji_item_focused, list.get(i), rowLetter, pos));
     }
     return sb.toString();
   }
 
   private void announceCategory() {
     String catName = getCategoryLabel(currentCategory);
+    if (currentCategory == FAVORITES_CATEGORY_INDEX && favorites.isEmpty()) {
+      speak(catName + ". " + context.getString(R.string.emoji_favorites_empty));
+      return;
+    }
     char rowLetter = getRowLetter(currentRow);
     String rowPreview = getRowPreview(currentCategory, currentRow);
     String announcement =
@@ -509,15 +515,15 @@ public class EmojiManager {
 
   private void announceFocusedEmoji() {
     String emoji = getSelectedEmoji();
+    char rowLetter = getRowLetter(currentRow);
     if (emoji == null) {
       if (currentCategory == FAVORITES_CATEGORY_INDEX && favorites.isEmpty()) {
         speak(context.getString(R.string.emoji_favorites_empty));
       } else {
-        announceRow();
+        speak(context.getString(R.string.emoji_row_empty, rowLetter));
       }
       return;
     }
-    char rowLetter = getRowLetter(currentRow);
     int pos = currentSelected + 1;
     String announcement = context.getString(R.string.emoji_item_focused, emoji, rowLetter, pos);
     speak(announcement);
