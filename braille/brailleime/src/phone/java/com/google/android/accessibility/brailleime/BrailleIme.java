@@ -1576,12 +1576,6 @@ public class BrailleIme extends InputMethodService {
 
         @Override
         public boolean onSwipeProduced(Swipe swipe) {
-          if (emojiManager != null && emojiManager.isEmojiModeActive()) {
-            if (swipe.getDirection() == Swipe.Direction.LEFT && swipe.getTouchCount() == 1) {
-              emojiManager.exitEmojiMode();
-              return true;
-            }
-          }
           if (brailleImeGestureController.performSwipeAction(swipe)) {
             showOnBrailleDisplay();
             if (!brailleDisplayConnectedAndNotSuspended) {
