@@ -269,7 +269,7 @@ public class LibLouis implements TranslatorFactory {
         return getBrailleTranslator(
             contractedMode,
             new LibLouisTranslatorSpanish(context),
-            new LibLouisTranslator(context, "es-g2.ctb"));
+            new LibLouisTranslatorSpanish(context, "es-g2.ctb"));
       }
       case "SPANISH_COMP8" -> {
         return new LibLouisTranslator(context, "Es-Es-G0.utb");

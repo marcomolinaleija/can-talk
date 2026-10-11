@@ -139,7 +139,7 @@ math        \x007D        456-2               }                   RIGHT CURLY BR
 # ----------------------------------------------------------------------------------------------
 
 sign        \x0080        456-15              €                   <control> - ANSI: EURO-CURRENCY SIGN - MACROMAN: A DIAERESIS
-punctuation \x0085        3-3-3               …                   <control> NEXT LINE (NEL) - ANSI: HORIZONTAL ELLIPSIS - MACROMAN: O DIAERESIS
+noback punctuation \x0085        3-3-3               …                   <control> NEXT LINE (NEL) - ANSI: HORIZONTAL ELLIPSIS - MACROMAN: O DIAERESIS
 sign        \x0089        456-356-356         ‰                   <control> CHARACTER TABULATION WITH JUSTIFICATION - ANSI: PER MILLE SIGN - MACROMAN: A CIRCUMFLEX
 punctuation \x0097        36-36               —                   <control> END OF GUARDED AREA - ANSI: EM DASH - MACROMAN: O ACUTE
 sign        \x00A2        45-14               ¢                   CENT SIGN
@@ -193,7 +193,8 @@ lowercase   \x03C9        4-2456              ω                   GREEK SMALL L
 
 punctuation \x2014        36-36               —                   EM DASH
 punctuation \x2015        36-36               ―                   HORIZONTAL BAR
-punctuation \x2026        3-3-3               …                   HORIZONTAL ELLIPSIS
+always      ...           3-3-3
+noback punctuation \x2026        3-3-3               …                   HORIZONTAL ELLIPSIS
 
 
 # ----------------------------------------------------------------------------------------------

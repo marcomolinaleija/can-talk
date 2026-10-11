@@ -18,6 +18,7 @@ package com.google.android.accessibility.braille.translate.liblouis;
 
 import android.content.Context;
 import com.google.android.accessibility.braille.interfaces.BrailleCharacter;
+import com.google.android.accessibility.braille.interfaces.BrailleWord;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -25,8 +26,29 @@ import java.util.Map;
 public class LibLouisTranslatorSpanish extends LibLouisTranslator {
 
   public LibLouisTranslatorSpanish(Context context) {
-    super(context, "es.tbl");
+    this(context, "es.tbl");
+  }
+
+  public LibLouisTranslatorSpanish(Context context, String tableName) {
+    super(context, tableName);
     setupCommutativityReplacementMap();
+    setupBypassMap();
+  }
+
+  private void setupBypassMap() {
+    getBypassMap()
+        .put(
+            new BrailleWord(
+                new BrailleCharacter(3), new BrailleCharacter(3), new BrailleCharacter(3)),
+            "...");
+    getBypassMap()
+        .put(
+            new BrailleWord(
+                new BrailleCharacter(3),
+                new BrailleCharacter(3),
+                new BrailleCharacter(3),
+                new BrailleCharacter(3)),
+            "....");
   }
 
   private void setupCommutativityReplacementMap() {
@@ -58,6 +80,17 @@ public class LibLouisTranslatorSpanish extends LibLouisTranslator {
   @Override
   protected String transformPostTranslation(String translation) {
     if (translation.length() > 0) {
+      if (translation.contains("\u2026")) {
+        translation = translation.replace("\u2026", "...");
+      }
+      if (translation.contains("\u0085")) {
+        translation = translation.replace("\u0085", "...");
+      }
+      if (translation.endsWith("..'")) {
+        translation = translation.substring(0, translation.length() - 3) + "...";
+      } else if (translation.endsWith(".'")) {
+        translation = translation.substring(0, translation.length() - 2) + "..";
+      }
       char char0 = translation.charAt(0);
       // If the translation begins with an invertible punctuation character, invert that character
       // in accordance with Spanish orthographic custom.
