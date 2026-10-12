@@ -746,12 +746,9 @@ public class BrailleInputView extends View
     return DotsOrientation.heldPortOnRight(callback.getScreenAwayOrientation());
   }
 
-  /** Calibrates dots positions. */
+  /** Calibrates dots positions. In TalkBack this was two steps; now redirects to ABK sequential calibration. */
   public void calibrateByTwoSteps() {
-    inputPlane.calibrateByTwoSteps();
-    calibrationType = CalibrationTriggeredType.MANUAL;
-    callback.onCalibration(CalibrationTriggeredType.MANUAL, FingersPattern.NO_FINGERS);
-    invalidate();
+    startSequentialCalibration(null);
   }
 
   /** Starts sequential dot calibration (dots 1 through 6). */
@@ -810,33 +807,7 @@ public class BrailleInputView extends View
       }
       return processed;
     } else if (result.type == MultitouchResult.TYPE_CALIBRATION_HOLD) {
-      if (result.pointersHeldCount == 5) {
-        calibrationType = CalibrationTriggeredType.FIVE_FINGERS;
-        return callback.onCalibration(calibrationType, FingersPattern.FIVE_FINGERS);
-      } else if (result.pointersHeldCount == 6) {
-        calibrationType = CalibrationTriggeredType.SIX_FINGERS;
-        return callback.onCalibration(calibrationType, FingersPattern.SIX_FINGERS);
-      } else if (result.pointersHeldCount == 7) {
-        calibrationType = CalibrationTriggeredType.SEVEN_FINGERS;
-        return callback.onCalibration(calibrationType, FingersPattern.SEVEN_FINGERS);
-      } else if (result.pointersHeldCount == 8) {
-        calibrationType = CalibrationTriggeredType.EIGHT_FINGERS;
-        return callback.onCalibration(calibrationType, FingersPattern.EIGHT_FINGERS);
-      } else if (result.pointersHeldCount == 3) {
-        return callback.onCalibration(
-            calibrationType,
-            result.isLeft
-                ? FingersPattern.FIRST_THREE_FINGERS
-                : FingersPattern.REMAINING_THREE_FINGERS);
-      } else if (result.pointersHeldCount == 4) {
-        return callback.onCalibration(
-            calibrationType,
-            result.isLeft
-                ? FingersPattern.FIRST_FOUR_FINGERS
-                : FingersPattern.REMAINING_FOUR_FINGERS);
-      } else {
-        callback.onCalibrationFailed(calibrationType);
-      }
+      return false;
     } else if (result.type == MultitouchResult.TYPE_HOLD) {
       return callback.onHoldProduced(result.pointersHeldCount);
     } else if (result.type == MultitouchResult.TYPE_HOLD_AND_SWIPE) {

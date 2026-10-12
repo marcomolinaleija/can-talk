@@ -651,8 +651,9 @@ public class BrailleIme extends InputMethodService {
       }
     } else {
       if (tutorialState == State.ROTATE_ORIENTATION
-          || tutorialState == State.ROTATE_ORIENTATION_CONTINUE) {
-        tutorialState = State.HOLD_6_FINGERS;
+          || tutorialState == State.ROTATE_ORIENTATION_CONTINUE
+          || tutorialState == State.HOLD_6_FINGERS) {
+        tutorialState = State.TYPE_LETTER_A;
       }
     }
     keyboardView.createAndAddTutorialView(tutorialState, tutorialCallback);
@@ -1598,9 +1599,7 @@ public class BrailleIme extends InputMethodService {
         @Override
         public boolean isCalibrationHoldRecognized(
             boolean inTwoStepCalibration, int pointersHeldCount) {
-          return isSixDotCalibration(pointersHeldCount)
-              || isEightDotCalibration(pointersHeldCount)
-              || (inTwoStepCalibration && isConfirmedTwoStepCalibration(pointersHeldCount));
+          return false;
         }
 
         @Override

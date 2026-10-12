@@ -170,8 +170,7 @@ public final class BrailleAppSearchInput extends FrameLayout implements BrailleI
   @Override public OrientationMonitor.Orientation getScreenAwayOrientation() { return heldOrientation; }
 
   @Override public boolean isCalibrationHoldRecognized(boolean twoStep, int count) {
-    int dots = input.getBrailleDotCount();
-    return count >= 5 && count <= dots || twoStep && count == dots / 2;
+    return false;
   }
 
   @Override public boolean onCalibration(CalibrationTriggeredType type, FingersPattern fingers) {

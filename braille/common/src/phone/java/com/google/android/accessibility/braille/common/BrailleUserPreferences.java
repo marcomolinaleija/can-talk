@@ -537,6 +537,14 @@ public class BrailleUserPreferences {
         .apply();
   }
 
+  /** Sets that tutorial will launch when Braille keyboard opens next time. */
+  public static void writeLaunchTutorialNextTime(Context context) {
+    getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
+        .edit()
+        .putBoolean(context.getString(R.string.pref_brailleime_auto_launch_tutorial), true)
+        .apply();
+  }
+
   /** Returns true if it's the first use of Braille keyboard. */
   public static boolean shouldLaunchTutorial(Context context) {
     return getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)

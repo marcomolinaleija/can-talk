@@ -404,7 +404,7 @@ public abstract class KeyboardView {
     if (brailleInputView == null) {
       return;
     }
-    brailleInputView.calibrateByTwoSteps();
+    brailleInputView.startSequentialCalibration(null);
   }
 
   /** Starts sequential dot calibration (dots 1 through 6). */

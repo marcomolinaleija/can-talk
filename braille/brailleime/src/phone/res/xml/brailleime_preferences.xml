@@ -5,6 +5,16 @@
   <PreferenceCategory android:key="@string/pref_brailleime_preferences_category">
 
     <Preference
+        android:key="@string/pref_brailleime_instruction"
+        android:summary="@string/summary_pref_brailleime_instruction"
+        android:title="@string/title_pref_brailleime_instruction" />
+
+    <Preference
+        android:key="@string/pref_brailleime_interactive_tutorial"
+        android:summary="@string/summary_pref_brailleime_interactive_tutorial"
+        android:title="@string/title_pref_brailleime_interactive_tutorial" />
+
+    <Preference
         android:key="@string/pref_brailleime_turn_on_braille_keyboard"
         android:title="@string/set_up_braille_keyboard" />
 
