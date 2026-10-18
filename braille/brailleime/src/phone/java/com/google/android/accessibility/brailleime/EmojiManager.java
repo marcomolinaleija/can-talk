@@ -18,6 +18,7 @@ package com.google.android.accessibility.brailleime;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.UserManager;
 import android.text.TextUtils;
 import android.view.inputmethod.InputConnection;
 import androidx.annotation.NonNull;
@@ -124,6 +125,7 @@ public class EmojiManager {
   private final Context context;
   private final List<List<String>> categories = new ArrayList<>(TOTAL_CATEGORIES);
   private final List<String> favorites = new ArrayList<>();
+  private boolean favoritesLoaded = false;
   private boolean isEmojiMode = false;
   private int currentCategory = 0;
   private int currentRow = 0;
@@ -167,31 +169,58 @@ public class EmojiManager {
     loadFavorites();
   }
 
+  private boolean isUserUnlocked() {
+    UserManager userManager = context.getSystemService(UserManager.class);
+    return userManager == null || userManager.isUserUnlocked();
+  }
+
+  private void ensureFavoritesLoaded() {
+    if (!favoritesLoaded && isUserUnlocked()) {
+      loadFavorites();
+    }
+  }
+
   private void loadFavorites() {
     favorites.clear();
-    SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-    String raw = prefs.getString(KEY_FAVORITES, "");
-    if (!TextUtils.isEmpty(raw)) {
-      String[] parts = raw.split("\n");
-      for (String p : parts) {
-        String trimmed = p.trim();
-        if (!trimmed.isEmpty()) {
-          favorites.add(trimmed);
+    if (!isUserUnlocked()) {
+      favoritesLoaded = false;
+      return;
+    }
+    try {
+      SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+      favoritesLoaded = true;
+      String raw = prefs.getString(KEY_FAVORITES, "");
+      if (!TextUtils.isEmpty(raw)) {
+        String[] parts = raw.split("\n");
+        for (String p : parts) {
+          String trimmed = p.trim();
+          if (!trimmed.isEmpty()) {
+            favorites.add(trimmed);
+          }
         }
       }
+    } catch (IllegalStateException e) {
+      favoritesLoaded = false;
     }
   }
 
   private void saveFavorites() {
-    SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-    StringBuilder sb = new StringBuilder();
-    for (String fav : favorites) {
-      if (sb.length() > 0) {
-        sb.append("\n");
-      }
-      sb.append(fav);
+    if (!isUserUnlocked()) {
+      return;
     }
-    prefs.edit().putString(KEY_FAVORITES, sb.toString()).apply();
+    try {
+      SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+      StringBuilder sb = new StringBuilder();
+      for (String fav : favorites) {
+        if (sb.length() > 0) {
+          sb.append("\n");
+        }
+        sb.append(fav);
+      }
+      prefs.edit().putString(KEY_FAVORITES, sb.toString()).apply();
+    } catch (IllegalStateException e) {
+      BrailleCommonLog.w(TAG, "Could not save favorite emojis while locked: " + e.getMessage());
+    }
   }
 
   public boolean isEmojiModeActive() {
@@ -207,6 +236,7 @@ public class EmojiManager {
   }
 
   public void enterEmojiMode(@Nullable InputConnection inputConnection) {
+    ensureFavoritesLoaded();
     isEmojiMode = true;
     currentCategory = 0;
     currentRow = 0;
@@ -419,6 +449,7 @@ public class EmojiManager {
   }
 
   public void toggleFavorite() {
+    ensureFavoritesLoaded();
     String emoji = getSelectedEmoji();
     if (emoji == null) {
       return;
@@ -447,6 +478,9 @@ public class EmojiManager {
   }
 
   private List<String> getCurrentCategoryList() {
+    if (currentCategory == FAVORITES_CATEGORY_INDEX) {
+      ensureFavoritesLoaded();
+    }
     if (currentCategory >= 0 && currentCategory < categories.size()) {
       return categories.get(currentCategory);
     }
@@ -469,6 +503,9 @@ public class EmojiManager {
   }
 
   private String getRowPreview(int categoryIndex, int row) {
+    if (categoryIndex == FAVORITES_CATEGORY_INDEX) {
+      ensureFavoritesLoaded();
+    }
     if (categoryIndex < 0 || categoryIndex >= categories.size()) {
       return "";
     }
@@ -494,6 +531,9 @@ public class EmojiManager {
   }
 
   private void announceCategory() {
+    if (currentCategory == FAVORITES_CATEGORY_INDEX) {
+      ensureFavoritesLoaded();
+    }
     String catName = getCategoryLabel(currentCategory);
     if (currentCategory == FAVORITES_CATEGORY_INDEX && favorites.isEmpty()) {
       speak(catName + ". " + context.getString(R.string.emoji_favorites_empty));
@@ -572,6 +612,7 @@ public class EmojiManager {
 
   @VisibleForTesting
   public List<String> getFavorites() {
+    ensureFavoritesLoaded();
     return Collections.unmodifiableList(favorites);
   }
 

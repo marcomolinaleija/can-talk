@@ -34,6 +34,7 @@ public final class CallSpeechVolumeController {
   private final CallSpeechVolume compensation = new CallSpeechVolume();
   private volatile boolean enabled;
   private volatile int percent;
+  private boolean closed;
   private Object modeListener;
   private int previousMode = AudioManager.MODE_NORMAL;
   private float previousGain = Float.NaN;
@@ -157,10 +158,24 @@ public final class CallSpeechVolumeController {
   }
 
   public void shutdown() {
+    if (closed) {
+      return;
+    }
+    closed = true;
     prefs.unregisterOnSharedPreferenceChangeListener(preferenceListener);
-    context.unregisterReceiver(phoneStateReceiver);
+    try {
+      context.unregisterReceiver(phoneStateReceiver);
+    } catch (IllegalArgumentException e) {
+      // Already unregistered.
+    }
     if (modeListener != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-      audioManager.removeOnModeChangedListener((AudioManager.OnModeChangedListener) modeListener);
+      try {
+        audioManager.removeOnModeChangedListener(
+            (AudioManager.OnModeChangedListener) modeListener);
+      } catch (IllegalArgumentException e) {
+        // Already removed.
+      }
+      modeListener = null;
     }
     compensation.reset();
   }

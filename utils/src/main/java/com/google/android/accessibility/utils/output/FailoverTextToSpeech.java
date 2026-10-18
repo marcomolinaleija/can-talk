@@ -760,16 +760,26 @@ public class FailoverTextToSpeech {
     }
   }
 
+  private boolean isShutdown;
+
   /**
    * Unregisters receivers, observers, and shuts down the text-to-speech engine. No calls should be
    * made to this object after calling this method.
    */
   public void shutdown() {
+    if (isShutdown) {
+      return;
+    }
+    isShutdown = true;
     callSpeechVolume.shutdown();
     // The player outlives this engine, so speech it holds or waits for must not block the next.
     releaseLowLatencyAudio();
     allowDeviceSleep();
-    context.unregisterReceiver(mediaStateMonitor);
+    try {
+      context.unregisterReceiver(mediaStateMonitor);
+    } catch (IllegalArgumentException e) {
+      // Already unregistered.
+    }
     unregisterGoogleTtsFixCallbacks();
     mHandler.removeCallbacksAndMessages(null);
 

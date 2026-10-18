@@ -662,11 +662,17 @@ public class FeedbackController {
     VIBRATION_EXECUTOR.execute(mVibrator::cancel);
   }
 
+  private boolean mIsShutdown;
+
   /**
    * Releases all resources held by the feedback controller and clears the shared instance. No calls
    * should be made to this instance after calling this method.
    */
   public void shutdown() {
+    if (mIsShutdown) {
+      return;
+    }
+    mIsShutdown = true;
     mCallSoundVolume.shutdown();
     mHapticFeedbackListeners.clear();
     mLowLatencyAudio = false;

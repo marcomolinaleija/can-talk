@@ -20,8 +20,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.SharedPreferences;
+import android.os.UserManager;
 import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.InputConnection;
@@ -252,5 +256,36 @@ public class EmojiManagerTest {
     // Toggle again removes from favorites
     emojiManager.onBrailleProduced(new BrailleCharacter("36"), null);
     assertFalse(emojiManager.getFavorites().contains("😀"));
+  }
+
+  @Test
+  public void testDirectBootLockedDoesNotAccessCredentialPreferencesAndLoadsAfterUnlock() {
+    context
+        .getSharedPreferences("braille_emoji_preferences", Context.MODE_PRIVATE)
+        .edit()
+        .putString("user_favorite_emojis", "🔥\n⭐")
+        .commit();
+
+    UserManager userManager = context.getSystemService(UserManager.class);
+    shadowOf(userManager).setUserUnlocked(false);
+
+    Context directBootGuardContext =
+        new ContextWrapper(context) {
+          @Override
+          public SharedPreferences getSharedPreferences(String name, int mode) {
+            if (!userManager.isUserUnlocked()) {
+              throw new IllegalStateException(
+                  "SharedPreferences in credential encrypted storage are not available until after"
+                      + " user is unlocked");
+            }
+            return super.getSharedPreferences(name, mode);
+          }
+        };
+
+    EmojiManager lockedManager = new EmojiManager(directBootGuardContext);
+    assertTrue(lockedManager.getFavorites().isEmpty());
+
+    shadowOf(userManager).setUserUnlocked(true);
+    assertEquals(Arrays.asList("🔥", "⭐"), lockedManager.getFavorites());
   }
 }

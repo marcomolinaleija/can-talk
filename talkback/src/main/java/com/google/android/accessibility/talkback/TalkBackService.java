@@ -1114,7 +1114,18 @@ public class TalkBackService extends AccessibilityServiceCompat
       brailleSuggestionsController.clear();
     }
     if (clipboardHistoryController != null) clipboardHistoryController.onAccessibilityEvent(event);
-    if (brailleAppSearchController != null) brailleAppSearchController.onAccessibilityEvent(event);
+    if (brailleAppSearchController != null) {
+      brailleAppSearchController.onAccessibilityEvent(event);
+      if (brailleAppSearchController.isShowing()) {
+        int modalEventType = event.getEventType();
+        if (modalEventType == AccessibilityEvent.TYPE_TOUCH_INTERACTION_START) {
+          isTouchInteracting = true;
+        } else if (modalEventType == AccessibilityEvent.TYPE_TOUCH_INTERACTION_END) {
+          isTouchInteracting = false;
+        }
+        return;
+      }
+    }
     // Paused Backtalk drops events, except the end of a touch that started before the pause, so
     // that nothing still thinks a finger is down after resuming. Its feedback is dropped too.
     if (PauseController.isPaused()
@@ -1679,6 +1690,13 @@ public class TalkBackService extends AccessibilityServiceCompat
     passThroughModeActor.setOverlayTouchRegion(region);
     if (FeatureSupport.supportPassthrough()) {
       setGestureDetectionPassthroughRegion(Display.DEFAULT_DISPLAY, region == null ? new Region() : region);
+    }
+    if (proximitySensorMonitor != null) {
+      if (region != null) {
+        proximitySensorMonitor.setSilenceOnProximity(false);
+      } else {
+        proximitySensorMonitor.reloadSilenceOnProximity();
+      }
     }
   }
 
