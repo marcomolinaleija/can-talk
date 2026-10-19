@@ -28,19 +28,22 @@ import java.util.List;
  */
 public class OcrInfo {
 
-  public final AccessibilityNodeInfoCompat node;
+  @Nullable public final AccessibilityNodeInfoCompat node;
   @Nullable public List<TextBlock> textBlocks;
 
-  public OcrInfo(AccessibilityNodeInfoCompat node) {
+  public OcrInfo(@Nullable AccessibilityNodeInfoCompat node) {
     this.node = node;
   }
 
+  @Nullable
   public AccessibilityNodeInfoCompat getNode() {
     return node;
   }
 
   public void getBoundsInScreenForOcr(Rect bounds) {
-    node.getBoundsInScreen(bounds);
+    if (node != null) {
+      node.getBoundsInScreen(bounds);
+    }
   }
 
   public void setTextBlocks(@Nullable List<TextBlock> textBlocks) {

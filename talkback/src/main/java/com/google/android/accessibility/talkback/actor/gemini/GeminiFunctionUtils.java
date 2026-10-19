@@ -680,14 +680,16 @@ public class GeminiFunctionUtils {
 
     SharedPreferences prefs = SharedPreferencesUtils.getSharedPreferences(context);
 
-    if (node == null) {
-      return null;
-    }
     if (SharedPreferencesUtils.getBooleanPref(
-        prefs,
-        context.getResources(),
-        R.string.pref_opt_in_screen_overview_key,
-        R.bool.pref_opt_in_screen_overview_default)) {
+            prefs,
+            context.getResources(),
+            R.string.pref_opt_in_screen_overview_key,
+            R.bool.pref_opt_in_screen_overview_default)
+        || SharedPreferencesUtils.getBooleanPref(
+            prefs,
+            context.getResources(),
+            R.string.pref_detailed_image_description_key,
+            R.bool.pref_detailed_image_description_default)) {
       return Feedback.performScreenOverview(node);
     } else {
       return Feedback.performGeminiOptInForScreenOverview(node);
