@@ -45,6 +45,9 @@ android {
         debug {
             debuggable = false
             signingConfig signingConfigs.shared
+            // Shrinks and optimizes the libraries, so there is less code to load and compile.
+            minifyEnabled = true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         release {
             signingConfig signingConfigs.shared
