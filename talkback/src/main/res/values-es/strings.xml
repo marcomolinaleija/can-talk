@@ -101,6 +101,8 @@
   <string name="reset_latency_settings_title">Restablecer todos los ajustes de latencia</string>
   <string name="title_pref_single_tap">Activar con solo un toque</string>
   <string name="summary_pref_single_tap">Toca una vez un elemento enfocado para activarlo. Es una forma de navegar más rápida que dar dos toques.</string>
+  <string name="title_pref_volume_keys_adjust_sliders">Ajustar controles deslizantes con teclas de volumen</string>
+  <string name="summary_pref_volume_keys_adjust_sliders">Cuando un control deslizante tiene el foco, las teclas para subir y bajar el volumen cambian su valor en lugar del volumen</string>
   <string name="pref_verbosity_title">Verbosidad</string>
   <string name="pref_punctuation_title">Decir símbolos y signos de puntuación</string>
   <string name="title_pref_category_manage_focus_indicator">Cambiar indicador de enfoque</string>
