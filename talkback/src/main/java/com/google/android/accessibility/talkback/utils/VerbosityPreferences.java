@@ -88,6 +88,21 @@ public class VerbosityPreferences {
     }
   }
 
+  /** Reads whether passwords should be spoken aloud in password fields. */
+  public static boolean shouldSpeakPasswords(SharedPreferences preferences, Resources resources) {
+    return getPreferenceValueBool(
+        preferences,
+        resources,
+        resources.getString(R.string.pref_speak_passwords_key),
+        resources.getBoolean(R.bool.pref_speak_passwords_default));
+  }
+
+  /** Reads whether passwords should be spoken aloud in password fields. */
+  public static boolean shouldSpeakPasswords(Context context) {
+    return shouldSpeakPasswords(
+        SharedPreferencesUtils.getSharedPreferences(context), context.getResources());
+  }
+
   /** Reads echo type of physical keyboard. */
   @KeyboardEchoType
   public static int readPhysicalKeyboardEcho(SharedPreferences prefs, Resources resources) {

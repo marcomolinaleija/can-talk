@@ -106,4 +106,9 @@ public class CallSpeechVolumeControllerTest {
     audio.setMode(AudioManager.MODE_IN_CALL);
     assertEquals(0.2f, gain(), 0.00001f);
   }
+
+  @Test public void shutdown_isIdempotent() {
+    controller.shutdown();
+    controller.shutdown();
+  }
 }

@@ -397,6 +397,9 @@ public class ImageCaptioner extends Handler
                     .putBoolean(
                         context.getString(R.string.pref_opt_in_screen_overview_key),
                         buttonClicked == DialogInterface.BUTTON_POSITIVE)
+                    .putBoolean(
+                        context.getString(R.string.pref_detailed_image_description_key),
+                        buttonClicked == DialogInterface.BUTTON_POSITIVE)
                     .apply();
                 analytics.onScreenOverviewOptInEvent(
                     buttonClicked == DialogInterface.BUTTON_POSITIVE
@@ -409,9 +412,6 @@ public class ImageCaptioner extends Handler
 
           @Override
           public void handleDialogDismiss() {
-            if (nodeToBeDetailDescribed == null) {
-              return;
-            }
             if (SharedPreferencesUtils.getBooleanPref(
                 prefs,
                 context.getResources(),
@@ -613,7 +613,7 @@ public class ImageCaptioner extends Handler
   @VisibleForTesting
   void shutdownIconDetector() {
     removeMessages(MSG_RESULT_TIMEOUT);
-    captionResults.cleanUp();
+    abandonCaptionResults();
 
     if (iconAnnotationsDetector != null) {
       synchronized (this) {
@@ -689,6 +689,8 @@ public class ImageCaptioner extends Handler
   }
 
   public void shutdown() {
+    // Ends all requests, so that results that come later are ignored.
+    clearRequests();
     shutdownIconDetector();
     shutdownImageDescription();
     moduleStateManager.shutdown();
@@ -927,8 +929,9 @@ public class ImageCaptioner extends Handler
             service,
             node,
             this::onScreenshotCapturePending,
-            (focusedNode, screenCapture, isUserRequested, captureByWindow) -> {
+            (request, focusedNode, screenCapture, isUserRequested, captureByWindow) -> {
               processImageCaptioningWithGemini(
+                  request,
                   focusedNode,
                   screenCapture,
                   isUserRequested,
@@ -946,12 +949,24 @@ public class ImageCaptioner extends Handler
       return false;
     }
 
+    @Nullable
+    AccessibilityNodeInfoCompat windowNode =
+        node != null ? node : AccessibilityServiceCompatUtils.getRootInActiveWindow(service);
     ScreenshotCaptureRequest screenshotCaptureRequest =
         new ScreenshotCaptureRequest(
             service,
-            node,
+            windowNode,
             this::onScreenshotCapturePending,
-            this::processScreenDescription,
+            (request, focusedNode, screenCapture, isUserRequested, captureByWindow) -> {
+              processImageCaptioningWithGemini(
+                  request,
+                  /* focusedNode= */ null,
+                  screenCapture,
+                  /* isUserRequested= */ true,
+                  /* captureByWindow= */ false,
+                  /* isToAiCore= */ false,
+                  /* isScreenDescription= */ true);
+            },
             /* isUserRequested= */ true);
     screenshotRequests.addRequest(screenshotCaptureRequest);
     return true;
@@ -969,8 +984,9 @@ public class ImageCaptioner extends Handler
             service,
             node,
             this::onScreenshotCapturePending,
-            (focusedNode, screenCapture, isUserRequested, captureByWindow) -> {
+            (request, focusedNode, screenCapture, isUserRequested, captureByWindow) -> {
               processImageCaptioningWithGemini(
+                  request,
                   focusedNode,
                   screenCapture,
                   isUserRequested,
@@ -983,13 +999,32 @@ public class ImageCaptioner extends Handler
   }
 
   private void processImageCaptioningWithGemini(
+      ScreenshotCaptureRequest request,
       AccessibilityNodeInfoCompat focusedNode,
       Bitmap screenCapture,
       boolean isUserRequested,
       boolean captureByWindow,
       boolean isToAiCore) {
+    processImageCaptioningWithGemini(
+        request,
+        focusedNode,
+        screenCapture,
+        isUserRequested,
+        captureByWindow,
+        isToAiCore,
+        /* isScreenDescription= */ false);
+  }
+
+  private void processImageCaptioningWithGemini(
+      ScreenshotCaptureRequest request,
+      @Nullable AccessibilityNodeInfoCompat focusedNode,
+      Bitmap screenCapture,
+      boolean isUserRequested,
+      boolean captureByWindow,
+      boolean isToAiCore,
+      boolean isScreenDescription) {
     if (screenCapture == null) {
-      handleScreenshotCaptureFailure(isUserRequested);
+      handleScreenshotCaptureFailure(request, isUserRequested);
       return;
     }
 
@@ -1002,9 +1037,11 @@ public class ImageCaptioner extends Handler
             captureByWindow);
     CaptionResult captionResult =
         new CaptionResult(
+            request,
             AccessibilityNode.takeOwnership(focusedNode),
             isUserRequested,
-            /* isImageDescriptionByGemini= */ true);
+            /* isImageDescriptionByGemini= */ true,
+            isScreenDescription);
     captionResults.addResultAndCleanOldOnes(requestId, captionResult, isUserRequested);
     // For Bitmap recycle.
     captionResult.addUsedScreenshot(screens.croppedScreenCapture());
@@ -1015,7 +1052,9 @@ public class ImageCaptioner extends Handler
 
     boolean hasCaptionRequest = false;
     CaptionNodeType captionNodeType =
-        getCaptionNodeType(service, focusedNode, /* needSizeCheck= */ false);
+        focusedNode == null
+            ? CaptionNodeType.IMAGE
+            : getCaptionNodeType(service, focusedNode, /* needSizeCheck= */ false);
     // Text recognition
     if (isUserRequested || needAutomaticTextRecognition(service, prefs, captionNodeType)) {
       addCaptionRequest(requestId, focusedNode, screens.croppedScreenCapture(), isUserRequested);
@@ -1027,6 +1066,8 @@ public class ImageCaptioner extends Handler
 
     // Icon detection
     if (iconAnnotationsDetector != null
+        && focusedNode != null
+        && !isScreenDescription
         && (isUserRequested || needAutomaticIconDetection(service, prefs, captionNodeType))) {
       addIconDetectionRequest(
           requestId, focusedNode, screens.blockedScreenCapture(), isUserRequested);
@@ -1038,11 +1079,12 @@ public class ImageCaptioner extends Handler
 
     // Image description with Gemini
     if (isUserRequested
-        || needAutomaticImageDescription(
-            service,
-            prefs,
-            getCaptionNodeType(service, focusedNode, /* needSizeCheck= */ true),
-            /* hasAiCore= */ true)) {
+        || (focusedNode != null
+            && needAutomaticImageDescription(
+                service,
+                prefs,
+                getCaptionNodeType(service, focusedNode, /* needSizeCheck= */ true),
+                /* hasAiCore= */ true))) {
       if (isToAiCore) {
         pipeline.returnFeedback(
             EVENT_ID_UNTRACKED,
@@ -1066,21 +1108,22 @@ public class ImageCaptioner extends Handler
       return;
     }
 
-    screenshotRequests.performNextRequest();
+    screenshotRequests.performNextRequest(request);
   }
 
   private void processScreenDescription(
+      ScreenshotCaptureRequest request,
       AccessibilityNodeInfoCompat focusedNode,
       Bitmap screenCapture,
       boolean isUserRequested,
       boolean captureByWindow) {
     if (screenCapture == null) {
-      handleScreenshotCaptureFailure(isUserRequested);
+      handleScreenshotCaptureFailure(request, isUserRequested);
       return;
     }
     byte[] imageBytes = DataFieldUtils.encodeImageToByteArray(screenCapture);
     if (imageBytes == null) {
-      handleScreenshotCaptureFailure(isUserRequested);
+      handleScreenshotCaptureFailure(request, isUserRequested);
       return;
     }
 
@@ -1092,7 +1135,7 @@ public class ImageCaptioner extends Handler
       screenCapture.recycle();
     }
 
-    screenshotRequests.performNextRequest();
+    screenshotRequests.performNextRequest(request);
   }
 
   /**
@@ -1304,12 +1347,13 @@ public class ImageCaptioner extends Handler
 
   @VisibleForTesting
   void handleScreenshotCaptureResponse(
+      ScreenshotCaptureRequest request,
       AccessibilityNodeInfoCompat node,
       @Nullable Bitmap screenCapture,
       boolean isUserRequested,
       boolean captureByWindow) {
     if (screenCapture == null) {
-      handleScreenshotCaptureFailure(isUserRequested);
+      handleScreenshotCaptureFailure(request, isUserRequested);
       return;
     }
 
@@ -1320,6 +1364,7 @@ public class ImageCaptioner extends Handler
       if (!isUserRequested) {
         LogUtils.v(TAG, "onScreenCaptureFinish(): auto-caption with Gemini");
         processImageCaptioningWithGemini(
+            request,
             node,
             screenCapture,
             /* isUserRequested= */ false,
@@ -1341,7 +1386,7 @@ public class ImageCaptioner extends Handler
             captureByWindow);
 
     CaptionResult captionResult =
-        new CaptionResult(AccessibilityNode.takeOwnership(node), isUserRequested);
+        new CaptionResult(request, AccessibilityNode.takeOwnership(node), isUserRequested);
     captionResults.addResultAndCleanOldOnes(requestId, captionResult, isUserRequested);
     // For Bitmap recycle.
     captionResult.addUsedScreenshot(screens.blockedScreenCapture());
@@ -1409,10 +1454,15 @@ public class ImageCaptioner extends Handler
     }
 
     LogUtils.v(TAG, "No caption request for the screenshot. Perform the next screenshot request.");
-    screenshotRequests.performNextRequest();
+    // No result will finish the caption result, so it goes now, with its timeout.
+    captionResult.recycleAndClearScreenshots();
+    captionResults.removeCaptionResult(requestId);
+    removeMessages(MSG_RESULT_TIMEOUT);
+    screenshotRequests.performNextRequest(request);
   }
 
-  private void handleScreenshotCaptureFailure(boolean isUserRequested) {
+  private void handleScreenshotCaptureFailure(
+      ScreenshotCaptureRequest request, boolean isUserRequested) {
     analytics.onImageCaptionEvent(IMAGE_CAPTION_EVENT_SCREENSHOT_FAILED);
     LogUtils.e(TAG, "onScreenCaptureFinish() taking screenshot has failed.");
 
@@ -1420,7 +1470,7 @@ public class ImageCaptioner extends Handler
       returnFeedback(R.string.gemini_screenshot_unavailable);
     }
 
-    screenshotRequests.performNextRequest();
+    screenshotRequests.performNextRequest(request);
   }
 
   @VisibleForTesting
@@ -1430,9 +1480,9 @@ public class ImageCaptioner extends Handler
       return;
     }
 
+    // The list could not schedule the request, so it has dropped its requests.
     analytics.onImageCaptionEvent(
         TalkBackAnalytics.IMAGE_CAPTION_EVENT_SCHEDULE_SCREENSHOT_CAPTURE_FAILURE);
-    screenshotRequests.performNextRequest();
   }
 
   @VisibleForTesting
@@ -1448,7 +1498,7 @@ public class ImageCaptioner extends Handler
             + StringBuilderUtils.joinFields(
                 StringBuilderUtils.optionalSubObj("result", result.text()),
                 StringBuilderUtils.optionalSubObj("node", node)));
-    characterCaptionRequests.performNextRequest();
+    characterCaptionRequests.performNextRequest(request);
 
     handleResult(request.getRequestId(), node, result, isUserRequested);
     imageCaptionStorage.updateCharacterCaptionResult(node, result);
@@ -1471,7 +1521,7 @@ public class ImageCaptioner extends Handler
               }
               analytics.onImageCaptionEvent(IMAGE_CAPTION_EVENT_OCR_PERFORM_FAIL);
               LogUtils.v(TAG, "onError(), error= %s", Request.errorName(errorCode));
-              characterCaptionRequests.performNextRequest();
+              characterCaptionRequests.performNextRequest(errorRequest);
               handleResult(
                   errorRequest.getRequestId(),
                   AccessibilityNode.takeOwnership(node),
@@ -1489,7 +1539,7 @@ public class ImageCaptioner extends Handler
     }
     analytics.onImageCaptionEvent(IMAGE_CAPTION_EVENT_ICON_DETECT_SUCCEED);
     LogUtils.v(TAG, "onIconDetectionFinish() result=%s node=%s", result.text(), node);
-    iconDetectionRequests.performNextRequest();
+    iconDetectionRequests.performNextRequest(request);
 
     handleResult(request.getRequestId(), node, result, isUserRequested);
     imageCaptionStorage.updateDetectedIconLabel(node, result);
@@ -1513,7 +1563,7 @@ public class ImageCaptioner extends Handler
               }
               analytics.onImageCaptionEvent(IMAGE_CAPTION_EVENT_ICON_DETECT_FAIL);
               LogUtils.v(TAG, "onError(), error=%s", Request.errorName(errorCode));
-              iconDetectionRequests.performNextRequest();
+              iconDetectionRequests.performNextRequest(errorRequest);
               handleResult(
                   errorRequest.getRequestId(),
                   AccessibilityNode.takeOwnership(node),
@@ -1536,7 +1586,7 @@ public class ImageCaptioner extends Handler
             + StringBuilderUtils.joinFields(
                 StringBuilderUtils.optionalSubObj("result", result.text()),
                 StringBuilderUtils.optionalSubObj("node", node)));
-    imageDescriptionRequests.performNextRequest();
+    imageDescriptionRequests.performNextRequest(request);
 
     handleResult(request.getRequestId(), node, result, isUserRequested);
     imageCaptionStorage.updateImageDescriptionResult(node, result);
@@ -1560,7 +1610,7 @@ public class ImageCaptioner extends Handler
               }
               analytics.onImageCaptionEvent(IMAGE_CAPTION_EVENT_IMAGE_DESCRIBE_FAIL);
               LogUtils.v(TAG, "onError(), error=%s", Request.errorName(errorCode));
-              imageDescriptionRequests.performNextRequest();
+              imageDescriptionRequests.performNextRequest(errorRequest);
               handleResult(
                   errorRequest.getRequestId(),
                   AccessibilityNode.takeOwnership(node),
@@ -1642,10 +1692,23 @@ public class ImageCaptioner extends Handler
 
   @VisibleForTesting
   void clearRequests() {
+    removeMessages(MSG_RESULT_TIMEOUT);
     screenshotRequests.clear();
     characterCaptionRequests.clear();
     iconDetectionRequests.clear();
-    captionResults.cleanUp();
+    imageDescriptionRequests.clear();
+    abandonCaptionResults();
+  }
+
+  /**
+   * Drops the caption results that wait for more results, and ends their screenshot requests, so
+   * that the next screenshot request is performed.
+   */
+  private void abandonCaptionResults() {
+    for (CaptionResult captionResult : captionResults.removeAll()) {
+      captionResult.recycleAndClearScreenshots();
+      screenshotRequests.performNextRequest(captionResult.screenshotRequest);
+    }
   }
 
   @VisibleForTesting
@@ -1718,7 +1781,8 @@ public class ImageCaptioner extends Handler
           default -> {}
         }
       }
-      screenshotRequests.performNextRequest();
+      // Its screenshot request ended when its caption result was dropped. The first screenshot
+      // request is another one, so it stays.
     } else {
       switch (result.type()) {
         case OCR -> {
@@ -1747,10 +1811,10 @@ public class ImageCaptioner extends Handler
         if (needFeedbackToUser) {
           returnCaptionResult(id, captionResult);
         }
-        screenshotRequests.performNextRequest();
         captionResult.recycleAndClearScreenshots();
         captionResults.removeCaptionResult(id);
         removeMessages(MSG_RESULT_TIMEOUT);
+        screenshotRequests.performNextRequest(captionResult.screenshotRequest);
       }
     }
 
@@ -1830,7 +1894,8 @@ public class ImageCaptioner extends Handler
         captionResult.isUserRequest,
         captionResult.isImageDescriptionByGemini,
         captionResult.isGeminiFinishedWithError,
-        captionResult.isNetworkError);
+        captionResult.isNetworkError,
+        captionResult.isScreenDescription);
   }
 
   private void returnCaptionResult(
@@ -1842,6 +1907,28 @@ public class ImageCaptioner extends Handler
       boolean isImageDescriptionByGemini,
       boolean isGeminiFinishedWithError,
       boolean isNetworkError) {
+    returnCaptionResult(
+        requestId,
+        ocrTextResult,
+        iconLabelResult,
+        imageDescriptionResult,
+        isUserRequested,
+        isImageDescriptionByGemini,
+        isGeminiFinishedWithError,
+        isNetworkError,
+        /* isScreenDescription= */ false);
+  }
+
+  private void returnCaptionResult(
+      int requestId,
+      @Nullable Result ocrTextResult,
+      @Nullable Result iconLabelResult,
+      @Nullable Result imageDescriptionResult,
+      boolean isUserRequested,
+      boolean isImageDescriptionByGemini,
+      boolean isGeminiFinishedWithError,
+      boolean isNetworkError,
+      boolean isScreenDescription) {
     if (Result.isEmpty(iconLabelResult)) {
       if (iconAnnotationsDetector != null) {
         analytics.onImageCaptionEvent(IMAGE_CAPTION_EVENT_ICON_DETECT_NO_RESULT);
@@ -1911,7 +1998,7 @@ public class ImageCaptioner extends Handler
                 imageDescriptionResult,
                 iconLabelResult,
                 ocrTextResult,
-                /* isScreenDescription= */ false));
+                isScreenDescription));
       }
 
       return;
@@ -1958,7 +2045,7 @@ public class ImageCaptioner extends Handler
     message.what = MSG_RESULT_TIMEOUT;
     message.arg1 = requestId;
 
-    sendMessageAtTime(message, System.currentTimeMillis() + RESULT_MAX_WAITING_TIME_MS);
+    sendMessageDelayed(message, RESULT_MAX_WAITING_TIME_MS);
   }
 
   @Override
@@ -1972,16 +2059,18 @@ public class ImageCaptioner extends Handler
         AccessibilityNode focusedNode =
             AccessibilityNode.takeOwnership(
                 accessibilityFocusMonitor.getAccessibilityFocus(/* useInputFocusIfEmpty= */ false));
-        if (captionResult.node.equals(focusedNode)) {
+        if (captionResult.isUserRequest
+            || (captionResult.node != null && captionResult.node.equals(focusedNode))) {
           returnCaptionResult(msg.arg1, captionResult);
         }
       }
       LogUtils.w(TAG, "Caption request is timeout.");
-      screenshotRequests.clear();
+      // Ends the caption requests, so that their results are ignored when they come. The screenshot
+      // requests that wait stay, such as one the user has just made.
       characterCaptionRequests.clear();
       iconDetectionRequests.clear();
       imageDescriptionRequests.clear();
-      captionResults.cleanUp();
+      abandonCaptionResults();
     }
   }
 
@@ -2108,7 +2197,10 @@ public class ImageCaptioner extends Handler
 
   /** Stores all caption results to announce them together. */
   private static class CaptionResult {
-    private final AccessibilityNode node;
+    /** The request that took the screenshot. It stays first in its list until this is finished. */
+    private final ScreenshotCaptureRequest screenshotRequest;
+
+    @Nullable private final AccessibilityNode node;
     private final boolean isUserRequest;
     private boolean isOcrFinished;
     @Nullable private Result ocrTextResult;
@@ -2117,19 +2209,47 @@ public class ImageCaptioner extends Handler
     private boolean isImageDescriptionFinished;
     @Nullable private Result imageDescriptionResult;
     private final List<Bitmap> screenshots = new ArrayList<>();
-    private boolean isImageDescriptionByGemini;
+    private final boolean isImageDescriptionByGemini;
+    private final boolean isScreenDescription;
     private boolean isGeminiFinishedWithError;
     private boolean isNetworkError;
 
-    private CaptionResult(AccessibilityNode node, boolean isUserRequest) {
-      this(node, isUserRequest, /* isImageDescriptionByGemini= */ false);
+    private CaptionResult(
+        ScreenshotCaptureRequest screenshotRequest,
+        @Nullable AccessibilityNode node,
+        boolean isUserRequest) {
+      this(
+          screenshotRequest,
+          node,
+          isUserRequest,
+          /* isImageDescriptionByGemini= */ false,
+          /* isScreenDescription= */ false);
     }
 
     private CaptionResult(
-        AccessibilityNode node, boolean isUserRequest, boolean isImageDescriptionByGemini) {
+        ScreenshotCaptureRequest screenshotRequest,
+        @Nullable AccessibilityNode node,
+        boolean isUserRequest,
+        boolean isImageDescriptionByGemini) {
+      this(
+          screenshotRequest,
+          node,
+          isUserRequest,
+          isImageDescriptionByGemini,
+          /* isScreenDescription= */ false);
+    }
+
+    private CaptionResult(
+        ScreenshotCaptureRequest screenshotRequest,
+        @Nullable AccessibilityNode node,
+        boolean isUserRequest,
+        boolean isImageDescriptionByGemini,
+        boolean isScreenDescription) {
+      this.screenshotRequest = screenshotRequest;
       this.node = node;
       this.isUserRequest = isUserRequest;
       this.isImageDescriptionByGemini = isImageDescriptionByGemini;
+      this.isScreenDescription = isScreenDescription;
     }
 
     /**
@@ -2306,9 +2426,11 @@ public class ImageCaptioner extends Handler
       captionResults = new HashMap<>();
     }
 
-    public void cleanUp() {
-      captionResults.forEach((key, value) -> value.recycleAndClearScreenshots());
+    /** Removes all caption results and returns them. */
+    public List<CaptionResult> removeAll() {
+      List<CaptionResult> results = new ArrayList<>(captionResults.values());
       captionResults.clear();
+      return results;
     }
 
     @Nullable

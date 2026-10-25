@@ -23,7 +23,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.graphics.Insets;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.graphics.Point;
@@ -35,7 +34,6 @@ import android.view.WindowManager.LayoutParams;
 import android.view.WindowMetrics;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import androidx.core.view.WindowInsetsCompat;
 import com.google.android.accessibility.talkback.DimmingOverlayView;
 import com.google.android.accessibility.talkback.Feedback;
 import com.google.android.accessibility.talkback.Feedback.Part;
@@ -46,6 +44,7 @@ import com.google.android.accessibility.talkback.R;
 import com.google.android.accessibility.talkback.TalkBackService;
 import com.google.android.accessibility.talkback.compositor.Compositor;
 import com.google.android.accessibility.talkback.compositor.Compositor.Flavor;
+import com.google.android.accessibility.talkback.gesture.GestureHints;
 import com.google.android.accessibility.talkback.gesture.GestureShortcutMapping;
 import com.google.android.accessibility.talkback.monitor.DeviceConfigurationMonitor.OnConfigurationChangedListener;
 import com.google.android.accessibility.talkback.utils.FocusIndicatorUtils;
@@ -244,10 +243,7 @@ public class DimScreenActor implements OnConfigurationChangedListener {
       view.setTimerLimit(INSTRUCTION_VISIBLE_SECONDS);
     }
 
-    // Updates the gesture to open TalkBack menu on the dimming overlay.
-    view.setInstruction(
-        gestureShortcutMapping.getGestureFromActionKey(
-            service.getString(R.string.shortcut_value_talkback_breakout)));
+    view.setInstruction(exitInstruction());
 
     initCurtainSize();
   }
@@ -263,12 +259,10 @@ public class DimScreenActor implements OnConfigurationChangedListener {
     if (FeatureSupport.supportWindowMetrics()) {
       WindowMetrics windowMetrics = windowManager.getCurrentWindowMetrics();
 
-      Insets cutoutInsets =
-          windowMetrics.getWindowInsets().getInsets(WindowInsetsCompat.Type.displayCutout());
-      int cutoutHeight = cutoutInsets.top + cutoutInsets.bottom;
-
+      // The curtain lays out into the camera cutout, so it starts at the top of the display, and the
+      // bounds already include the cutout. Adding its height as well covered the pixel left below.
       width = windowMetrics.getBounds().width();
-      height = windowMetrics.getBounds().height() + cutoutHeight;
+      height = windowMetrics.getBounds().height();
     } else {
       Point point = new Point();
       windowManager.getDefaultDisplay().getRealSize(point);
@@ -423,14 +417,30 @@ public class DimScreenActor implements OnConfigurationChangedListener {
             .setSpeech(
                 Speech.builder()
                     .setAction(Action.SPEAK)
-                    .setText(
-                        service.getString(
-                            R.string.screen_dimming_exit_instruction_line2,
-                            gestureShortcutMapping.getGestureFromActionKey(
-                                service.getString(R.string.shortcut_value_talkback_breakout)),
-                            service.getString(R.string.shortcut_disable_dimming)))
+                    .setText(exitInstruction())
                     .setOptions(announcementOptions(SpeechController.QUEUE_MODE_QUEUE))
                     .build()));
+  }
+
+  /**
+   * How to show the screen again, with the user's gestures: from the Backtalk menu if a gesture
+   * opens it, or else with the gesture for hiding and showing the screen, or else where gestures
+   * are assigned.
+   */
+  private String exitInstruction() {
+    String menuGesture =
+        GestureHints.gestureInSentence(
+            service,
+            gestureShortcutMapping,
+            service.getString(R.string.shortcut_value_talkback_breakout));
+    if (menuGesture != null) {
+      return service.getString(
+          R.string.screen_dimming_exit_instruction_line2,
+          menuGesture,
+          service.getString(R.string.shortcut_disable_dimming));
+    }
+    return GestureHints.actionLine(
+        service, gestureShortcutMapping, R.string.shortcut_value_show_hide_screen);
   }
 
   /**

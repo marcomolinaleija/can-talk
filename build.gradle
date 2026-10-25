@@ -30,12 +30,27 @@ android {
         testInstrumentationRunner = 'android.test.InstrumentationTestRunner'
         multiDexEnabled = true
     }
+    signingConfigs {
+        shared {
+            storeFile file("keystore/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
     buildTypes {
         // The published builds are debug builds, signed with the debug key. Android runs a
         // debuggable app without compiling it, which makes navigation several times slower on
         // a watch, so they are not debuggable. Debug logging in the libraries stays on.
         debug {
             debuggable = false
+            signingConfig signingConfigs.shared
+            // Shrinks and optimizes the libraries, so there is less code to load and compile.
+            minifyEnabled = true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        release {
+            signingConfig signingConfigs.shared
         }
     }
     packaging {

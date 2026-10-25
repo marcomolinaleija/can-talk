@@ -167,6 +167,32 @@ public class BrailleIme extends InputMethodService {
   // switching from other keyboard.
   @SuppressWarnings("NonFinalStaticField")
   private static BrailleIme instance;
+  private boolean restoringBackup;
+
+  public static void beginBackupRestore() {
+    if (instance != null) instance.restoringBackup = true;
+  }
+
+  public static void finishBackupRestore() {
+    BrailleIme ime = instance;
+    if (ime == null) return;
+    ime.restoringBackup = false;
+    ime.tabletHeldUpFacesAway = BrailleUserPreferences.readTabletHeldUpFacesAway(ime);
+    if (ime.emojiManager != null) ime.emojiManager.reloadAfterBackup();
+    if (ime.editBuffer != null) {
+      if (ime.getCurrentInputConnection() != null && ime.getCurrentInputEditorInfo() != null) {
+        ime.editBuffer.commit(ime.getImeConnection());
+      }
+      ime.createEditBuffer();
+    }
+    if (ime.keyboardView != null && ime.keyboardView.isInputViewCreated()) {
+      ime.keyboardView.refreshInputView();
+    }
+    if (ime.brailleImeActor != null && ime.isInputViewShown()) {
+      ime.brailleImeActor.onKeyboardActivated();
+    }
+    ime.showOnBrailleDisplay(/* retranslate= */ true);
+  }
 
   // A note on how the desired hiding of the default IME views is achieved:
   // - Hiding the candidatesArea is simple - simply do not override onCreateCandidatesView.
@@ -625,8 +651,9 @@ public class BrailleIme extends InputMethodService {
       }
     } else {
       if (tutorialState == State.ROTATE_ORIENTATION
-          || tutorialState == State.ROTATE_ORIENTATION_CONTINUE) {
-        tutorialState = State.HOLD_6_FINGERS;
+          || tutorialState == State.ROTATE_ORIENTATION_CONTINUE
+          || tutorialState == State.HOLD_6_FINGERS) {
+        tutorialState = State.TYPE_LETTER_A;
       }
     }
     keyboardView.createAndAddTutorialView(tutorialState, tutorialCallback);
@@ -1559,12 +1586,6 @@ public class BrailleIme extends InputMethodService {
 
         @Override
         public boolean onSwipeProduced(Swipe swipe) {
-          if (emojiManager != null && emojiManager.isEmojiModeActive()) {
-            if (swipe.getDirection() == Swipe.Direction.LEFT && swipe.getTouchCount() == 1) {
-              emojiManager.exitEmojiMode();
-              return true;
-            }
-          }
           if (brailleImeGestureController.performSwipeAction(swipe)) {
             showOnBrailleDisplay();
             if (!brailleDisplayConnectedAndNotSuspended) {
@@ -1587,9 +1608,7 @@ public class BrailleIme extends InputMethodService {
         @Override
         public boolean isCalibrationHoldRecognized(
             boolean inTwoStepCalibration, int pointersHeldCount) {
-          return isSixDotCalibration(pointersHeldCount)
-              || isEightDotCalibration(pointersHeldCount)
-              || (inTwoStepCalibration && isConfirmedTwoStepCalibration(pointersHeldCount));
+          return false;
         }
 
         @Override
@@ -1864,14 +1883,20 @@ public class BrailleIme extends InputMethodService {
     if (talkBackForBrailleIme != null && shouldAnnounceCharacter) {
       announceType = NORMAL;
     }
+    boolean speakPasswords =
+        talkBackForBrailleIme == null || talkBackForBrailleIme.shouldSpeakPasswords();
     return new ImeConnection(
-        getCurrentInputConnection(), getCurrentInputEditorInfo(), announceType);
+        getCurrentInputConnection(),
+        getCurrentInputEditorInfo(),
+        announceType,
+        speakPasswords);
   }
 
   private final OnSharedPreferenceChangeListener onSharedPreferenceChangeListener =
       new OnSharedPreferenceChangeListener() {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+          if (restoringBackup || key == null) return;
           if (key.equals(getString(R.string.pref_brailleime_translator_code))) {
             Code newCode =
                 BrailleUserPreferences.readCurrentActiveInputCodeAndCorrect(BrailleIme.this);

@@ -42,6 +42,43 @@ object TranslationSettings {
     else -> locale.language.ifBlank { "en" }
   }
 
+  fun normalizeLanguage(code: String?): String {
+    if (code.isNullOrBlank()) return ""
+    val normalized = code.trim().replace('_', '-').lowercase(Locale.ROOT)
+    return when {
+      normalized == "zh-tw" || normalized == "zh-hk" || normalized.startsWith("zh-hant") -> "zh-tw"
+      normalized.startsWith("zh") -> "zh-cn"
+      normalized == "iw" -> "he"
+      normalized == "in" -> "id"
+      normalized == "ji" -> "yi"
+      else -> normalized.substringBefore('-')
+    }
+  }
+
+  fun sameLanguage(first: String?, second: String?): Boolean {
+    val a = normalizeLanguage(first)
+    val b = normalizeLanguage(second)
+    return a.isNotEmpty() && a == b
+  }
+
+  fun swapTarget(prefs: SharedPreferences, source: String, target: String): String {
+    if (source != "auto" && !sameLanguage(source, target)) {
+      return source
+    }
+    val locales = Resources.getSystem().configuration.locales
+    val systemLang = if (!locales.isEmpty) languageCode(locales[0]) else "en"
+    if (!sameLanguage(systemLang, target)) {
+      return systemLang
+    }
+    for (i in 1 until locales.size()) {
+      val candidate = languageCode(locales[i])
+      if (!sameLanguage(candidate, target)) {
+        return candidate
+      }
+    }
+    return if (sameLanguage(target, "en")) "es" else "en"
+  }
+
   // Metadata/credentials remain provider-specific. No transport-specific assumptions in the queue.
   fun createProvider(id: String): TranslationProvider = when (id) {
     "google_web" -> GoogleInstantTranslationProvider(BuildConfig.TRANSLATION_INSTANT_KEY)

@@ -1,8 +1,6 @@
 package com.google.android.accessibility.brailleime.dialog;
 
 import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-import static com.google.android.accessibility.brailleime.BrailleImeGestureAction.getActionWithSameRoot;
 import static com.google.android.accessibility.brailleime.Utils.getCombinedGestureDescription;
 
 import android.app.Dialog;
@@ -15,7 +13,6 @@ import com.google.android.accessibility.braille.common.BrailleImeAction;
 import com.google.android.accessibility.brailleime.BrailleImeGestureAction;
 import com.google.android.accessibility.brailleime.R;
 import com.google.android.accessibility.utils.material.A11yAlertDialogWrapper;
-import java.util.List;
 
 /** A dialog for showing custom gesture commands. */
 public class CustomGestureDialog extends CommonDialog {
@@ -52,16 +49,7 @@ public class CustomGestureDialog extends CommonDialog {
         getCombinedGestureDescription(
             context, BrailleImeGestureAction.getGesture(context, action)));
     TextView shareText = dialogView.findViewById(R.id.share_text);
-    List<BrailleImeAction> sameAction = getActionWithSameRoot(action);
-    if (!sameAction.isEmpty()) {
-      shareText.setVisibility(VISIBLE);
-      shareText.setText(
-          context.getString(
-              R.string.custom_gestures_dialog_share_description,
-              sameAction.get(0).getDescriptionRes(context.getResources())));
-    } else {
-      shareText.setVisibility(GONE);
-    }
+    shareText.setVisibility(GONE);
     Button changeGesture = dialogView.findViewById(R.id.custom_gesture_button_change_gesture);
     changeGesture.setOnClickListener(
         v -> {

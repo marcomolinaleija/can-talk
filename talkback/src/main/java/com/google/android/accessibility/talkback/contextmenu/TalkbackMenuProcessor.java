@@ -74,9 +74,9 @@ public class TalkbackMenuProcessor {
   private static final int ORDER_ACTIONS = 2;
   private static final int ORDER_PAGE_NAVIGATION = 4;
   public static final int ORDER_LABELS = 5;
-  public static final int ORDER_SUMMARIZE_VIEW = 6;
   public static final int ORDER_IMAGE_CAPTION = 6;
-  private static final int ORDER_NAVIGATION = 7;
+  public static final int ORDER_SUMMARIZE_VIEW = 7;
+  private static final int ORDER_NAVIGATION = 8;
   public static final int ORDER_TEXT_FORMATTING = 13;
   private static final int ORDER_LANGUAGES = 14;
   private static final int ORDER_EMOJI = 15;
@@ -441,7 +441,7 @@ public class TalkbackMenuProcessor {
       return;
     }
 
-    if (currentNode == null) {
+    if (currentNode == null && itemId != R.id.summarize_view_menu) {
       return;
     }
     AccessibilityNodeInfoCompat node = currentNode;

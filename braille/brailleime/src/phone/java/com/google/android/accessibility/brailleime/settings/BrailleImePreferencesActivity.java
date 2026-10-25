@@ -158,6 +158,39 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
 
     private void configurePrefs() {
       {
+        // Braille keyboard instruction guide preference.
+        Preference instructionPref =
+            findPreference(getString(R.string.pref_brailleime_instruction));
+        if (instructionPref != null) {
+          instructionPref.setOnPreferenceClickListener(
+              preference -> {
+                startActivity(new Intent(getContext(), BrailleImeInstructionActivity.class));
+                return true;
+              });
+        }
+      }
+
+      {
+        // Braille keyboard interactive tutorial preference.
+        Preference tutorialPref =
+            findPreference(getString(R.string.pref_brailleime_interactive_tutorial));
+        if (tutorialPref != null) {
+          tutorialPref.setOnPreferenceClickListener(
+              preference -> {
+                BrailleUserPreferences.writeLaunchTutorialNextTime(getContext());
+                if (!BrailleCommonUtils.isBrailleKeyboardEnabled(getContext())) {
+                  ((BrailleImePreferencesActivity) getActivity()).showTurnOnKeyboardDialog();
+                } else {
+                  Intent intent = new Intent(getContext(), BrailleImeInstructionActivity.class);
+                  intent.putExtra(BrailleImeInstructionActivity.EXTRA_FOCUS_PRACTICE, true);
+                  startActivity(intent);
+                }
+                return true;
+              });
+        }
+      }
+
+      {
         // Turn on keyboard preference.
         Preference turnOnKeyboardPref =
             findPreference(getString(R.string.pref_brailleime_turn_on_braille_keyboard));

@@ -31,7 +31,7 @@ if (localPropertiesFile.exists()) {
 def geminiApiKey = localProperties.getProperty('gemini.api.key', '')
 def geminiModel = localProperties.getProperty('gemini.model', 'gemini-flash-latest')
 // Experimental web service credential: injected locally, never stored in tracked source.
-def translationInstantKey = System.getenv('CANTALK_TRANSLATION_INSTANT_KEY') ?: ''
+def translationInstantKey = System.getenv('CANTALK_TRANSLATION_INSTANT_KEY') ?: localProperties.getProperty('translation.instant.key', '')
 
 android {
     namespace = "com.google.android.accessibility.talkback"

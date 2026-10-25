@@ -77,12 +77,12 @@ class GoogleWebTranslationProvider(
       val parts = data.optJSONArray(0) ?: throw IOException("Invalid translation response")
       val output = StringBuilder()
       for (i in 0 until parts.length()) {
-        val part = parts.optJSONArray(i) ?: throw IOException("Invalid translation segment")
-        if (part.isNull(0) || part.opt(0) !is String) throw IOException("Missing translation text")
-        output.append(part.getString(0))
+        val part = parts.optJSONArray(i) ?: continue
+        val translated = part.opt(0) as? String ?: continue
+        output.append(translated)
       }
       if (output.isBlank()) throw IOException("Empty translation response")
-      return TranslationResult(output.toString(), data.opt(2) as? String)
+      return TranslationResult(output.toString(), (data.opt(2) as? String)?.takeIf { it.isNotBlank() })
     }
 
     private fun post(url: String, body: String, cancellation: TranslationCancellation): String {
@@ -92,11 +92,12 @@ class GoogleWebTranslationProvider(
         cancellation.check()
         connection.instanceFollowRedirects = false
         connection.requestMethod = "POST"
-        connection.connectTimeout = 3_000
-        connection.readTimeout = 3_000
+        connection.connectTimeout = 5_000
+        connection.readTimeout = 5_000
         connection.doOutput = true
         connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
         connection.setRequestProperty("Accept", "application/json")
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0")
         connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
         if (connection.responseCode != 200) throw IOException("Translation service unavailable")
         // Bounded response; no HTML/CAPTCHA parsing, redirect following, logging or retries.

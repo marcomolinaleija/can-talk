@@ -13,4 +13,47 @@
   <string name="recalibrate_completed">Calibración completada con éxito.</string>
   <string name="recalibrate_reset">Reiniciar</string>
   <string name="recalibrate_cancelled">Calibración cancelada.</string>
+
+  <!-- Preferences and context menu items for instruction manual and tutorial -->
+  <string name="title_pref_brailleime_instruction">Instructivo del teclado braille</string>
+  <string name="summary_pref_brailleime_instruction">Aprende a escribir, navegar, usar gestos, recalibrar puntos, bloquear la orientación y más.</string>
+  <string name="title_pref_brailleime_interactive_tutorial">Tutorial interactivo del teclado braille</string>
+  <string name="summary_pref_brailleime_interactive_tutorial">Practica paso a paso cómo escribir letras, gestos y utilizar el teclado braille.</string>
+  <string name="context_menu_instruction_selection">Instructivo del teclado braille</string>
+
+  <!-- Braille instruction guide UI and content strings -->
+  <string name="instruction_activity_title">Instructivo del teclado braille</string>
+  <string name="instruction_btn_recalibrate">Recalibrar puntos ahora (1 al 6)</string>
+  <string name="instruction_btn_tutorial">Iniciar tutorial interactivo</string>
+  <string name="instruction_btn_clear">Limpiar texto</string>
+  <string name="instruction_practice_title">Área de práctica interactiva</string>
+  <string name="instruction_practice_hint">Toca aquí para practicar escritura y gestos con el teclado braille...</string>
+  <string name="instruction_practice_content_description">Campo de texto de práctica. Toca para abrir el teclado braille.</string>
+
+  <string name="instruction_section_modes_title">1. Modos de uso del teclado</string>
+  <string name="instruction_section_modes_body">• Modo de pantalla hacia afuera: Sujeta el dispositivo con la pantalla mirando en dirección contraria a ti. Toma los bordes laterales con ambas manos. Los dedos índice, medio y anular de la mano izquierda se ubican sobre los puntos 1, 2 y 3; los de la mano derecha sobre los puntos 4, 5 y 6.\n• Modo de mesa: Apoya el teléfono sobre una mesa o superficie plana con las manos por encima de la pantalla, donde los puntos se distribuyen cómodamente bajo las yemas de tus dedos.</string>
+
+  <string name="instruction_section_typing_title">2. Escritura básica y gestos elementales</string>
+  <string name="instruction_section_typing_body">• Escribir letras: Toca la combinación de puntos correspondiente de forma simultánea.\n• Espacio: Desliza 1 dedo hacia la derecha.\n• Borrar carácter (retroceso): Desliza 1 dedo hacia la izquierda.\n• Salto de línea (Enter): Desliza 2 dedos hacia la derecha.\n• Borrar palabra completa: Desliza 2 dedos hacia la izquierda.</string>
+
+  <string name="instruction_section_recalibration_title">3. Recalibración secuencial de puntos (estilo ABK)</string>
+  <string name="instruction_section_recalibration_body">Se eliminó la calibración tradicional de TalkBack con dos pasos o múltiples dedos a la vez. Ahora se utiliza la calibración secuencial punto por punto.\n• Presiona el botón "Recalibrar puntos ahora" arriba o accede a "Recalibración de puntos" desde Ajustes o el Menú de opciones.\n• La voz te indicará tocar en la pantalla la posición para el punto 1, luego el 2, y así sucesivamente hasta el punto 6 donde caigan cómodamente tus dedos.\n• Cada toque se confirma con un tono y vibración, adaptando el teclado a tu posición anatómica exacta.</string>
+
+  <string name="instruction_section_orientation_lock_title">4. Bloqueo de orientación del teclado</string>
+  <string name="instruction_section_orientation_lock_body">Evita que la orientación de los puntos braille se gire de manera involuntaria si mueves o inclinas el teléfono.\n• Gesto: Mantén presionados los puntos 4, 5 y 6 y desliza 1 dedo hacia ARRIBA.\n• La voz de TalkBack confirmará si la orientación quedó bloqueada o desbloqueada.</string>
+
+  <string name="instruction_section_emojis_title">5. Modo Emojis</string>
+  <string name="instruction_section_emojis_body">• Activar / Salir del modo emoji: Mantén presionados los puntos 4, 5 y 6 y desliza 1 dedo hacia la DERECHA.\n• Navegación de emojis: Selecciona categorías mediante letras braille (A a J) o signos (*, #, $), filas con las letras K a Z, o desliza hacia arriba y abajo para explorar e insertar emojis.</string>
+
+  <string name="instruction_section_voice_title">6. Entrada de voz</string>
+  <string name="instruction_section_voice_body">• Dictado por voz rápido: Mantén presionados los puntos 4, 5 y 6 y desliza 1 dedo hacia ABAJO.\n• Habla claramente y tu dictado se transcribirá directamente en el campo de texto.</string>
+
+  <string name="instruction_section_navigation_title">7. Navegación y control del cursor</string>
+  <string name="instruction_section_navigation_body">• Mover por carácter: Desliza 1 dedo hacia ARRIBA (carácter anterior) o hacia ABAJO (siguiente).\n• Mover por palabra: Mantén presionado el punto 5 y desliza 1 dedo hacia ARRIBA (palabra anterior) o hacia ABAJO (siguiente).\n• Mover por línea: Mantén presionado el punto 4 y desliza 1 dedo hacia ARRIBA (línea anterior) o hacia ABAJO (siguiente).\n• Ir al inicio o fin del texto: Mantén presionados los puntos 4 y 5 y desliza 1 dedo hacia ARRIBA (inicio) o hacia ABAJO (fin).\n• Cambiar granularidad de navegación: Desliza 3 dedos hacia la IZQUIERDA o hacia la DERECHA.</string>
+
+  <string name="instruction_section_clipboard_title">8. Portapapeles: Copiar, Cortar, Pegar y Seleccionar todo</string>
+  <string name="instruction_section_clipboard_body">• Seleccionar todo el texto: Mantén presionado el punto 4 y desliza 3 dedos hacia la IZQUIERDA.\n• Cortar texto seleccionado: Mantén presionado el punto 4 y desliza 3 dedos hacia ARRIBA.\n• Copiar texto seleccionado: Mantén presionado el punto 4 y desliza 3 dedos hacia ABAJO.\n• Pegar desde el portapapeles: Mantén presionado el punto 4 y desliza 3 dedos hacia la DERECHA.</string>
+
+  <string name="instruction_section_system_title">9. Menú de opciones y acciones del sistema</string>
+  <string name="instruction_section_system_body">• Abrir menú de opciones contextual: Desliza 3 dedos hacia ARRIBA.\n• Ocultar teclado braille: Desliza 2 dedos hacia ABAJO.\n• Cambiar al siguiente teclado (ej. Gboard): Desliza 3 dedos hacia ABAJO.\n• Enviar / Acción del formulario (Submit): Desliza 2 dedos hacia ARRIBA.</string>
 </resources>

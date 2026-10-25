@@ -26,7 +26,7 @@ class TranslationEngine(
   val provider: TranslationProvider,
   val cache: TranslationCache = TranslationCache(),
   private val workers: ExecutorService = java.util.concurrent.ThreadPoolExecutor(
-    2, 2, 0L, java.util.concurrent.TimeUnit.MILLISECONDS, java.util.concurrent.ArrayBlockingQueue(8)),
+    4, 4, 0L, java.util.concurrent.TimeUnit.MILLISECONDS, java.util.concurrent.ArrayBlockingQueue(16)),
   private val timers: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(),
   private val clock: () -> Long = { System.nanoTime() / 1_000_000 },
 ) {
@@ -53,15 +53,38 @@ class TranslationEngine(
       job.callbacks.add(callback)
       return cancellation(key, job, callback)
     }
-    if (jobs.size >= 8) { callback(null); return Runnable {} }
+    if (jobs.size >= 16) { callback(null); return Runnable {} }
     val created = Job(cache.generation)
     created.callbacks.add(callback)
     jobs[key] = created
-    created.timeout = timers.schedule({ finish(key, created, null, useCache) }, 6_000,
+    created.timeout = timers.schedule({ finish(key, created, null, useCache) }, 10_000,
       java.util.concurrent.TimeUnit.MILLISECONDS)
     try {
       created.future = workers.submit {
-        val result = try { provider.translate(request, created.cancellation) } catch (_: Exception) { null }
+        val result = try {
+          val initialRequest = if (request.source != "auto" && !request.swapTarget.isNullOrBlank()) {
+            request.copy(source = "auto")
+          } else {
+            request
+          }
+          val initial = provider.translate(initialRequest, created.cancellation)
+          val swapTo = request.swapTarget
+          if (!swapTo.isNullOrBlank() &&
+            !TranslationSettings.sameLanguage(swapTo, request.target) &&
+            TranslationSettings.sameLanguage(initial.detectedSource, request.target)
+          ) {
+            created.cancellation.check()
+            val swapped = provider.translate(
+              TranslationRequest(request.text, request.target, swapTo),
+              created.cancellation,
+            )
+            swapped.copy(targetLanguage = swapTo)
+          } else {
+            initial.copy(targetLanguage = request.target)
+          }
+        } catch (_: Exception) {
+          null
+        }
         finish(key, created, result, useCache)
       }
     } catch (_: java.util.concurrent.RejectedExecutionException) {
@@ -90,7 +113,6 @@ class TranslationEngine(
       jobs.remove(key)
       job.timeout?.cancel(false)
       if (result == null) {
-        unavailableUntil = clock() + 15_000 // Back off on outages/429; no retry storm during swipes.
         job.cancellation.cancel()
         job.future?.cancel(true)
       }

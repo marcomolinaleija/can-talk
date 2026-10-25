@@ -36,6 +36,7 @@ import com.google.android.accessibility.braille.interfaces.BrailleCharacter;
 import com.google.android.accessibility.braille.interfaces.BrailleDisplayForBrailleIme.ResultForDisplay.HoldingsInfo;
 import com.google.android.accessibility.braille.interfaces.BrailleWord;
 import com.google.android.accessibility.braille.translate.BrailleTranslator;
+import com.google.android.accessibility.utils.input.PasswordCharacterTracker;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import java.nio.ByteBuffer;
@@ -110,6 +111,10 @@ public abstract class EditBufferContracted implements EditBuffer {
       result =
           hideTextForPasswordIfNecessary(imeConnection, result, /* brailleCharacterLength= */ 1);
       EditBufferUtils.speak(context, talkBack, result);
+      if (BrailleCommonUtils.isPasswordField(imeConnection.editorInfo)
+          && imeConnection.speakPasswords) {
+        PasswordCharacterTracker.getInstance().recordBrailleHandled();
+      }
     }
     return result;
   }
@@ -410,6 +415,7 @@ public abstract class EditBufferContracted implements EditBuffer {
   private String hideTextForPasswordIfNecessary(
       ImeConnection imeConnection, String text, int brailleCharacterLength) {
     if (imeConnection.announceType == NORMAL
+        || imeConnection.speakPasswords
         || !BrailleCommonUtils.isPasswordField(imeConnection.editorInfo)) {
       return text;
     }

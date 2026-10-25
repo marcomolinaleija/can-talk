@@ -138,6 +138,7 @@ public class TextEventInterpreter {
   private boolean readLineWhenMoveToAdjacentLineByUpDownKey = false;
   private int lastKeyCode = KeyEvent.KEYCODE_UNKNOWN;
   private int lastKeyModifiers = 0;
+  private boolean speakPasswords = true;
   private @Nullable LineTextSegmentIteratorProvider lineTextSegmentIteratorProvider;
 
   // /////////////////////////////////////////////////////////////////////////////////
@@ -197,6 +198,10 @@ public class TextEventInterpreter {
   public void resetLastKeyDown() {
     lastKeyCode = KeyEvent.KEYCODE_UNKNOWN;
     lastKeyModifiers = 0;
+  }
+
+  public void setSpeakPasswords(boolean speakPasswords) {
+    this.speakPasswords = speakPasswords;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////
@@ -319,6 +324,11 @@ public class TextEventInterpreter {
     boolean isPassword = event.isPassword();
     interpretation.setIsPassword(isPassword);
 
+    // If Braille IME already spoke this character directly, drop this event to avoid double speech.
+    if (isPassword && PasswordCharacterTracker.getInstance().consumeBrailleHandled()) {
+      return interpretation.setInvalid("Handled by Braille IME.");
+    }
+
     // Validity check
     if (!isValid(event)) {
       return interpretation.setInvalid("isValid() is false.");
@@ -376,6 +386,12 @@ public class TextEventInterpreter {
         addedText = getSubsequenceWithSpans(addedText, removedLength, addedLength);
         // Prevent TapPresubmit alert for Nullable annotation conflict
         addedText = (addedText == null) ? "" : addedText;
+      }
+    }
+    if (isPassword && speakPasswords && addedText.length() == 1) {
+      String typedChar = PasswordCharacterTracker.getInstance().consumeTypedChar();
+      if (typedChar != null) {
+        addedText = typedChar;
       }
     }
     interpretation.setRemovedText(removedText);
@@ -880,6 +896,11 @@ public class TextEventInterpreter {
     return PUNCTUATION_PATTERN.matcher(Character.toString(ch)).matches();
   }
 
+  /** Returns whether typing {@code ch} can make keyboard echo speak the word before it. */
+  public static boolean endsWordForEcho(char ch) {
+    return isWhiteSpace(ch) || isPunctuation(ch);
+  }
+
   private boolean appendLastWordIfNeeded(
       AccessibilityEvent event, TextEventInterpretation interpretation) {
     // Do not handle word's keyboard echo for password field.
@@ -895,7 +916,7 @@ public class TextEventInterpreter {
     final int wordEnd = getWordEchoEnd(addedText);
     char lastChar = addedText.charAt(wordEnd);
     // Echo word only occurs when the added character is either a space or a punctuation symbol.
-    if (!isWhiteSpace(lastChar) && !isPunctuation(lastChar)) {
+    if (!endsWordForEcho(lastChar)) {
       return false;
     }
 
@@ -1049,7 +1070,9 @@ public class TextEventInterpreter {
    */
   private @Nullable CharSequence getSubsequence(
       boolean isPassword, @Nullable CharSequence text, int from, int to) {
-    // TODO: Has removed Speak password settings.
+    if (isPassword && !speakPasswords) {
+      return "";
+    }
     return getSubsequenceWithSpans(text, from, to);
   }
 

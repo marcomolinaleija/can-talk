@@ -75,12 +75,21 @@ public class BrailleImeGestureController {
   private boolean performAction(Gesture gesture) {
     List<BrailleImeAction> currentActions = BrailleImeGestureAction.getAction(context, gesture);
     List<BrailleImeAction> defaultActions = BrailleImeGestureAction.getDefaultAction(gesture);
-    // Use the root one.
+    // Correction actions have their own assignments and take precedence in that context.
     Optional<BrailleImeAction> optionalBrailleImeAction =
-        currentActions.stream().filter(action -> action.equals(action.getRootAction())).findFirst();
+        brailleImeActor.isCorrectionContext()
+            ? currentActions.stream().filter(action -> action != action.getRootAction()).findFirst()
+            : Optional.empty();
+    if (optionalBrailleImeAction.isEmpty()) {
+      optionalBrailleImeAction =
+          currentActions.stream().filter(action -> action == action.getRootAction()).findFirst();
+    }
     if (optionalBrailleImeAction.isEmpty()) {
       if (gesture instanceof Swipe swipe && swipe.hasSwipedDot()) {
         return performAction(swipe.withoutDot());
+      }
+      if (gesture instanceof DotHoldSwipe heldSwipe && heldSwipe.getSwipe().hasSwipedDot()) {
+        return performAction(heldSwipe.withoutSwipedDot());
       }
       BrailleImeLog.d(TAG, "No BrailleImeAction");
       return false;
@@ -91,7 +100,7 @@ public class BrailleImeGestureController {
         (action == BrailleImeAction.DELETE_CHARACTER_OR_PREVIOUS_ITEM
                 || action == BrailleImeAction.DELETE_WORD)
             && brailleImeActor.isNothingToDelete();
-    boolean result = brailleImeActor.performAction(action);
+    boolean result = brailleImeActor.performAssignedAction(action);
     performFeedback(action, nothingToDelete);
     performLogging(action, currentActions.equals(defaultActions));
     return result;

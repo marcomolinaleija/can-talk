@@ -46,6 +46,8 @@ class BrailleAppSearchController @JvmOverloads constructor(
   private var elementsDirty = true
   private var hasAnnouncedResult = false
   private var view: BrailleAppSearchInput? = null
+  private var cachedApps: List<AppSearchResults.App> = emptyList()
+  private var appsLoaded = false
   private var results = AppSearchResults(emptyList())
   private var originWindowId: Int? = null
   private var backCaptured = false
@@ -59,12 +61,12 @@ class BrailleAppSearchController @JvmOverloads constructor(
     }
     hide(false)
     try {
-      results = AppSearchResults(loadApps())
+      results = AppSearchResults(cachedApps)
+      appsLoaded = false
       mode = if (prefs.getBoolean("pref_braille_search_elements_mode", false)) Mode.ELEMENTS else Mode.APPS
       hasAnnouncedResult = false
       originWindowId = activeAppWindowId()
       elementsDirty = true
-      if (mode == Mode.ELEMENTS) refreshElements()
       val bounds = windows.currentWindowMetrics.bounds
       val input = createInput(Size(bounds.width(), bounds.height()), this)
       val params = WindowManager.LayoutParams().apply {
@@ -84,12 +86,26 @@ class BrailleAppSearchController @JvmOverloads constructor(
       service.setModalTouchRegion(Region(bounds))
       updateView()
       speak(service.getString(R.string.braille_app_search_opened, modeName()))
+      if (mode == Mode.APPS) {
+        handler.post { if (isShowing) ensureAppsLoaded() }
+      }
       return true
     } catch (e: RuntimeException) {
       LogUtils.w("BrailleAppSearch", "Cannot open search: %s", e.javaClass.simpleName)
       hide(false)
       speak(service.getString(R.string.braille_app_search_failed))
       return false
+    }
+  }
+
+  private fun ensureAppsLoaded() {
+    if (appsLoaded) return
+    cachedApps = loadApps()
+    appsLoaded = true
+    val currentQuery = results.query
+    results = AppSearchResults(cachedApps)
+    if (currentQuery.isNotEmpty()) {
+      results.search(currentQuery)
     }
   }
 
@@ -108,6 +124,7 @@ class BrailleAppSearchController @JvmOverloads constructor(
 
   override fun onQueryChanged(query: String) {
     if (!isShowing) return
+    if (mode == Mode.APPS) ensureAppsLoaded()
     results.search(query)
     if (mode == Mode.ELEMENTS) {
       if (elementsDirty) refreshElements() else screenSearch.search(query)
@@ -127,8 +144,9 @@ class BrailleAppSearchController @JvmOverloads constructor(
         mode = if (mode == Mode.APPS) Mode.ELEMENTS else Mode.APPS
         prefs.edit().putBoolean("pref_braille_search_elements_mode", mode == Mode.ELEMENTS).apply()
         if (mode == Mode.ELEMENTS) {
-          refreshElements()
+          if (results.query.isNotBlank()) refreshElements() else elementsDirty = true
         } else {
+          ensureAppsLoaded()
           results.search(results.query)
         }
         hasAnnouncedResult = false
@@ -258,6 +276,7 @@ class BrailleAppSearchController @JvmOverloads constructor(
     input.close()
     service.setModalTouchRegion(null)
     try { windows.removeViewImmediate(input) } catch (_: IllegalArgumentException) { }
+    appsLoaded = false
     results = AppSearchResults(emptyList())
     screenSearch.clear()
     if (announce) speak(service.getString(R.string.braille_app_search_closed))

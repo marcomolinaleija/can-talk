@@ -32,11 +32,11 @@ import java.util.regex.Pattern;
  * Describes a user-initiated swipe and dots hold on the touch screen.
  *
  * <p>Dot hold and swipe includes the braille dots hold, a swipe direction{@link Direction}, a touch
- * count which is the number of fingers that were touching the screen.
+ * count for the moving fingers, and optionally the dot from which a single moving finger started.
  */
 public class DotHoldSwipe implements Gesture {
   private static final Pattern REGEX_PATTERN =
-      Pattern.compile("hold_dot(?<dot>\\d+)_swipe_(?<direction>[A-Za-z]+)_(?<touchpoints>\\d+)");
+      Pattern.compile("hold_dot(?<dot>[1-8]+)_(?<swipe>swipe_(?:dot[1-8]_)?[A-Za-z]+_\\d+)");
   private final Swipe swipe;
   private final BrailleCharacter heldBrailleCharacter;
 
@@ -50,10 +50,7 @@ public class DotHoldSwipe implements Gesture {
     if (!matcher.matches()) {
       throw new IllegalArgumentException("Invalid id");
     }
-    this.swipe =
-        new Swipe(
-            Direction.valueOf(matcher.group("direction").toUpperCase(Locale.ENGLISH)),
-            Integer.parseInt(matcher.group("touchpoints")));
+    this.swipe = new Swipe(matcher.group("swipe"));
     this.heldBrailleCharacter = new BrailleCharacter(matcher.group("dot"));
   }
 
@@ -69,11 +66,22 @@ public class DotHoldSwipe implements Gesture {
 
   @Override
   public Gesture mirrorDots() {
-    return new DotHoldSwipe(swipe, heldBrailleCharacter.toMirror());
+    return new DotHoldSwipe((Swipe) swipe.mirrorDots(), heldBrailleCharacter.toMirror());
+  }
+
+  public DotHoldSwipe withoutSwipedDot() {
+    return new DotHoldSwipe(swipe.withoutDot(), heldBrailleCharacter);
   }
 
   @Override
   public String getDescription(Resources resources) {
+    if (swipe.hasSwipedDot()) {
+      return resources.getString(
+          R.string.gesture_hold_and_swipe_dot,
+          getDotsDescription(resources, getHeldDots()),
+          NumberFormat.getNumberInstance(Locale.getDefault()).format(swipe.getSwipedDot()),
+          swipe.getDirection().getDescription(resources));
+    }
     if (getSwipe().getTouchCount() > 1) {
       return resources.getString(
           R.string.gesture_hold_and_swipe_multiple_finger,
@@ -112,7 +120,7 @@ public class DotHoldSwipe implements Gesture {
      * it would be equivalent to bit shifting. The fact that 37 is prime is standard practice.
      */
     int result = 13;
-    result = 37 * result + (swipe.getDirection() == null ? 0 : swipe.getDirection().hashCode());
+    result = 37 * result + swipe.hashCode();
     result = 37 * result + (heldBrailleCharacter == null ? 0 : heldBrailleCharacter.hashCode());
     result = 37 * result + swipe.getTouchCount();
     return result;

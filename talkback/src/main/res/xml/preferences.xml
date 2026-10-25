@@ -112,8 +112,5 @@
     <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
         android:key="@string/pref_tutorial_and_help_key"
         android:title="@string/title_pref_category_tutorial" />
-    <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
-        android:key="@string/pref_help_and_feedback_key"
-        android:title="@string/title_pref_help_and_feedback" />
   </com.google.android.accessibility.material.preference.AccessibilitySuitePreferenceCategory>
 </PreferenceScreen>

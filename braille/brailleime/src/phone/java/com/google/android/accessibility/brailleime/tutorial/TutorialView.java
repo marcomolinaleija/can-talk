@@ -160,7 +160,7 @@ public class TutorialView extends FrameLayout implements OrientationSensitive {
 
     @Override
     public TutorialState nextState() {
-      return isTabletop ? holdSixFingers : rotateOrientation;
+      return isTabletop ? typeLetterA : rotateOrientation;
     }
 
     @Override
@@ -1654,7 +1654,7 @@ public class TutorialView extends FrameLayout implements OrientationSensitive {
       case SWIPE_DOWN_3_FINGERS -> this.state = swipeDown3Fingers;
       case SWIPE_UP_3_FINGERS -> this.state = swipeUp3Fingers;
       case CONTEXT_MENU_OPENED -> this.state = contextMenuOpened;
-      case HOLD_6_FINGERS -> this.state = holdSixFingers;
+      case HOLD_6_FINGERS -> this.state = typeLetterA;
     }
   }
 
@@ -1895,8 +1895,7 @@ public class TutorialView extends FrameLayout implements OrientationSensitive {
         @Override
         public boolean isCalibrationHoldRecognized(
             boolean inTwoStepCalibration, int pointersHeldCount) {
-          // For calibration.
-          return pointersHeldCount >= 5 || (inTwoStepCalibration && pointersHeldCount == 3);
+          return false;
         }
 
         @Override

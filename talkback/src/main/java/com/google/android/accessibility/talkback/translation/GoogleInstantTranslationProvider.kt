@@ -33,37 +33,46 @@ class GoogleInstantTranslationProvider(
   override val id = "google-instant-web-v1"
   override val sendsTextOffDevice = true
 
+  private val webFallback = GoogleWebTranslationProvider()
+
   override fun translate(request: TranslationRequest, cancellation: TranslationCancellation): TranslationResult {
     require(request.target.matches(Regex("[A-Za-z]{2,3}(-[A-Za-z]{2,4})?")))
     require(request.source == "auto" || request.source.matches(Regex("[A-Za-z]{2,3}(-[A-Za-z]{2,4})?")))
     require(request.text.isNotBlank() && request.text.length <= maxInputCharacters)
-    if (serviceKey.isBlank()) throw IOException("Translation provider is not configured")
-    val output = StringBuilder()
-    var detected: String? = null
-    // Smaller chunks than the desktop addon bound encoded GET URLs on Android.
-    for (chunk in GoogleWebTranslationProvider.chunks(request.text)) {
-      cancellation.check()
-      if (chunk.isBlank()) { output.append(chunk); continue }
-      val parameters = listOf(
-        "params.client" to "gtx",
-        "query.source_language" to request.source,
-        "query.target_language" to request.target,
-        "query.display_language" to displayLanguage,
-        "query.text" to chunk.trim(),
-        "key" to serviceKey,
-        "data_types" to "TRANSLATION",
-        "data_types" to "SENTENCE_SPLITS",
-      )
-      val query = parameters.joinToString("&") { (name, value) ->
-        URLEncoder.encode(name, "UTF-8") + "=" + URLEncoder.encode(value, "UTF-8")
-      }
-      val result = parse(transport("https://translate-pa.googleapis.com/v1/translate?$query", cancellation))
-      output.append(chunk.takeWhile { it.isWhitespace() })
-        .append(result.text.trim()).append(chunk.takeLastWhile { it.isWhitespace() })
-      detected = detected ?: result.detectedSource
+    if (serviceKey.isBlank()) {
+      return webFallback.translate(request, cancellation)
     }
-    cancellation.check()
-    return TranslationResult(output.toString(), detected)
+    try {
+      val output = StringBuilder()
+      var detected: String? = null
+      // Smaller chunks than the desktop addon bound encoded GET URLs on Android.
+      for (chunk in GoogleWebTranslationProvider.chunks(request.text)) {
+        cancellation.check()
+        if (chunk.isBlank()) { output.append(chunk); continue }
+        val parameters = listOf(
+          "params.client" to "gtx",
+          "query.source_language" to request.source,
+          "query.target_language" to request.target,
+          "query.display_language" to displayLanguage,
+          "query.text" to chunk.trim(),
+          "key" to serviceKey,
+          "data_types" to "TRANSLATION",
+          "data_types" to "SENTENCE_SPLITS",
+        )
+        val query = parameters.joinToString("&") { (name, value) ->
+          URLEncoder.encode(name, "UTF-8") + "=" + URLEncoder.encode(value, "UTF-8")
+        }
+        val result = parse(transport("https://translate-pa.googleapis.com/v1/translate?$query", cancellation))
+        output.append(chunk.takeWhile { it.isWhitespace() })
+          .append(result.text.trim()).append(chunk.takeLastWhile { it.isWhitespace() })
+        detected = detected ?: result.detectedSource
+      }
+      cancellation.check()
+      return TranslationResult(output.toString(), detected)
+    } catch (e: Exception) {
+      cancellation.check()
+      return webFallback.translate(request, cancellation)
+    }
   }
 
   companion object {
@@ -91,8 +100,8 @@ class GoogleInstantTranslationProvider(
         cancellation.check()
         connection.instanceFollowRedirects = false
         connection.requestMethod = "GET"
-        connection.connectTimeout = 3_000
-        connection.readTimeout = 3_000
+        connection.connectTimeout = 5_000
+        connection.readTimeout = 5_000
         connection.setRequestProperty("Content-Type", "application/json+protobuf")
         connection.setRequestProperty("User-Agent", "Mozilla/5.0")
         if (connection.responseCode != 200) throw IOException("Translation service unavailable")

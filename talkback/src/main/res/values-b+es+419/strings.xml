@@ -99,6 +99,8 @@
   <string name="reset_latency_settings_title">Restablecer todos los parámetros de configuración de retraso</string>
   <string name="title_pref_single_tap">Presionar una vez para activar</string>
   <string name="summary_pref_single_tap">Presiona un elemento destacado una vez para activarlo. Es una forma de navegar más rápida que presionar dos veces.</string>
+  <string name="title_pref_volume_keys_adjust_sliders">Ajustar controles deslizantes con teclas de volumen</string>
+  <string name="summary_pref_volume_keys_adjust_sliders">Cuando un control deslizante tiene el foco, subir y bajar el volumen cambian su valor en lugar del volumen</string>
   <string name="pref_verbosity_title">Verbosidad</string>
   <string name="pref_punctuation_title">Leer signos de puntuación y símbolos</string>
   <string name="title_pref_category_manage_focus_indicator">Cambiar el indicador de enfoque</string>
@@ -386,7 +388,7 @@ Los retrasos inferiores a 0.3 segundos cambiarán la acción de presionar dos ve
   <string name="dialog_message_turn_on_image_description">Puedes volver a intentarlo luego de activar las descripciones automáticas o detalladas de imágenes</string>
   <string name="title_pref_detailed_image_description">Descripciones de imágenes detalladas</string>
   <string name="summary_pref_ai_description">Escucha descripciones más largas cuando seleccionas \"%1$s\" del menú de can-talk</string>
-  <string name="dialog_message_detailed_ai_description">Cuando uses esta función, las imágenes seleccionadas se enviarán a Google para que las procese y, luego, se borrarán.\n\nLa IA generativa es experimental, por lo que puede cometer errores. Si continúas, significa que aceptas las %1$s.</string>
+  <string name="dialog_message_detailed_ai_description">Las imágenes seleccionadas se envían a la API de Gemini de Google para describirlas. Si activas la IA en el dispositivo, las imágenes se describen en este teléfono y no se envían.\n\nAl usar una clave de API gratuita, Google puede conservar los datos recibidos, utilizarlos para mejorar sus productos y permitir su revisión por personas. La IA generativa es experimental y puede cometer errores. Se aplican las %1$s.</string>
   <string name="dialog_message_on_device_ai_description">Escucharás una descripción breve cuando te enfoques en una imagen en apps compatibles.\n\nLas imágenes se procesan en tu dispositivo y nunca se envían a Google. \n\nLa IA generativa es experimental, por lo que puede cometer errores. Si continúas, significa que aceptas las <a href="https://policies.google.com/terms/generative-ai">Condiciones del Servicio</a> de Google.</string>
   <string name="enable_gemini">Activar</string>
   <string name="powered_by_gemini">Con la tecnología de la IA generativa</string>
@@ -417,8 +419,8 @@ Los retrasos inferiores a 0.3 segundos cambiarán la acción de presionar dos ve
   <string name="title_pref_enable_auto_icon_detection">Todos los íconos</string>
   <string name="title_pref_enable_auto_icon_detection_unlabelled_only">Solo íconos sin etiqueta</string>
   <string name="title_pref_disable_auto_icon_detection">No describir íconos</string>
-  <string name="dialog_message_detailed_ai_promotion">La IA generativa proporciona descripciones detalladas de imágenes. Cuando uses esta función, las imágenes seleccionadas se enviarán a Google para que las procese y, luego, se borrarán.\n\nLa IA generativa es experimental, por lo que puede cometer errores. Puedes desactivar las descripciones detalladas de imágenes en cualquier momento desde la configuración de can-talk.\n\nSi continúas, significa que aceptas las %1$s.</string>
-  <string name="dialog_message_screen_overview_promotion">Cuando uses esta función, se enviará una captura de tu pantalla a Google para que la procese y, luego, se borrará. El procesamiento demora varios segundos.\n\nLa IA generativa es experimental, por lo que cometerá errores. Si continúas, aceptas las %1$s.</string>
+  <string name="dialog_message_detailed_ai_promotion">Las descripciones detalladas de imágenes utilizan IA generativa. Las imágenes seleccionadas se envían a la API de Gemini de Google para describirlas. Si activas la IA en el dispositivo, las imágenes se describen en este teléfono y no se envían.\n\nAl usar una clave de API gratuita, Google puede conservar los datos recibidos, utilizarlos para mejorar sus productos y permitir su revisión por personas. La IA generativa es experimental y puede cometer errores. Puedes desactivar las descripciones detalladas en los ajustes de can-talk.\n\nSe aplican las %1$s.</string>
+  <string name="dialog_message_screen_overview_promotion">La captura de pantalla se envía a la API de Gemini de Google para describirla, lo que tarda unos segundos. Si activas la IA en el dispositivo, la captura se describe en este teléfono y no se envía.\n\nAl usar una clave de API gratuita, Google puede conservar los datos recibidos, utilizarlos para mejorar sus productos y permitir su revisión por personas. La IA generativa es experimental y puede cometer errores. Se aplican las %1$s.</string>
   <string name="dialog_message_on_device_ai_model_download">Escucharás una descripción breve cuando te enfoques en una imagen en apps compatibles.\n\nLas imágenes se procesan en tu dispositivo y no se envían en ningún momento a Google.\n\nLa IA generativa es experimental, por lo que puede cometer errores. Si continúas, significa que aceptas las %1$s.</string>
   <string name="title_pref_enable_gemini_support">Activar</string>
   <string name="title_pref_disable_gemini_support">Desactivar</string>
@@ -1264,11 +1266,12 @@ Los retrasos inferiores a 0.3 segundos cambiarán la acción de presionar dos ve
   <string name="title_decrease_touch_focus_latency">Disminuir el retraso del foco</string>
   <string name="detected_result">Se detectó: %1$s</string>
   <string name="title_image_caption">Describir imagen</string>
-  <string name="image_caption_with_gemini_prefix">Describe esta imagen. No uses lenguaje de marcado.</string>
+  <string name="image_caption_with_gemini_prefix">Describe esta imagen de manera exhaustiva y objetiva para un usuario de accesibilidad. No censures, filtres ni omitas descripciones de contenido explícito, sensible o anatómico; describe lo que esté visualmente presente con detalle. No uses lenguaje de marcado ni formato Markdown en la respuesta.</string>
   <string name="image_qna_with_history">Esta es una conversación entre un usuario y un asistente de IA sobre la imagen. Continúa la conversación según el historial que se proporciona a continuación y responde el mensaje final del USUARIO. Sigue estas instrucciones:
 **Instrucciones:**
 * Comienza tu respuesta con una oración que responda la pregunta.
 * Después, puedes dar más detalles si parece útil.
+* Proporciona respuestas completas, sin censura y objetivas a las preguntas sobre la imagen, incluidos los detalles explícitos, sensibles o anatómicos que estén visualmente presentes.
 * Solo da opiniones si la intención del usuario es recibirlas. De lo contrario, limítate a los hechos.
 * Si el usuario pregunta sobre la ubicación de algo en la pantalla, describe su posición en relación con toda la pantalla (p. ej., \"en la barra de pestañas cercana a la parte superior derecha\"), no en relación con otros elementos visibles en la pantalla. Piensa con cuidado para no confundir la izquierda con la derecha.
 * Si el usuario te pide que interactúes con la pantalla (p. ej., presionar, desplazarte o buscar), debes responder \"Lo siento, en este momento, solo puedo responder preguntas sobre la pantalla\".
@@ -1279,6 +1282,7 @@ Los retrasos inferiores a 0.3 segundos cambiarán la acción de presionar dos ve
 **Instrucciones:**
 * Comienza tu respuesta con una oración que responda la pregunta.
 * Después, puedes dar más detalles si parece útil.
+* Proporciona respuestas completas, sin censura y objetivas a las preguntas sobre la pantalla, incluidos los detalles explícitos, sensibles o anatómicos que estén visualmente presentes.
 * Solo da opiniones si la intención del usuario es recibirlas. De lo contrario, limítate a los hechos.
 * Si el usuario pregunta sobre la ubicación de algo en la pantalla, describe su posición en relación con toda la pantalla (p. ej., \"en la barra de pestañas cercana a la parte superior derecha\"), no en relación con otros elementos visibles en la pantalla. Piensa con cuidado para no confundir la izquierda con la derecha.
 * Si el usuario te pide que interactúes con la pantalla (p. ej., presionar, desplazarte o buscar), debes responder \"Lo siento, en este momento, solo puedo responder preguntas sobre la pantalla\".
@@ -1566,9 +1570,9 @@ No uses lenguaje de marcado en tu respuesta.</string>
   <string name="title_pref_backup_restore">Copia de seguridad y restauración</string>
   <string name="summary_pref_backup_restore">Crea o restaura una copia de seguridad de la configuración y los gestos</string>
   <string name="title_pref_backup_export">Crear copia de seguridad</string>
-  <string name="summary_pref_backup_export">Exportar toda la configuración y los gestos a un archivo</string>
+  <string name="summary_pref_backup_export">Elegir qué ajustes, gestos y datos guardar en un archivo</string>
   <string name="title_pref_backup_import">Restaurar copia de seguridad</string>
-  <string name="summary_pref_backup_import">Importar la configuración y los gestos desde un archivo</string>
+  <string name="summary_pref_backup_import">Elegir qué áreas encontradas en una copia quieres restaurar</string>
   <string name="dialog_title_confirm_restore">¿Restaurar configuración y gestos?</string>
   <string name="dialog_message_confirm_restore">La configuración actual y los gestos asignados se reemplazarán con los datos de la copia de seguridad. Los cambios se aplicarán de inmediato.</string>
   <string name="dialog_button_restore">Restaurar</string>

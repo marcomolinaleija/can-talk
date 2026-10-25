@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_pref_speak_nav_bar_buttons">Anunciar botones de la barra de navegación</string>
+    <string name="summary_pref_speak_nav_bar_buttons">Al activar los botones de la barra de navegación levantando el dedo, anuncia el botón pulsado, como Atrás o Inicio.</string>
+    <string name="template_setting_limit">%1$s, %2$s</string>
+    <string name="template_battery_level">Batería al %1$s por ciento</string>
+    <string name="template_battery_level_unknown">Nivel de batería desconocido</string>
+    <string name="value_charger_connected">Cargador conectado</string>
+    <string name="title_pref_reserve_vibration_watch_gestures">Reservar gestos para Vibration Watch</string>
+    <string name="summary_pref_reserve_vibration_watch_gestures">Evita que can-talk gestione los toques simples y dobles con dos dedos para que Samsung Vibration Watch pueda usarlos. Activa Vibration Watch en los ajustes de accesibilidad del reloj.</string>
+    <string name="shortcut_reserved_for_vibration_watch">Reservado para Vibration Watch en Ajustes avanzados</string>
+    <string name="pref_table_headers_category_title">Lectura de tablas</string>
+    <string name="pref_table_column_headers_title">Leer encabezados de columnas</string>
+    <string name="pref_table_column_headers_entry_after">Después del contenido de la celda</string>
+    <string name="pref_table_column_headers_entry_before">Antes del contenido de la celda</string>
+    <string name="pref_table_column_headers_entry_off">No leer</string>
+    <string name="pref_table_speak_row_column_numbers_title">Anunciar números de fila y columna</string>
+    <string name="pref_table_speak_row_column_numbers_summary">Anunciar los números de fila y columna de las celdas de una tabla</string>
+    <string name="talkback_exit_watermark_text_no_menu_gesture">can-talk activado. Mantén dos dedos sobre la pantalla durante cinco segundos para desactivarlo. Para ocultar este mensaje, desactiva Ajustes de can-talk &gt; Ajustes avanzados &gt; Mostrar instrucciones para desactivar can-talk.</string>
+    <string name="value_type_confirmation_lift_to_type_except_action_key">Mantén el dedo para seleccionar cualquier tecla y levántalo para escribir. Toca dos veces para Intro, Listo o Enviar.</string>
+    <string name="value_focus_delay_200ms_default">0.2 segundos (predeterminado)</string>
+    <string name="value_focus_delay_300ms">0.3 segundos</string>
+    <string name="title_pref_interrupt_typing">Interrumpir la voz al escribir</string>
+    <string name="pref_interrupt_typing_entry_always">Siempre</string>
+    <string name="pref_interrupt_typing_entry_edit_fields">En campos de edición</string>
+    <string name="pref_interrupt_typing_entry_keyboard_echo">Al anunciar lo escrito</string>
+    <string name="title_pref_interrupt_enter">Interrumpir la voz al pulsar Intro</string>
+    <string name="pref_node_desc_order_entry_name_state_role_pos">Nombre, estado, tipo</string>
+    <string name="pref_node_desc_order_entry_role_state_name_pos">Tipo, estado, nombre</string>
+    <string name="pref_node_desc_order_entry_state_role_name_pos">Estado, tipo, nombre</string>
+    <string name="item_detail_name">Nombre</string>
+    <string name="item_detail_type">Tipo</string>
+    <string name="item_detail_state">Estado</string>
+    <string name="action_move_up">Subir</string>
+    <string name="action_move_down">Bajar</string>
+    <string name="template_list_position">Posición %1$d de %2$d</string>
+    <string name="template_item_details_order_picked_up">Se tomó %1$s. %2$s</string>
+    <string name="template_item_details_order_dropped">Se colocó %1$s. %2$s</string>
+    <string name="item_details_order_footer">can-talk anuncia los detalles de los elementos en este orden. Para cambiarlo, mantén pulsado un detalle y arrástralo hacia arriba o abajo. Con can-talk activado, toca dos veces y mantén pulsado; después arrastra. También puedes usar las acciones Subir y Bajar.</string>
+    <string name="gemini_api_terms_link">Condiciones adicionales del servicio de la API de Gemini</string>
+    <string name="notification_channel_backtalk_paused">can-talk en pausa</string>
+</resources>

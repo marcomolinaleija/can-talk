@@ -247,6 +247,11 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
   }
 
   @Override
+  public boolean shouldSpeakPasswords() {
+    return VerbosityPreferences.shouldSpeakPasswords(prefs, service.getResources());
+  }
+
+  @Override
   public boolean isVibrationFeedbackEnabled() {
     return FeatureSupport.isVibratorSupported(service)
         && SharedPreferencesUtils.getBooleanPref(

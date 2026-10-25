@@ -1,8 +1,17 @@
 #Requires -Version 7
 param(
-    [string[]]$Tareas = @(':assemblePhoneDebug'),
+    [string[]]$Tareas,
+    [switch]$Release,
     [switch]$Prueba
 )
+
+if (-not $Tareas) {
+    if ($Release) {
+        $Tareas = @(':assemblePhoneRelease')
+    } else {
+        $Tareas = @(':assemblePhoneDebug')
+    }
+}
 
 $ErrorActionPreference = 'Stop'
 if (-not $IsWindows) { throw 'Este script es para Windows. En Linux/macOS usa ./gradlew.' }

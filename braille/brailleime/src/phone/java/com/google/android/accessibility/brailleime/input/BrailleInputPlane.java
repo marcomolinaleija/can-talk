@@ -16,9 +16,7 @@
 
 package com.google.android.accessibility.brailleime.input;
 
-import static com.google.android.accessibility.brailleime.input.BrailleInputPlane.TwoStepCalibrationState.NONE;
-import static com.google.android.accessibility.brailleime.input.BrailleInputPlane.TwoStepCalibrationState.STEP1;
-import static com.google.android.accessibility.brailleime.input.BrailleInputPlane.TwoStepCalibrationState.STEP2;
+
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
@@ -120,7 +118,6 @@ public abstract class BrailleInputPlane {
 
   private PointF[] textPosition;
   private PointF[] dotCenterPosition;
-  private TwoStepCalibrationState twoStepCalibrationState = NONE;
   private int sequentialCalibrationDot = 0;
   private final Map<Integer, PointF> sequentialCalibratedDots = new HashMap<>();
   private SequentialCalibrationListener sequentialCalibrationListener;
@@ -151,13 +148,6 @@ public abstract class BrailleInputPlane {
           return false;
         }
       };
-
-  /** state of two step calibration. */
-  enum TwoStepCalibrationState {
-    NONE,
-    STEP1, // If reverse dot, it's right 3 fingers hold; otherwise, left 3 fingers hold.
-    STEP2, // If reverse dot, it's left 3 fingers hold; otherwise, right 3 fingers hold.
-  }
 
   /** Listens custom gestures events. */
   interface CustomOnGestureListener {
@@ -268,28 +258,21 @@ public abstract class BrailleInputPlane {
   abstract Size getInputViewCaptionScreenSize(Size screenSize);
 
   public void setTableTopMode(boolean isTableTopMode) {
+    cancelTouch();
     this.isTableTopMode = isTableTopMode;
     calibrationFailCount = 0;
     refresh();
-    // We allow user to change orientation in first step of two-step calibration because it takes
-    // some time for user to change to the hold position or put it on the table after selects
-    // calibration in the context menu,
-    if (twoStepCalibrationState == STEP2) {
-      // Cancel calibration.
-      twoStepCalibrationState = NONE;
-      calibrationFailCount = 0;
-      customOnGestureListener.onTwoStepCalibrationFailed();
-    }
   }
 
   public void setOptions(BrailleInputOptions options) {
+    cancelTouch();
     this.options = options;
     refresh();
   }
 
-  /** Whether keyboard is in the process of two step calibration. */
+  /** Whether keyboard is in the process of two step calibration. Always false. */
   public boolean inTwoStepCalibration() {
-    return twoStepCalibrationState != NONE;
+    return false;
   }
 
   public List<DotTarget> getDotTargets() {
@@ -320,7 +303,10 @@ public abstract class BrailleInputPlane {
     if (!options.tutorialMode()) {
       dotCenters = readLayoutPoints(screenSize);
     }
-    if (dotCenters.isEmpty()) {
+    if (dotCenters.size() != options.brailleType().getDotCount()
+        || dotCenters.stream().anyMatch(point ->
+            point == null || !Float.isFinite(point.x) || !Float.isFinite(point.y))) {
+      // A damaged or mismatched saved calibration must not crash dot indexing/gesture capture.
       dotCenters = buildDotTargetCenters(screenSize);
       sortDotCenters(dotCenters);
     }
@@ -402,6 +388,7 @@ public abstract class BrailleInputPlane {
    * @param screenSize used as the height and width of the canvas
    */
   public void setOrientation(int orientation, Size screenSize) {
+    cancelTouch();
     this.orientation = orientation;
     this.sizeInPixels = screenSize;
     dotTargets = buildDotTargets(screenSize);
@@ -415,6 +402,12 @@ public abstract class BrailleInputPlane {
   /** Get the accumulation mode. See {@link MultitouchHandler#isAccumulationMode()}. */
   boolean isAccumulationMode() {
     return multitouchHandler.isAccumulationMode();
+  }
+
+  /** Drops touch history and pending callbacks before replacing or removing the input surface. */
+  void cancelTouch() {
+    multitouchHandler.cancel();
+    currentlyPressedDots.clear();
   }
 
   /**
@@ -437,22 +430,6 @@ public abstract class BrailleInputPlane {
   }
 
   private boolean processMultitouchResult(MultitouchResult touchResult) {
-    if (twoStepCalibrationState != NONE) {
-      if (touchResult.type != MultitouchResult.TYPE_CALIBRATION_HOLD
-          || touchResult.heldPoints.size() != options.brailleType().getDotCount() / 2) {
-        if (calibrationFailCount < CALIBRATION_MAXIMUM_FAIL_COUNT) {
-          calibrationFailCount++;
-          customOnGestureListener.onTwoStepCalibrationRetry(twoStepCalibrationState == STEP1);
-        } else {
-          dotTargets = buildDotTargets(sizeInPixels);
-          calibrationFailCount = 0;
-          twoStepCalibrationState = NONE;
-          customOnGestureListener.onTwoStepCalibrationFailed();
-        }
-        // Return true otherwise unexpected dots will be produced after fingers are released.
-        return true;
-      }
-    }
     switch (touchResult.type) {
       case MultitouchResult.TYPE_TAP -> {
         return customOnGestureListener.detect(
@@ -481,30 +458,14 @@ public abstract class BrailleInputPlane {
                 touchResult.heldPoints.size())));
       }
       case MultitouchResult.TYPE_CALIBRATION_HOLD -> {
-        if (twoStepCalibrationState != NONE) {
-          Optional<BrailleInputPlaneResult> result =
-              Optional.of(
-                  BrailleInputPlaneResult.createCalibration(
-                      twoStepCalibrationState == STEP1, touchResult.heldPoints.size()));
-          doTwoStepCalibration(touchResult.heldPoints);
-          calibrationFailCount = 0;
-          return customOnGestureListener.detect(result);
-        } else if (5 <= touchResult.heldPoints.size() && touchResult.heldPoints.size() <= 8) {
-          Optional<BrailleInputPlaneResult> result =
-              Optional.of(
-                  BrailleInputPlaneResult.createCalibration(
-                      /* isLeft= */ false, touchResult.heldPoints.size()));
-          doCalibration(touchResult.heldPoints);
-          calibrationFailCount = 0;
-          return customOnGestureListener.detect(result);
-        }
+        return false;
       }
       case MultitouchResult.TYPE_HOLD_AND_SWIPE -> {
         Swipe swipe = touchResult.swipe;
         if (swipe != null && swipe.getTouchCount() == 1
             && touchResult.releasedPoints != null && !touchResult.releasedPoints.isEmpty()) {
           Set<Integer> dots = matchTouchToTargetNumbers(touchResult.releasedPoints);
-          if (!dots.isEmpty()) {
+          if (dots.size() == 1) {
             swipe = new Swipe(swipe.getDirection(), 1, dots.iterator().next());
           }
         }
@@ -533,18 +494,17 @@ public abstract class BrailleInputPlane {
     drawTouchCircles(canvas, multitouchHandler.getActivePoints());
   }
 
-  /** Calibrates dots positions by two steps. */
+  /** Calibrates dots positions. In TalkBack this was two steps; now redirects to ABK sequential calibration. */
   void calibrateByTwoSteps() {
-    twoStepCalibrationState = STEP1;
-    calibrationFailCount = 0;
+    startSequentialCalibration(null);
   }
 
   /** Starts sequential dot calibration (dots 1 through 6). */
   public void startSequentialCalibration(@Nullable SequentialCalibrationListener listener) {
+    cancelTouch();
     this.sequentialCalibrationListener = listener;
     this.sequentialCalibrationDot = 1;
     this.sequentialCalibratedDots.clear();
-    this.twoStepCalibrationState = NONE;
     String intro = context.getString(R.string.recalibrate_intro);
     String prompt = context.getString(R.string.recalibrate_touch_dot_prompt, 1);
     BrailleCommonTalkBackSpeaker.getInstance().speak(
@@ -693,11 +653,7 @@ public abstract class BrailleInputPlane {
           break;
         }
       }
-      boolean useDefaultColor =
-          twoStepCalibrationState == NONE
-              || (twoStepCalibrationState == STEP2
-                  && (options.reverseDots()
-                      == (i >= options.brailleType().getDotCount() / GROUP_COUNT)));
+      boolean useDefaultColor = true;
       // Draw dot background.
       int dotBackgroundColor =
           useDefaultColor ? dotBackgroundColorDefault : dotBackgroundColorDefaultCalibration;
@@ -831,46 +787,6 @@ public abstract class BrailleInputPlane {
       centerPoints.add(dotTarget.center);
     }
     writeLayoutPoints(centerPoints, sizeInPixels);
-  }
-
-  private void doTwoStepCalibration(List<PointF> pointList) {
-    if (!options.tutorialMode()) {
-      sortDotCentersByGroup(pointList, twoStepCalibrationState == STEP1);
-      oldDotTargets = new ArrayList<>(dotTargets);
-      int[] dotNumber = getDotNumberOrder();
-      for (int i = 0; i < pointList.size(); i++) {
-        int index =
-            options.reverseDots()
-                ? (twoStepCalibrationState == STEP1
-                    ? options.brailleType().getDotCount() / GROUP_COUNT + i
-                    : i)
-                : (twoStepCalibrationState == STEP1
-                    ? i
-                    : options.brailleType().getDotCount() / GROUP_COUNT + i);
-        dotTargets.set(
-            index, new DotTarget(dotNumber[index], pointList.get(i).x, pointList.get(i).y));
-      }
-    }
-    if (twoStepCalibrationState == STEP1) {
-      twoStepCalibrationState = STEP2;
-    } else if (twoStepCalibrationState == STEP2) {
-      twoStepCalibrationState = NONE;
-    }
-  }
-
-  private void doCalibration(List<PointF> holdPoints) {
-    // Do 2-step calibration for 5/6/7 dots.
-    if (holdPoints.size() == 5
-        || ((holdPoints.size() == BrailleType.SIX_DOT.getDotCount()
-                && options.brailleType() == BrailleType.EIGHT_DOT)
-            || (holdPoints.size() == 7 && options.brailleType() == BrailleType.EIGHT_DOT))) {
-      twoStepCalibrationState = STEP1;
-    } else if (!options.tutorialMode()
-        && (holdPoints.size() == BrailleType.SIX_DOT.getDotCount()
-            || holdPoints.size() == BrailleType.EIGHT_DOT.getDotCount())) {
-      oldDotTargets = new ArrayList<>(dotTargets);
-      dotTargets = buildCalibratedDotTargets(holdPoints);
-    }
   }
 
   /** Contains dot coordinate and its dot number. */
