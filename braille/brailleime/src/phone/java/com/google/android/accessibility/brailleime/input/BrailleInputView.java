@@ -124,6 +124,14 @@ public class BrailleInputView extends View
     @CanIgnoreReturnValue
     boolean onHoldProduced(int pointersHeldCount);
 
+    /** Exact held dots for independent surfaces; existing IME clients retain count-based actions. */
+    default boolean onDotsHeld(BrailleCharacter dots, int pointersHeldCount) {
+      return onHoldProduced(pointersHeldCount);
+    }
+
+    /** Called as held fingers are lifted, including cancellation of the touch sequence. */
+    default void onHeldDotsChanged(BrailleCharacter dots) {}
+
     /**
      * Signals that {@link BrailleCharacter} input has been produced.
      *
@@ -403,6 +411,11 @@ public class BrailleInputView extends View
 
   private final CustomOnGestureListener customOnGestureListener =
       new CustomOnGestureListener() {
+        @Override
+        public void onHeldDotsChanged(BrailleCharacter dots) {
+          callback.onHeldDotsChanged(dots);
+        }
+
         @Override
         public boolean detect(Optional<BrailleInputPlaneResult> resultOptional) {
           if (resultOptional.isPresent()) {
@@ -809,7 +822,9 @@ public class BrailleInputView extends View
     } else if (result.type == MultitouchResult.TYPE_CALIBRATION_HOLD) {
       return false;
     } else if (result.type == MultitouchResult.TYPE_HOLD) {
-      return callback.onHoldProduced(result.pointersHeldCount);
+      return result.heldBrailleCharacter == null
+          ? callback.onHoldProduced(result.pointersHeldCount)
+          : callback.onDotsHeld(result.heldBrailleCharacter, result.pointersHeldCount);
     } else if (result.type == MultitouchResult.TYPE_HOLD_AND_SWIPE) {
       return callback.onDotHoldAndDotSwipe(
           new DotHoldSwipe(result.swipe, result.heldBrailleCharacter));

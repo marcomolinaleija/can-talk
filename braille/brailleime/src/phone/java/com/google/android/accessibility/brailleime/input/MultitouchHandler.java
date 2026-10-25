@@ -585,7 +585,7 @@ class MultitouchHandler {
                 .thenComparingLong(pointer -> pointer.releaseOrder));
   }
 
-  private ImmutableList<PointF> getHeldPoints() {
+  ImmutableList<PointF> getHeldPoints() {
     return activePointers.values().stream()
         .filter(pointerWithHistory -> pointerWithHistory.isHoldInProgress)
         .map(pointerWithHistory -> pointerWithHistory.pointHeld)

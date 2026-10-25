@@ -152,6 +152,8 @@ public abstract class BrailleInputPlane {
   /** Listens custom gestures events. */
   interface CustomOnGestureListener {
 
+    default void onHeldDotsChanged(BrailleCharacter dots) {}
+
     /** Signals that a gesture is detected. */
     boolean detect(Optional<BrailleInputPlaneResult> resultOptional);
 
@@ -421,6 +423,8 @@ public abstract class BrailleInputPlane {
       return true;
     }
     boolean result = multitouchHandler.onTouchEvent(event);
+    customOnGestureListener.onHeldDotsChanged(
+        new BrailleCharacter(matchTouchToTargetNumbers(multitouchHandler.getHeldPoints())));
     currentlyPressedDots = matchTouchToTargets(multitouchHandler.getActivePoints());
     return result;
   }
@@ -449,7 +453,9 @@ public abstract class BrailleInputPlane {
       }
       case MultitouchResult.TYPE_HOLD -> {
         return customOnGestureListener.detect(
-            Optional.of(BrailleInputPlaneResult.createHold(touchResult.heldPoints.size())));
+            Optional.of(BrailleInputPlaneResult.createHold(
+                new BrailleCharacter(matchTouchToTargetNumbers(touchResult.heldPoints)),
+                touchResult.heldPoints.size())));
       }
       case MultitouchResult.TYPE_CALIBRATION_HOLD -> {
         return false;

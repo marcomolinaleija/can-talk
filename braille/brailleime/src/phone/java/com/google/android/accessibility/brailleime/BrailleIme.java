@@ -1166,6 +1166,15 @@ public class BrailleIme extends InputMethodService {
   private final BrailleImeForTalkBack brailleImeForTalkBack =
       new BrailleImeForTalkBack() {
         @Override
+        public void commitPendingInput(String packageName, int fieldId) {
+          if (editBuffer != null && isInputViewShown() && isConnectionValid()
+              && packageName.equals(getCurrentInputEditorInfo().packageName)
+              && fieldId == getCurrentInputEditorInfo().fieldId) {
+            editBuffer.commit(getImeConnection());
+          }
+        }
+
+        @Override
         public void onTalkBackSuspended() {
           BrailleImeLog.d(TAG, "onTalkBackSuspended");
           // We might get service state off when TalkBack turns off, but we'll handle it in

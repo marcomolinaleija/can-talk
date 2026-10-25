@@ -86,6 +86,15 @@ public class TalkBackPreferenceFragment extends TalkbackBaseFragment {
     prefs = SharedPreferencesUtils.getSharedPreferences(context);
     settingsMetricStore = new SettingsMetricStore(context);
 
+    Preference remotePreference = findPreference("nvda_remote");
+    if (remotePreference != null) {
+      remotePreference.setOnPreferenceClickListener(preference -> {
+        startActivity(new Intent(context,
+            com.google.android.accessibility.talkback.remote.NvdaRemoteActivity.class));
+        return true;
+      });
+    }
+
     fixListSummaries(getPreferenceScreen());
 
     HatsRequesterViewModel viewModel =

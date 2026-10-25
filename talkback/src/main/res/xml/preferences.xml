@@ -35,6 +35,10 @@
       android:key="@string/pref_category_controls_key"
       android:title="@string/title_pref_category_controls">
     <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
+        android:key="nvda_remote"
+        android:title="@string/nvda_remote_title"
+        android:summary="@string/nvda_remote_summary" />
+    <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
         android:fragment="com.google.android.accessibility.talkback.translation.TranslationFragment"
         android:key="@string/pref_translation_key"
         android:title="@string/translation_title" />

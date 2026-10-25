@@ -181,6 +181,14 @@
 
         <!-- TalkBack Preferences -->
         <activity
+            android:name="com.google.android.accessibility.talkback.remote.NvdaRemoteActivity"
+            android:exported="false"
+            android:label="@string/nvda_remote_title"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:theme="@style/TalkBackSettings"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name="com.google.android.accessibility.talkback.preference.TalkBackPreferencesActivity"
             android:configChanges="keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="true"
