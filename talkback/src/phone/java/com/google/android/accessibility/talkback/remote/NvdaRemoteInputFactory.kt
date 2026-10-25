@@ -116,6 +116,7 @@ private class RemoteBrailleView(
     return true
   }
   override fun onDotHoldAndDotSwipe(swipe: DotHoldSwipe): Boolean {
+    consumedHold = true
     if (!closed) listener.onGesture(gesture(swipe.swipe, swipe.heldDots.toString()))
     return true
   }

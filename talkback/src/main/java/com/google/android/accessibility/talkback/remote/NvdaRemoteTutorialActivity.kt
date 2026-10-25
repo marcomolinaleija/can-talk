@@ -19,6 +19,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.accessibility.talkback.R
 import com.google.android.accessibility.talkback.TalkBackService
 
@@ -219,6 +222,34 @@ class NvdaRemoteTutorialActivity : AppCompatActivity() {
     content.post { if (acceptsInput()) announce(instruction()) }
   }
 
+  private fun setImmersiveMode(enable: Boolean) {
+    val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+    if (enable) {
+      WindowCompat.setDecorFitsSystemWindows(window, false)
+      insetsController.systemBarsBehavior =
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+      insetsController.hide(WindowInsetsCompat.Type.systemBars())
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        window.attributes.layoutInDisplayCutoutMode =
+          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+      }
+      @Suppress("DEPRECATION")
+      window.decorView.systemUiVisibility = (
+        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+        or View.SYSTEM_UI_FLAG_FULLSCREEN
+      )
+    } else {
+      WindowCompat.setDecorFitsSystemWindows(window, true)
+      insetsController.show(WindowInsetsCompat.Type.systemBars())
+      @Suppress("DEPRECATION")
+      window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+    }
+  }
+
   private fun showSurface() {
     if (page != Page.PRACTICE || !resumed || surface != null || dialog?.isShowing == true) return
     val created = NvdaRemoteInputFactory.create(this, Size(content.width.coerceAtLeast(1),
@@ -241,6 +272,7 @@ class NvdaRemoteTutorialActivity : AppCompatActivity() {
     })
     if (created == null) { showIntroduction(reset = false); announce(getString(R.string.nvda_remote_surface_requires_android)); return }
     content.removeAllViews(); simulator.resetContact()
+    setImmersiveMode(true)
     surface = created
     content.addView(created, FrameLayout.LayoutParams(-1, -1))
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -370,6 +402,7 @@ class NvdaRemoteTutorialActivity : AppCompatActivity() {
     }
   }
   private fun removeSurface() {
+    setImmersiveMode(false)
     if (ownsTouchRegion) { ownsTouchRegion = false; TalkBackService.getInstance()?.setModalTouchRegion(null) }
     simulator.clearHeld()
     val previous = surface; surface = null
@@ -385,7 +418,11 @@ class NvdaRemoteTutorialActivity : AppCompatActivity() {
   }
   override fun onWindowFocusChanged(hasFocus: Boolean) {
     super.onWindowFocusChanged(hasFocus)
-    if (hasFocus) { updateTouchRegion(); content.post { announcePanel() } }
+    if (hasFocus) {
+      if (surface != null) setImmersiveMode(true)
+      updateTouchRegion()
+      content.post { announcePanel() }
+    }
     else if (surface != null && dialog == null && page == Page.PRACTICE) {
       simulator.clearInput(); showIntroduction(reset = false)
     }

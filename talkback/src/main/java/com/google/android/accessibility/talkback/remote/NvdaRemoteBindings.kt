@@ -2,6 +2,12 @@
 package com.google.android.accessibility.talkback.remote
 
 import android.content.Context
+import com.google.android.accessibility.braille.common.BrailleImeAction
+import com.google.android.accessibility.braille.common.BrailleUserPreferences
+import com.google.android.accessibility.braille.interfaces.BrailleCharacter
+import com.google.android.accessibility.brailleime.BrailleImeGestureAction
+import com.google.android.accessibility.brailleime.input.DotHoldSwipe
+import com.google.android.accessibility.brailleime.input.Swipe
 import com.google.android.accessibility.talkback.R
 
 enum class NvdaRemoteMode(val label: Int) {
@@ -59,9 +65,82 @@ data class NvdaRemoteGesture(
   }
 }
 
-class NvdaRemoteBindings(context: Context) {
+class NvdaRemoteBindings(private val context: Context) {
   private val prefs = context.getSharedPreferences("nvda_remote_gestures_v1", Context.MODE_PRIVATE)
   private fun preference(mode: NvdaRemoteMode, gesture: NvdaRemoteGesture) = "${mode.name}/${gesture.id}"
+
+  fun toBrailleGesture(gesture: NvdaRemoteGesture): com.google.android.accessibility.brailleime.input.Gesture? {
+    if (gesture.direction.isEmpty()) return null
+    val direction = runCatching {
+      Swipe.Direction.valueOf(gesture.direction)
+    }.getOrNull() ?: return null
+    val swipe = if (gesture.swipedDot in 1..8) {
+      Swipe(direction, gesture.fingers, gesture.swipedDot)
+    } else {
+      Swipe(direction, gesture.fingers)
+    }
+    return if (gesture.held.isNotEmpty() && gesture.held.all { it in '1'..'8' }) {
+      DotHoldSwipe(swipe, BrailleCharacter(gesture.held))
+    } else swipe
+  }
+
+  fun findCustomBrailleAction(gesture: NvdaRemoteGesture): BrailleImeAction? {
+    val brailleGesture = toBrailleGesture(gesture) ?: return null
+    val customMap = runCatching { BrailleUserPreferences.readGestureActionMap(context) }.getOrNull()
+    if (!customMap.isNullOrEmpty()) {
+      val targetId = brailleGesture.id
+      for ((action, ids) in customMap) {
+        if (ids != null && ids.contains(targetId)) {
+          return action
+        }
+      }
+      val matchedActions = runCatching {
+        BrailleImeGestureAction.getAction(context, brailleGesture)
+      }.getOrNull()
+      if (!matchedActions.isNullOrEmpty()) {
+        for (action in matchedActions) {
+          if (customMap.containsKey(action)) {
+            return action
+          }
+        }
+      }
+    }
+    return null
+  }
+
+  fun mapBrailleImeAction(action: BrailleImeAction): String? = when (action) {
+    BrailleImeAction.TOGGLE_EMOJI_MODE -> "emoji"
+    BrailleImeAction.DELETE_WORD, BrailleImeAction.UNDO_SPELLING_SUGGESTION -> key(0x08, listOf("ctrl"))
+    BrailleImeAction.DELETE_CHARACTER_OR_PREVIOUS_ITEM -> "braille_erase"
+    BrailleImeAction.ADD_SPACE_OR_NEXT_ITEM, BrailleImeAction.HEAR_NEXT_SPELLING_SUGGESTION -> "braille_space"
+    BrailleImeAction.ADD_NEWLINE, BrailleImeAction.SUBMIT_TEXT, BrailleImeAction.CONFIRM_SPELLING_SUGGESTION -> "braille_enter"
+    BrailleImeAction.MOVE_CURSOR_BACKWARD, BrailleImeAction.PREVIOUS_CHARACTER -> key(0x25)
+    BrailleImeAction.MOVE_CURSOR_FORWARD, BrailleImeAction.NEXT_CHARACTER -> key(0x27)
+    BrailleImeAction.PREVIOUS_WORD, BrailleImeAction.PREVIOUS_MISSPELLED_WORD -> key(0x25, listOf("ctrl"))
+    BrailleImeAction.NEXT_WORD, BrailleImeAction.NEXT_MISSPELLED_WORD -> key(0x27, listOf("ctrl"))
+    BrailleImeAction.PREVIOUS_LINE -> key(0x26)
+    BrailleImeAction.NEXT_LINE -> key(0x28)
+    BrailleImeAction.BEGINNING_OF_PAGE -> key(0x24, listOf("ctrl"))
+    BrailleImeAction.END_OF_PAGE -> key(0x23, listOf("ctrl"))
+    BrailleImeAction.SELECT_PREVIOUS_CHARACTER -> key(0x25, listOf("shift"))
+    BrailleImeAction.SELECT_NEXT_CHARACTER -> key(0x27, listOf("shift"))
+    BrailleImeAction.SELECT_PREVIOUS_WORD -> key(0x25, listOf("ctrl", "shift"))
+    BrailleImeAction.SELECT_NEXT_WORD -> key(0x27, listOf("ctrl", "shift"))
+    BrailleImeAction.SELECT_PREVIOUS_LINE -> key(0x26, listOf("shift"))
+    BrailleImeAction.SELECT_NEXT_LINE -> key(0x28, listOf("shift"))
+    BrailleImeAction.SELECT_ALL -> key(0x41, listOf("ctrl"))
+    BrailleImeAction.SELECT_CURRENT_TO_START -> key(0x24, listOf("shift"))
+    BrailleImeAction.SELECT_CURRENT_TO_END -> key(0x23, listOf("shift"))
+    BrailleImeAction.COPY -> key(0x43, listOf("ctrl"))
+    BrailleImeAction.CUT -> key(0x58, listOf("ctrl"))
+    BrailleImeAction.PASTE -> key(0x56, listOf("ctrl"))
+    BrailleImeAction.HIDE_KEYBOARD -> "exit"
+    BrailleImeAction.HELP_AND_OTHER_ACTIONS -> "menu"
+    BrailleImeAction.SWITCH_KEYBOARD, BrailleImeAction.NEXT_KEYBOARD -> "mode"
+    BrailleImeAction.PREVIOUS_GRANULARITY, BrailleImeAction.HEAR_PREVIOUS_SPELLING_SUGGESTION -> key(0x09, listOf("shift"))
+    BrailleImeAction.NEXT_GRANULARITY -> key(0x09)
+    else -> null
+  }
 
   fun resolve(mode: NvdaRemoteMode, gesture: NvdaRemoteGesture): String {
     if (gesture.holdOnly) {
@@ -75,8 +154,31 @@ class NvdaRemoteBindings(context: Context) {
     for (candidate in candidates) {
       val key = preference(mode, candidate)
       if (prefs.contains(key)) return prefs.getString(key, "none") ?: "none"
+    }
+
+    if (mode == NvdaRemoteMode.KEYBOARD) {
+      for (candidate in candidates) {
+        val customAction = findCustomBrailleAction(candidate)?.let { mapBrailleImeAction(it) }
+        if (customAction != null) return customAction
+      }
+    }
+
+    for (candidate in candidates) {
       defaults(mode)[candidate.id]?.let { return it }
     }
+
+    if (mode == NvdaRemoteMode.KEYBOARD) {
+      for (candidate in candidates) {
+        val brailleGesture = toBrailleGesture(candidate)
+        if (brailleGesture != null) {
+          val defaultAction = runCatching {
+            BrailleImeGestureAction.getAction(context, brailleGesture).firstOrNull()?.let { mapBrailleImeAction(it) }
+          }.getOrNull()
+          if (defaultAction != null) return defaultAction
+        }
+      }
+    }
+
     if (gesture.held.isNotEmpty()) {
       val navigation = navigationHeldDots(mode, gesture.held)
       if (navigation != gesture.held) return resolve(mode, gesture.copy(held = navigation))
@@ -110,7 +212,34 @@ class NvdaRemoteBindings(context: Context) {
     edit.apply()
   }
   fun gestures(mode: NvdaRemoteMode): List<NvdaRemoteGesture> {
-    val ids = defaults(mode).keys + prefs.all.keys.filter { it.startsWith("${mode.name}/") }
+    val customKeys = if (mode == NvdaRemoteMode.KEYBOARD) {
+      runCatching {
+        BrailleUserPreferences.readGestureActionMap(context).values.flatten()
+      }.getOrDefault(emptyList()).mapNotNull { id ->
+        if (id.startsWith("hold_dot")) {
+          val parts = id.removePrefix("hold_dot").split('_')
+          if (parts.size == 4 && parts[1] == "swipe") {
+            val held = parts[0]
+            val dir = parts[2].uppercase()
+            val fingers = parts[3].toIntOrNull() ?: 1
+            NvdaRemoteGesture(direction = dir, fingers = fingers, held = held).id
+          } else null
+        } else if (id.startsWith("swipe_")) {
+          val parts = id.split('_')
+          if (parts.size == 3) {
+            val dir = parts[1].uppercase()
+            val fingers = parts[2].toIntOrNull() ?: 1
+            NvdaRemoteGesture(direction = dir, fingers = fingers).id
+          } else if (parts.size == 4 && parts[1].startsWith("dot")) {
+            val dot = parts[1].removePrefix("dot").toIntOrNull() ?: 0
+            val dir = parts[2].uppercase()
+            val fingers = parts[3].toIntOrNull() ?: 1
+            NvdaRemoteGesture(direction = dir, fingers = fingers, swipedDot = dot).id
+          } else null
+        } else null
+      }
+    } else emptyList()
+    val ids = defaults(mode).keys + customKeys + prefs.all.keys.filter { it.startsWith("${mode.name}/") }
       .map { it.substringAfter('/') }
     return ids.distinct().mapNotNull { NvdaRemoteGesture.parse(it) }
   }
@@ -165,9 +294,9 @@ class NvdaRemoteBindings(context: Context) {
     }
 
     val localActions = listOf("none", "mode", "menu", "exit", "learn", "clear", "toggle_remote_speech", "ctrl", "alt", "shift",
-      "nvda", "windows", "braille", "braille_space", "braille_erase", "braille_enter", "braille_translate")
+      "nvda", "windows", "braille", "braille_space", "braille_erase", "braille_enter", "braille_translate", "emoji")
     val keys = listOf(0x09, 0x0D, 0x1B, 0x08, 0x2E, 0x20, 0x25, 0x26, 0x27, 0x28,
-      0x24, 0x23, 0x21, 0x22, 0x2D, 0x14, 0x11, 0x5B) + (0x70..0x7B) + (0x41..0x5A) + (0x30..0x39)
+      0x24, 0x23, 0x21, 0x22, 0x2D, 0x14, 0x11, 0x5B, 0xBE) + (0x70..0x7B) + (0x41..0x5A) + (0x30..0x39)
 
     fun actionLabel(context: Context, action: String): String {
       val resource = when (action) {
@@ -187,6 +316,7 @@ class NvdaRemoteBindings(context: Context) {
         "braille_erase" -> R.string.nvda_remote_braille_erase
         "braille_enter" -> R.string.nvda_remote_braille_enter
         "braille_translate" -> R.string.nvda_remote_braille_translate
+        "emoji" -> R.string.nvda_remote_emoji
         else -> R.string.nvda_remote_no_action
       }
       val code = keyCode(action) ?: return context.getString(resource)
@@ -200,6 +330,7 @@ class NvdaRemoteBindings(context: Context) {
         0x21 -> R.string.nvda_remote_page_up; 0x22 -> R.string.nvda_remote_page_down
         0x2D -> R.string.nvda_remote_insert; 0x14 -> R.string.nvda_remote_caps
         0x11 -> R.string.nvda_remote_stop; 0x5B -> R.string.nvda_remote_windows
+        0xBE -> R.string.nvda_remote_period
         else -> 0
       }
       val name = when {

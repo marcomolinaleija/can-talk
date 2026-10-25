@@ -29,6 +29,7 @@
   <string name="nvda_remote_certificate_error">Server certificate could not be verified</string>
   <string name="nvda_remote_certificate_message">Server: %1$s\n\nSHA-256 fingerprint:\n%2$s\n\nOnly continue if this fingerprint matches the certificate of the server you intended to use. Trust applies to this connection only.</string>
   <string name="nvda_remote_trust_once">Trust this certificate once</string>
+  <string name="nvda_remote_trust_always">Trust this server</string>
   <string name="nvda_remote_gestures">Open remote keyboard</string>
   <string name="nvda_remote_pad">Remote control. Double tap: Enter. Swipe left or right: previous or next control. Swipe up or down: arrows. Swipe down with two fingers: return to buttons.</string>
   <string name="nvda_remote_gestures_started">Remote gestures enabled. Swipe down with two fingers to return to the phone controls.</string>
@@ -117,4 +118,6 @@
   <string name="nvda_remote_page_down">Page down</string>
   <string name="nvda_remote_insert">Insert</string>
   <string name="nvda_remote_caps">Caps Lock</string>
+  <string name="nvda_remote_emoji">Emojis</string>
+  <string name="nvda_remote_period">Period</string>
 </resources>

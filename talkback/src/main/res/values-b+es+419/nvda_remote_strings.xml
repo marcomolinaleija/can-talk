@@ -29,6 +29,7 @@
   <string name="nvda_remote_certificate_error">No se pudo verificar el certificado del servidor</string>
   <string name="nvda_remote_certificate_message">Servidor: %1$s\n\nHuella SHA-256:\n%2$s\n\nContinúa solamente si esta huella coincide con el certificado del servidor que querías usar. La confianza se aplica únicamente a esta conexión.</string>
   <string name="nvda_remote_trust_once">Confiar en este certificado una vez</string>
+  <string name="nvda_remote_trust_always">Confiar en este servidor</string>
   <string name="nvda_remote_gestures">Abrir teclado remoto</string>
   <string name="nvda_remote_pad">Control remoto. Doble toque: Enter. Desliza a izquierda o derecha: control anterior o siguiente. Desliza arriba o abajo: flechas. Desliza hacia abajo con dos dedos: volver a los botones.</string>
   <string name="nvda_remote_gestures_started">Gestos remotos activados. Desliza hacia abajo con dos dedos para volver a los controles del teléfono.</string>
@@ -117,4 +118,6 @@
   <string name="nvda_remote_page_down">Página abajo</string>
   <string name="nvda_remote_insert">Insert</string>
   <string name="nvda_remote_caps">Bloqueo de mayúsculas</string>
+  <string name="nvda_remote_emoji">Emojis</string>
+  <string name="nvda_remote_period">Punto</string>
 </resources>

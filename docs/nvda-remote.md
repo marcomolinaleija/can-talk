@@ -19,15 +19,19 @@ La pantalla distingue conexión al servidor de una computadora realmente
 presente. Solo habilita comandos con una computadora controlada. Si hay varias,
 se desconecta para evitar enviar comandos o mezclar voz de varias PCs.
 Para certificados no verificables se permite comparar SHA-256 y confiar
-en el certificado una vez; la sesión queda fijada a esa huella.
+en el certificado una vez o confiar permanentemente en el servidor guardando
+su huella por nombre de host. Si el certificado cambia, se vuelve a solicitar
+confirmación.
 
 ## Superficie braille y modos
 
 **Abrir teclado remoto** muestra una superficie propia de esta pantalla,
-sin abrir ni cambiar el IME. Usa la disposición, inversión de puntos,
-orientación, acumulación y calibración de CAN Talk. Necesita Android 11 o
-posterior para recibir toques directamente. Menús, salida y pérdida de foco
-restauran la exploración táctil. Atrás vuelve al formulario.
+sin abrir ni cambiar el IME. Se ejecuta en modo inmersivo a pantalla completa,
+ocultando las barras del sistema (recientes, inicio y atrás) para evitar toques
+accidentales en los bordes que interrumpan la conexión. Usa la disposición,
+inversión de puntos, orientación, acumulación y calibración de CAN Talk. Necesita
+Android 11 o posterior para recibir toques directamente. Menús, salida y pérdida
+de foco restauran la exploración táctil y las barras del sistema. Atrás vuelve al formulario.
 
 Tres dedos abajo alternan **Modo control** y **Modo teclado**; tres dedos
 arriba abren el menú; dos dedos abajo vuelven al formulario. Estas asignaciones
@@ -82,7 +86,11 @@ garantizar que esos eventos lleguen a Windows.
 | Dos dedos arriba | Control para detener voz |
 
 En teclado, los puntos viajan como `braille_input` y NVDA los interpreta con
-**su tabla de entrada braille**, sin usar el portapapeles. Un dedo a la derecha
+**su tabla de entrada braille**, sin usar el portapapeles. Además, este modo
+respeta las asignaciones personalizadas de gestos de escritura configuradas en
+el teclado braille de CAN Talk (por ejemplo, punto 5 a la izquierda para emojis,
+punto 1 a la izquierda para borrar palabras, etc.), traduciéndolas a sus acciones
+y atajos equivalentes en Windows. Un dedo a la derecha
 envía espacio; a la izquierda borra una celda o carácter; arriba/abajo envía
 izquierda/derecha. Dos dedos a la derecha confirman y envían Enter; arriba
 confirman sin espacio; a la izquierda envían Ctrl+Retroceso. Tres dedos

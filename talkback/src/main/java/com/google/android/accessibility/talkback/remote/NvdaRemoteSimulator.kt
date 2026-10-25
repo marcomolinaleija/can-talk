@@ -96,8 +96,9 @@ class NvdaRemoteSimulator(private val context: Context, private val bindings: Nv
       return press(code, modifiers, event)
     }
     if (learned && action in listOf("braille", "braille_space", "braille_erase", "braille_enter",
-        "braille_translate", "toggle_remote_speech")) return Result("learn", NvdaRemoteBindings.actionLabel(context, action))
+        "braille_translate", "toggle_remote_speech", "emoji")) return Result("learn", NvdaRemoteBindings.actionLabel(context, action))
     return when (action) {
+      "emoji" -> press(0xBE, listOf("windows"), key(0xBE, "windows"))
       "mode" -> {
         prepared.clear(); resetContact()
         mode = if (mode == NvdaRemoteMode.CONTROL) NvdaRemoteMode.KEYBOARD else NvdaRemoteMode.CONTROL

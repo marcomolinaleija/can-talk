@@ -28,6 +28,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.accessibility.talkback.R
 import com.google.android.accessibility.talkback.TalkBackService
 import org.json.JSONObject
@@ -181,6 +184,16 @@ class NvdaRemoteActivity : AppCompatActivity() {
     }
   }
 
+  private fun getTrustedCertificate(hostname: String?): String? {
+    if (hostname.isNullOrBlank()) return null
+    return getPreferences(Context.MODE_PRIVATE).getString("trusted_cert_$hostname", null)
+  }
+
+  private fun saveTrustedCertificate(hostname: String?, fingerprint: String) {
+    if (hostname.isNullOrBlank()) return
+    getPreferences(Context.MODE_PRIVATE).edit().putString("trusted_cert_$hostname", fingerprint).apply()
+  }
+
   private fun connect(trustedFingerprint: String? = null) {
     val address = host.text.toString().trim()
     val endpoint = try {
@@ -205,9 +218,10 @@ class NvdaRemoteActivity : AppCompatActivity() {
     getPreferences(Context.MODE_PRIVATE).edit().putString("host", hostname).putString("port", number.toString()).apply()
     lastReady = null
     lastSpeech.setText(R.string.nvda_remote_last_speech)
+    val pin = trustedFingerprint ?: getTrustedCertificate(hostname)
     lateinit var created: NvdaRemoteSession
     fun onUi(action: () -> Unit) { runOnUiThread { if (session === created && !isFinishing) action() } }
-    created = NvdaRemoteSession(hostname, number, password, trustedFingerprint, object : NvdaRemoteSession.Listener {
+    created = NvdaRemoteSession(hostname, number, password, pin, object : NvdaRemoteSession.Listener {
       override fun onState(ready: Boolean) = onUi {
         if (!ready) setControl(false, false)
         val message = when {
@@ -234,12 +248,16 @@ class NvdaRemoteActivity : AppCompatActivity() {
         }
         status.setText(message)
         if (resumed) announce(message)
-        if (resumed && failure == NvdaRemoteSession.Failure.CERTIFICATE && fingerprint != null && trustedFingerprint == null) {
+        if (resumed && failure == NvdaRemoteSession.Failure.CERTIFICATE && fingerprint != null && (trustedFingerprint == null || trustedFingerprint != fingerprint)) {
           certificateDialog = AlertDialog.Builder(this@NvdaRemoteActivity)
             .setTitle(R.string.nvda_remote_certificate_error)
             .setMessage(getString(R.string.nvda_remote_certificate_message, hostname, fingerprint))
+            .setPositiveButton(R.string.nvda_remote_trust_always) { _, _ ->
+              saveTrustedCertificate(hostname, fingerprint)
+              connect(fingerprint)
+            }
+            .setNeutralButton(R.string.nvda_remote_trust_once) { _, _ -> connect(fingerprint) }
             .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.nvda_remote_trust_once) { _, _ -> connect(fingerprint) }
             .create().also { it.show() }
         }
       }
@@ -329,6 +347,34 @@ class NvdaRemoteActivity : AppCompatActivity() {
     }
   }
 
+  private fun setImmersiveMode(enable: Boolean) {
+    val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+    if (enable) {
+      WindowCompat.setDecorFitsSystemWindows(window, false)
+      insetsController.systemBarsBehavior =
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+      insetsController.hide(WindowInsetsCompat.Type.systemBars())
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        window.attributes.layoutInDisplayCutoutMode =
+          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+      }
+      @Suppress("DEPRECATION")
+      window.decorView.systemUiVisibility = (
+        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+        or View.SYSTEM_UI_FLAG_FULLSCREEN
+      )
+    } else {
+      WindowCompat.setDecorFitsSystemWindows(window, true)
+      insetsController.show(WindowInsetsCompat.Type.systemBars())
+      @Suppress("DEPRECATION")
+      window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+    }
+  }
+
   private fun showSurface() {
     if (surface != null || !resumed || uiDialog?.isShowing == true) return
     if (captureMode == null && (!controlling || session?.ready != true)) return
@@ -371,6 +417,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
       announce(R.string.nvda_remote_surface_requires_android)
       return
     }
+    setImmersiveMode(true)
     surface = created
     controlBack.isEnabled = true
     formScroll.visibility = View.GONE
@@ -391,6 +438,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
   }
 
   private fun removeSurface() {
+    setImmersiveMode(false)
     releaseHeldModifiers()
     blockedHeldDots = ""
     if (ownsTouchRegion) {
@@ -407,8 +455,10 @@ class NvdaRemoteActivity : AppCompatActivity() {
 
   override fun onWindowFocusChanged(focused: Boolean) {
     super.onWindowFocusChanged(focused)
-    if (focused) updateTouchRegion()
-    else {
+    if (focused) {
+      if (surface != null) setImmersiveMode(true)
+      updateTouchRegion()
+    } else {
       releaseHeldModifiers()
       if (ownsTouchRegion) {
         ownsTouchRegion = false
@@ -538,6 +588,20 @@ class NvdaRemoteActivity : AppCompatActivity() {
       return
     }
     when (action) {
+      "emoji" -> {
+        if (learning) {
+          announce((gesture?.label(this)?.plus(". ") ?: "") + NvdaRemoteBindings.actionLabel(this, action))
+          return
+        }
+        preparedModifiers.clear()
+        updateSurfaceDescription()
+        val accepted = if (pendingBraille) session?.pressAfterBraille(0xBE, 0x5B) else session?.press(0xBE, 0x5B)
+        if (accepted == true) {
+          pendingBraille = false
+          vibrate(12)
+          announce(R.string.nvda_remote_emoji)
+        } else announce(R.string.nvda_remote_not_ready)
+      }
       "toggle_remote_speech" -> {
         if (learning) announce(remoteSpeechActionLabel()) else toggleRemoteSpeech()
       }
