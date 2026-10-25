@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:id="@+id/braille_web_navigation" android:orderInCategory="9"
+      android:title="@string/braille_web_title" />
   <item android:id="@+id/clipboard_history" android:orderInCategory="10"
       android:title="@string/clipboard_history_title" />
   <item android:id="@+id/toggle_translation" android:orderInCategory="28"

@@ -184,6 +184,10 @@ public final class BrailleImeGestureAction {
               TOGGLE_EMOJI_MODE,
               new DotHoldSwipe(
                   new Swipe(Direction.RIGHT, /* touchCount= */ 1), new BrailleCharacter(4, 5, 6)))
+          .put(
+              BrailleImeAction.WEB_NAVIGATION,
+              new DotHoldSwipe(
+                  new Swipe(Direction.LEFT, /* touchCount= */ 1), new BrailleCharacter(4, 5, 6)))
           .buildOrThrow();
 
   private static final ImmutableMap<BrailleImeAction, ImmutableList<Gesture>>

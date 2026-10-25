@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="braille_web_title">Navegación web braille</string>
+  <string name="braille_web_opened">Navegación web. Escribe una letra braille. Tres dedos arriba abre la ayuda y los gestos.</string>
+  <string name="braille_web_closed">Navegación web cerrada</string>
+  <string name="braille_web_surface">Navegación web\nEscribe una letra braille para saltar. Tres dedos arriba abre el menú.</string>
+  <string name="braille_web_no_page">Abre una página web que permita navegar por elementos e inténtalo de nuevo.</string>
+  <string name="braille_web_unavailable">Desbloquea el teléfono para usar la navegación web. Se necesita Android 11 o posterior.</string>
+  <string name="braille_web_failed">No se pudo abrir la navegación web braille</string>
+  <string name="braille_web_choose_letter">Elige primero un tipo de elemento. Por ejemplo, escribe h para encabezados.</string>
+  <string name="braille_web_unknown_letter">Esa letra no tiene un comando. Tres dedos arriba abre la ayuda.</string>
+  <string name="braille_web_unknown_gesture">Ese gesto no tiene un comando. Tres dedos arriba abre el menú.</string>
+  <string name="braille_web_activation_failed">No se pudo activar este elemento</string>
+  <string name="braille_web_enable_keyboard">Activa el teclado braille de CAN Talk en los ajustes de Android para escribir aquí.</string>
+  <string name="braille_web_writing">Escritura. El teclado braille está listo. Usa Navegación web en su menú para volver.</string>
+  <string name="braille_web_headings">Encabezados</string>
+  <string name="braille_web_links">Enlaces</string>
+  <string name="braille_web_lists">Listas</string>
+  <string name="braille_web_items">Elementos de lista</string>
+  <string name="braille_web_buttons">Botones</string>
+  <string name="braille_web_edits">Campos de texto</string>
+  <string name="braille_web_forms">Controles de formulario</string>
+  <string name="braille_web_tables">Tablas</string>
+  <string name="braille_web_graphics">Imágenes</string>
+  <string name="braille_web_landmarks">Regiones de la página</string>
+  <string name="braille_web_checkboxes">Casillas de verificación</string>
+  <string name="braille_web_comboboxes">Listas desplegables</string>
+  <string name="braille_web_radios">Botones de opción</string>
+  <string name="braille_web_previous">Elemento anterior del tipo elegido</string>
+  <string name="braille_web_next">Elemento siguiente del tipo elegido</string>
+  <string name="braille_web_previous_item">Elemento anterior</string>
+  <string name="braille_web_next_item">Elemento siguiente</string>
+  <string name="braille_web_activate">Activar el elemento actual</string>
+  <string name="braille_web_menu">Abrir el menú de navegación</string>
+  <string name="braille_web_exit">Cerrar la navegación web</string>
+  <string name="braille_web_help">Ayuda</string>
+  <string name="braille_web_help_body">Usa letras braille sin contracciones: h encabezados, k enlaces, l listas, i elementos de lista, b botones, e campos de texto, f controles de formulario, t tablas, g imágenes, d regiones de la página, x casillas de verificación, c listas desplegables, r botones de opción.\nCada letra salta hacia delante. Un dedo arriba o abajo repite el tipo elegido hacia atrás o hacia delante. Un dedo a izquierda o derecha lee el elemento anterior o siguiente. Dos dedos a la derecha activa el elemento actual. Encontrar un campo de texto solo lo lee; activarlo permite escribir.\nTres dedos arriba siempre abre este menú. Dos dedos a la izquierda siempre cierra la navegación. Atrás también la cierra. Dos dedos abajo la cierra de forma predeterminada. Puedes asignar gestos adicionales desde este menú.\nMientras escribes, usa Navegación web en el menú del teclado braille para volver. Su gesto predeterminado es mantener los puntos 4, 5 y 6 y deslizar a la izquierda con un dedo; puedes cambiarlo en los ajustes de gestos del teclado.</string>
+  <string name="braille_web_resume">Seguir navegando</string>
+  <string name="braille_web_assign">Asignar un gesto adicional</string>
+  <string name="braille_web_capture">Haz un deslizamiento para: %1$s. Atrás cancela. Tres dedos arriba y dos dedos a la izquierda están reservados.</string>
+  <string name="braille_web_capture_swipe">Usa un deslizamiento. Las letras braille, tres dedos arriba y dos dedos a la izquierda están reservados.</string>
+  <string name="braille_web_confirm_gesture">%1$s realizará: %2$s.\nAcción actual: %3$s.</string>
+  <string name="braille_web_unassigned">Sin asignar</string>
+  <string name="braille_web_reset">Restablecer los gestos de navegación</string>
+  <string name="braille_web_reset_question">¿Quieres quitar los gestos adicionales y volver a los predeterminados?</string>
+</resources>

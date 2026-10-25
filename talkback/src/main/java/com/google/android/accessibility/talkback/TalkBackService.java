@@ -167,6 +167,7 @@ import com.google.android.accessibility.talkback.eventprocessor.CallSpeechVolume
 import com.google.android.accessibility.talkback.eventprocessor.LocalMediaVolumeKeyHandler;
 import com.google.android.accessibility.talkback.clipboard.ClipboardHistoryController;
 import com.google.android.accessibility.talkback.appsearch.BrailleAppSearchController;
+import com.google.android.accessibility.talkback.web.BrailleWebNavigationController;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorEmojiTraversal;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorEventQueue;
 import com.google.android.accessibility.talkback.eventprocessor.ProcessorGestureVibrator;
@@ -686,6 +687,7 @@ public class TalkBackService extends AccessibilityServiceCompat
   private LocalMediaVolumeKeyHandler localMediaVolumeKeyHandler;
   private ClipboardHistoryController clipboardHistoryController;
   private BrailleAppSearchController brailleAppSearchController;
+  private BrailleWebNavigationController brailleWebNavigationController;
   private BrailleSuggestionsController brailleSuggestionsController;
 
   public BrailleSuggestionsController getBrailleSuggestionsController() {
@@ -962,6 +964,10 @@ public class TalkBackService extends AccessibilityServiceCompat
       brailleAppSearchController.shutdown();
       brailleAppSearchController = null;
     }
+    if (brailleWebNavigationController != null) {
+      brailleWebNavigationController.shutdown();
+      brailleWebNavigationController = null;
+    }
     if (translationController != null) {
       translationController.close();
     }
@@ -1042,6 +1048,7 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onConfigurationChanged(Configuration newConfig) {
+    if (brailleWebNavigationController != null) brailleWebNavigationController.dismiss(false);
     if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
     if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
     this.getTheme().applyStyle(R.style.TalkbackBaseTheme, /* force= */ true);
@@ -1117,6 +1124,20 @@ public class TalkBackService extends AccessibilityServiceCompat
       brailleSuggestionsController.clear();
     }
     if (clipboardHistoryController != null) clipboardHistoryController.onAccessibilityEvent(event);
+    if (brailleWebNavigationController != null) {
+      brailleWebNavigationController.onAccessibilityEvent(event);
+      if (brailleWebNavigationController.isShowing()) {
+        int type = event.getEventType();
+        if (type == AccessibilityEvent.TYPE_TOUCH_INTERACTION_START
+            || type == AccessibilityEvent.TYPE_TOUCH_INTERACTION_END) {
+          isTouchInteracting = type == AccessibilityEvent.TYPE_TOUCH_INTERACTION_START;
+          return;
+        }
+        // Browser focus/content events must still reach the normal reading pipeline.
+        if (type == AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_START
+            || type == AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_END) return;
+      }
+    }
     if (brailleAppSearchController != null) {
       brailleAppSearchController.onAccessibilityEvent(event);
       if (brailleAppSearchController.isShowing()) {
@@ -1392,6 +1413,9 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   /** Handles a key event and returns whether it should be considered consumed. */
   protected boolean onKeyEventInternal(KeyEvent keyEvent) {
+    if (brailleWebNavigationController != null && brailleWebNavigationController.onKeyEvent(keyEvent)) {
+      return true;
+    }
     if (brailleAppSearchController != null && brailleAppSearchController.onKeyEvent(keyEvent)) {
       return true;
     }
@@ -1665,6 +1689,9 @@ public class TalkBackService extends AccessibilityServiceCompat
   }
 
   private boolean handleOnGestureById(int displayId, int gestureId) {
+    if (brailleWebNavigationController != null && brailleWebNavigationController.isShowing()) {
+      return true;
+    }
     if (brailleAppSearchController != null && brailleAppSearchController.isShowing()) {
       // Raw braille touches own this surface. Consume any late framework gesture.
       return true;
@@ -1733,6 +1760,7 @@ public class TalkBackService extends AccessibilityServiceCompat
   }
 
   public boolean showClipboardHistory() {
+    if (brailleWebNavigationController != null) brailleWebNavigationController.dismiss(false);
     if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
     return clipboardHistoryController != null && isServiceActive() && !PauseController.isPaused()
         && clipboardHistoryController.show();
@@ -1743,7 +1771,18 @@ public class TalkBackService extends AccessibilityServiceCompat
       return false;
     }
     if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
+    if (brailleWebNavigationController != null) brailleWebNavigationController.dismiss(false);
     return brailleAppSearchController.show();
+  }
+
+  /** Opens the calibrated braille surface over the current web page, without an editor. */
+  public boolean showBrailleWebNavigation() {
+    if (!isServiceActive() || PauseController.isPaused() || brailleWebNavigationController == null) {
+      return false;
+    }
+    if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
+    if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
+    return brailleWebNavigationController.show();
   }
 
   public void setClipboardHistoryTouchRegion(@Nullable Region region) {
@@ -2635,10 +2674,12 @@ public class TalkBackService extends AccessibilityServiceCompat
     clipboardHistoryController = new ClipboardHistoryController(
         this, pipeline.getFeedbackReturner(), accessibilityFocusMonitor);
     brailleAppSearchController = new BrailleAppSearchController(this, pipeline.getFeedbackReturner());
+    brailleWebNavigationController = new BrailleWebNavigationController(this, pipeline.getFeedbackReturner());
     brailleSuggestionsController = BrailleSuggestionsController.forService(this, pipeline.getFeedbackReturner());
     ringerModeAndScreenMonitor.addScreenChangedListener((interactive, eventId) -> {
       if (!interactive && clipboardHistoryController != null) clipboardHistoryController.dismiss();
       if (!interactive && brailleAppSearchController != null) brailleAppSearchController.dismiss();
+      if (!interactive && brailleWebNavigationController != null) brailleWebNavigationController.dismiss(false);
       if (!interactive && brailleSuggestionsController != null) brailleSuggestionsController.clear();
     });
 
@@ -2690,6 +2731,7 @@ public class TalkBackService extends AccessibilityServiceCompat
                 if (brailleSuggestionsController != null) brailleSuggestionsController.clear();
                 if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
                 if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
+                if (brailleWebNavigationController != null) brailleWebNavigationController.dismiss(false);
                 if (menuManager != null) {
                   menuManager.dismissAll();
                 }
@@ -3243,6 +3285,7 @@ public class TalkBackService extends AccessibilityServiceCompat
    * {@link #onDestroy}.
    */
   private void suspendInfrastructure() {
+    if (brailleWebNavigationController != null) brailleWebNavigationController.dismiss(false);
     if (clipboardHistoryController != null) clipboardHistoryController.dismiss();
     if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
     if (translationController != null) {

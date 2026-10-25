@@ -100,6 +100,7 @@ public class SupportedCommand {
           .add(new SupportedCommand(TOGGLE_EMOJI_MODE, BASIC, TYPING))
           .add(new SupportedCommand(HELP_AND_OTHER_ACTIONS, BASIC, KEYBOARD))
           .add(new SupportedCommand(TOGGLE_ORIENTATION_LOCK, BASIC, KEYBOARD))
+          .add(new SupportedCommand(BrailleImeAction.WEB_NAVIGATION, BASIC, KEYBOARD))
           .add(new SupportedCommand(PREVIOUS_CHARACTER, CURSOR_MOVEMENT, CHARACTER))
           .add(new SupportedCommand(NEXT_CHARACTER, CURSOR_MOVEMENT, CHARACTER))
           .add(new SupportedCommand(PREVIOUS_WORD, CURSOR_MOVEMENT, WORD))

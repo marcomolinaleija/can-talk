@@ -142,6 +142,11 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
   }
 
   @Override
+  public boolean startWebNavigation() {
+    return service.showBrailleWebNavigation();
+  }
+
+  @Override
   public void focusInputField() {
     FocusFinder focusFinder = createFocusFinder();
     AccessibilityNodeInfoCompat inputFocus = focusFinder.findFocusCompat(FOCUS_INPUT);

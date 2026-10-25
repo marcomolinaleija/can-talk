@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="shortcut_value_braille_web_navigation" translatable="false">BRAILLE_WEB_NAVIGATION</string>
+  <string name="braille_web_title">Braille web navigation</string>
+  <string name="braille_web_opened">Web navigation. Type a letter in braille. Three fingers up opens help and gestures.</string>
+  <string name="braille_web_closed">Web navigation closed</string>
+  <string name="braille_web_surface">Web navigation\nType a braille letter to jump. Three fingers up opens the menu.</string>
+  <string name="braille_web_no_page">Open a web page that supports navigation by element, then try again.</string>
+  <string name="braille_web_unavailable">Unlock the phone to use web navigation. Android 11 or later is required.</string>
+  <string name="braille_web_failed">Could not open braille web navigation</string>
+  <string name="braille_web_choose_letter">Choose an element type first. For example, type h for headings.</string>
+  <string name="braille_web_unknown_letter">That letter has no command. Three fingers up opens help.</string>
+  <string name="braille_web_unknown_gesture">That gesture has no command. Three fingers up opens the menu.</string>
+  <string name="braille_web_activation_failed">Could not activate this element</string>
+  <string name="braille_web_enable_keyboard">Enable the CAN Talk braille keyboard in Android settings to write here.</string>
+  <string name="braille_web_writing">Writing. The braille keyboard is ready. Use Web navigation from its menu to return.</string>
+  <string name="braille_web_headings">Headings</string>
+  <string name="braille_web_links">Links</string>
+  <string name="braille_web_lists">Lists</string>
+  <string name="braille_web_items">List items</string>
+  <string name="braille_web_buttons">Buttons</string>
+  <string name="braille_web_edits">Text fields</string>
+  <string name="braille_web_forms">Form controls</string>
+  <string name="braille_web_tables">Tables</string>
+  <string name="braille_web_graphics">Images</string>
+  <string name="braille_web_landmarks">Page regions</string>
+  <string name="braille_web_checkboxes">Checkboxes</string>
+  <string name="braille_web_comboboxes">Combo boxes</string>
+  <string name="braille_web_radios">Radio buttons</string>
+  <string name="braille_web_previous">Previous element of the selected type</string>
+  <string name="braille_web_next">Next element of the selected type</string>
+  <string name="braille_web_previous_item">Previous item</string>
+  <string name="braille_web_next_item">Next item</string>
+  <string name="braille_web_activate">Activate current element</string>
+  <string name="braille_web_menu">Open navigation menu</string>
+  <string name="braille_web_exit">Close web navigation</string>
+  <string name="braille_web_help">Help</string>
+  <string name="braille_web_help_body">Use uncontracted braille letters: h headings, k links, l lists, i list items, b buttons, e text fields, f form controls, t tables, g images, d page regions, x checkboxes, c combo boxes, r radio buttons.\nEach letter jumps forward. One finger up or down repeats the selected type backward or forward. One finger left or right reads the previous or next item. Two fingers right activates the current element. Finding a text field only reads it; activating it opens writing.\nThree fingers up always opens this menu. Two fingers left always closes navigation. Back also closes it. Two fingers down closes it by default. You can assign additional gestures from this menu.\nWhile writing, use Web navigation in the braille keyboard menu to return. Its default shortcut is to hold dots 4, 5 and 6 and swipe left with one finger; you can change it in the keyboard gesture settings.</string>
+  <string name="braille_web_resume">Keep navigating</string>
+  <string name="braille_web_assign">Assign an additional gesture</string>
+  <string name="braille_web_capture">Perform a swipe for: %1$s. Back cancels. Three fingers up and two fingers left are reserved.</string>
+  <string name="braille_web_capture_swipe">Use a swipe. Braille letters, three fingers up and two fingers left are reserved.</string>
+  <string name="braille_web_confirm_gesture">%1$s will perform: %2$s.\nCurrent action: %3$s.</string>
+  <string name="braille_web_unassigned">Unassigned</string>
+  <string name="braille_web_reset">Reset navigation gestures</string>
+  <string name="braille_web_reset_question">Remove the additional gestures and restore the defaults?</string>
+</resources>

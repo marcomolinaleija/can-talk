@@ -512,6 +512,7 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
         R.string.shortcut_value_copy_last_spoken_phrase, R.string.title_copy_last_spoken_phrase),
     BRAILLE_KEYBOARD(R.string.shortcut_value_braille_keyboard, R.string.shortcut_braille_keyboard),
     BRAILLE_APP_SEARCH(R.string.shortcut_value_braille_app_search, R.string.braille_app_search_title),
+    BRAILLE_WEB_NAVIGATION(R.string.shortcut_value_braille_web_navigation, R.string.braille_web_title),
 
     // Special features.
     MEDIA_CONTROL(R.string.shortcut_value_media_control, R.string.shortcut_media_control),

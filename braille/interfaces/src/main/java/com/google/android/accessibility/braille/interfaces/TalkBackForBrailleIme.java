@@ -42,6 +42,9 @@ public interface TalkBackForBrailleIme {
   @CanIgnoreReturnValue
   boolean performAction(ScreenReaderAction action, Object... arg);
 
+  /** Opens web navigation after the IME has committed its composing text. */
+  default boolean startWebNavigation() { return false; }
+
   /**
    * Moves accessibility focus to the input focused edit field if it is on another node, so that
    * text navigation acts on the field being typed in.
