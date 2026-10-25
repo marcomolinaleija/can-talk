@@ -540,8 +540,8 @@ public class GeminiActor {
       return;
     }
 
+    final byte[] finalImage = image;
     if (isSupportImageQna(requestId)) {
-      final byte[] finalImage = image;
       mainHandler.post(
           () ->
               bottomSheetResultOverlay.showImageCaptionResultBottomSheet(
@@ -554,7 +554,12 @@ public class GeminiActor {
       mainHandler.post(
           () ->
               new CaptionResultDialog(
-                      context, imageDescriptionResult, iconLabelResult, ocrTextResult)
+                      context,
+                      finalImage,
+                      imageDescriptionResult,
+                      iconLabelResult,
+                      ocrTextResult,
+                      isScreenDescription)
                   .showDialog());
     }
     if (requestIdMap.containsKey(requestId)) {
@@ -584,6 +589,7 @@ public class GeminiActor {
               () ->
                   new CaptionResultDialog(
                           context,
+                          overview.getImageBytes(),
                           Result.create(
                               CaptionType.SCREEN_OVERVIEW, overview.getOverview().getSummary()))
                       .showDialog());

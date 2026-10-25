@@ -63,6 +63,12 @@
         android:paddingEnd="8dp"
         android:visibility="gone"
         android:textAppearance="@style/A11yAlertDialogContentTextStyle"/>
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/caption_share_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/caption_share_title" />
   </LinearLayout>
 
 </ScrollView>

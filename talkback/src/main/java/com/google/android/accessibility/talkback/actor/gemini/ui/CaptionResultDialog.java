@@ -35,13 +35,22 @@ public class CaptionResultDialog extends BaseDialog {
   private final Optional<Result> iconLabelResult;
   private final Optional<Result> ocrTextResult;
   private final Optional<Result> screenOverviewResult;
+  private final byte[] imageBytes;
 
   public CaptionResultDialog(
       Context context,
+      byte[] imageBytes,
       Result imageDescriptionResult,
       Result iconLabelResult,
-      Result ocrTextResult) {
-    super(context, R.string.title_gemini_result_dialog, /* pipeline= */ null);
+      Result ocrTextResult,
+      boolean isScreenDescription) {
+    super(
+        context,
+        isScreenDescription
+            ? R.string.title_gemini_screen_overview_result_dialog
+            : R.string.title_gemini_result_dialog,
+        /* pipeline= */ null);
+    this.imageBytes = imageBytes;
     this.imageDescriptionResult = Optional.ofNullable(imageDescriptionResult);
     this.iconLabelResult = Optional.ofNullable(iconLabelResult);
     this.ocrTextResult = Optional.ofNullable(ocrTextResult);
@@ -51,8 +60,9 @@ public class CaptionResultDialog extends BaseDialog {
   }
 
   /** The dialog result for screen description. */
-  public CaptionResultDialog(Context context, Result screenOverviewResult) {
+  public CaptionResultDialog(Context context, byte[] imageBytes, Result screenOverviewResult) {
     super(context, R.string.title_gemini_screen_overview_result_dialog, /* pipeline= */ null);
+    this.imageBytes = imageBytes;
     this.screenOverviewResult = Optional.ofNullable(screenOverviewResult);
     imageDescriptionResult = Optional.empty();
     iconLabelResult = Optional.empty();
@@ -109,6 +119,17 @@ public class CaptionResultDialog extends BaseDialog {
       }
     }
 
+    String description =
+        CaptionSharing.description(
+            context,
+            screenOverviewResult.orElse(null),
+            imageDescriptionResult.orElse(null),
+            iconLabelResult.orElse(null),
+            ocrTextResult.orElse(null));
+    View shareButton = dialogView.findViewById(R.id.caption_share_button);
+    shareButton.setEnabled(imageBytes.length > 0 || !TextUtils.isEmpty(description));
+    shareButton.setOnClickListener(
+        view -> CaptionSharing.showOptions(context, imageBytes, description, this::dismissDialog));
     return dialogView;
   }
 

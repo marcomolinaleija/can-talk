@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="caption_share_title">Share</string>
+  <string name="caption_share_image">Share image</string>
+  <string name="caption_share_description">Share description</string>
+  <string name="caption_share_both">Share image and description</string>
+  <string name="caption_share_error">Could not share. Try again.</string>
+</resources>

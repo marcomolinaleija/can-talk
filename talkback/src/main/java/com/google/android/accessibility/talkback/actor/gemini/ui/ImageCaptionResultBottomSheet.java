@@ -197,12 +197,19 @@ public class ImageCaptionResultBottomSheet {
 
     MaterialButton closeButton = contentView.findViewById(R.id.close_button);
     closeButton.setOnClickListener(view -> dialog.dismiss());
+    String description =
+        CaptionSharing.description(context, imageDescriptionResult, iconLabelResult, ocrTextResult);
+    MaterialButton shareButton = contentView.findViewById(R.id.caption_share_button);
+    shareButton.setEnabled(imageBytes.length > 0 || !TextUtils.isEmpty(description));
+    shareButton.setOnClickListener(
+        view -> CaptionSharing.showOptions(service, imageBytes, description, dialog::dismiss));
 
     // For Hide screen feature
     if (isDimScreenEnabled) {
       contentView.setBackgroundColor(Color.BLACK);
       viewPager.setBackgroundColor(Color.BLACK);
       closeButton.setTextColor(Color.BLACK);
+      shareButton.setTextColor(Color.BLACK);
     }
 
     dialog.setContentView(contentView);
