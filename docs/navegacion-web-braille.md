@@ -28,6 +28,12 @@ Cada letra busca el siguiente elemento de ese tipo. Un dedo arriba busca el
 anterior del último tipo elegido; un dedo abajo busca el siguiente. Un dedo
 a izquierda o derecha recorre los elementos de lectura habituales.
 
+El punto 3 solo salta al inicio de la página y el punto 6 solo salta al final,
+usando las acciones de inicio/final del lector. Ambos estaban libres en este
+modo. Se conserva el tipo elegido con la última letra para seguir recorriéndolo
+con arriba o abajo después del salto. Inicio y final también aparecen como
+acciones en la asignación de deslizamientos adicionales.
+
 Dos dedos a la derecha activa el elemento actual. Tres dedos arriba abre
 un menú accesible con ayuda, asignación de gestos adicionales y restablecimiento.
 Dos dedos abajo cierra el modo de forma predeterminada. Dos dedos a la izquierda
@@ -101,3 +107,18 @@ CAN Talk quedó conectado como servicio de accesibilidad y sin servicios caídos
 
 Después de instalarla, el usuario probó la navegación en el teléfono y confirmó
 que funciona correctamente el 25 de octubre de 2026.
+
+### Ampliación: inicio y final con los puntos 3 y 6
+
+Se verificó que ambos puntos estaban libres y que no se superponen con las
+13 letras. Los tres idiomas tienen ahora 46 textos con los mismos nombres y
+parámetros. La compilación terminó con BUILD SUCCESSFUL en 6 min 16 s, sin lint
+ni pruebas unitarias. Registro:
+.git/preparacion/web-braille-inicio-final-build.log.
+
+APK: build/apks/cantalk-web-inicio-final-prueba.apk.
+Versión TfPu_release_16_2-2026_10_25_0156, código 70000296.
+Firma verificada e instalación con adb install -r: Success.
+El teléfono confirmó esa versión a las 02:03:13 del 25 de octubre de 2026.
+CAN Talk quedó activo, sin servicios caídos. El usuario probó los puntos 3 y 6
+en el teléfono y confirmó que funcionan correctamente el 25 de octubre de 2026.
