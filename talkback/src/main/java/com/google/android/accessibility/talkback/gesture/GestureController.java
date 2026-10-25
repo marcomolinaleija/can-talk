@@ -557,6 +557,8 @@ public class GestureController {
       result = service.showClipboardHistory();
     } else if (action.equals(service.getString(R.string.shortcut_value_braille_app_search))) {
       result = service.showBrailleAppSearch();
+    } else if (action.equals(service.getString(R.string.shortcut_value_braille_web_navigation))) {
+      result = service.showBrailleWebNavigation();
     } else if (action.equals(service.getString(R.string.shortcut_value_braille_keyboard))) {
       String inputMethodInfoId = KeyboardUtils.getEnabledImeId(service, service.getPackageName());
       if (!TextUtils.isEmpty(inputMethodInfoId)) {

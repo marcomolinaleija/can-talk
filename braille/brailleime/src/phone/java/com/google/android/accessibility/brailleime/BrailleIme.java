@@ -1957,6 +1957,19 @@ public class BrailleIme extends InputMethodService {
   private final ContextMenuDialog.Callback contextMenuDialogCallback =
       new ContextMenuDialog.Callback() {
         @Override
+        public void onWebNavigation() {
+          // Run after the options menu releases focus; commit without submitting the editor.
+          mainHandler.post(() -> {
+            if (brailleImeActor != null && isInputViewShown()) {
+              // The menu deactivated touch input. Restore it even if the page is unsupported.
+              onDialogHidden();
+              brailleImeActor.performAssignedAction(
+                  com.google.android.accessibility.braille.common.BrailleImeAction.WEB_NAVIGATION);
+            }
+          });
+        }
+
+        @Override
         public void onDialogHidden() {
           activateBrailleIme();
           startAnalyticsPossibly();

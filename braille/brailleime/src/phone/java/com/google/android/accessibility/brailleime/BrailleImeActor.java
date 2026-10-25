@@ -188,6 +188,10 @@ public class BrailleImeActor {
     if (action == null || !callback.isConnectionValid()) {
       return false;
     }
+    if (action == BrailleImeAction.WEB_NAVIGATION) {
+      callback.getEditBuffer().commit(callback.getImeConnection());
+      return talkBackForBrailleIme.startWebNavigation();
+    }
     BrailleImeAction requestedAction = action;
     if (SupportedCommand.getSupportedCommands(context).stream()
         .noneMatch(command -> command.getBrailleImeAction().equals(requestedAction))) {
