@@ -37,10 +37,12 @@ import static com.google.android.accessibility.braille.common.BrailleImeAction.V
 
 import android.content.Context;
 import android.os.Handler;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.inputmethod.InputConnection;
 import androidx.annotation.Nullable;
 import com.google.android.accessibility.braille.common.BrailleCommonTalkBackSpeaker;
+import com.google.android.accessibility.braille.common.BrailleCommonUtils;
 import com.google.android.accessibility.braille.common.BrailleImeAction;
 import com.google.android.accessibility.braille.common.BrailleUserPreferences;
 import com.google.android.accessibility.braille.common.FeedbackManager;
@@ -147,7 +149,14 @@ public class BrailleImeActor {
       talkBackForBrailleIme.resetGranularity();
     }
     boolean autoCapSetting = BrailleUserPreferences.readAutoCapitalize(context);
-    boolean shouldAutoCap = shouldCapitalize && autoCapSetting;
+    ImeConnection typingConnection = callback.getImeConnection();
+    int variation = typingConnection.editorInfo.inputType & InputType.TYPE_MASK_VARIATION;
+    // Credentials and addresses must preserve the case the user actually types.
+    boolean exactInput = BrailleCommonUtils.isPasswordField(typingConnection.editorInfo)
+        || variation == InputType.TYPE_TEXT_VARIATION_URI
+        || variation == InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+        || variation == InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS;
+    boolean shouldAutoCap = shouldCapitalize && autoCapSetting && !exactInput;
     String result =
         callback.getEditBuffer().appendBraille(callback.getImeConnection(), brailleChar, shouldAutoCap);
     if (callback.getEditBuffer().wasLastAutoCapitalized()) {

@@ -162,6 +162,8 @@ public abstract class BrailleInputPlane {
   /** Listens custom gestures events. */
   interface CustomOnGestureListener {
 
+    default void onHeldDotsChanged(BrailleCharacter dots) {}
+
     /** Signals that a gesture is detected. */
     boolean detect(Optional<BrailleInputPlaneResult> resultOptional);
 
@@ -428,6 +430,8 @@ public abstract class BrailleInputPlane {
       return true;
     }
     boolean result = multitouchHandler.onTouchEvent(event);
+    customOnGestureListener.onHeldDotsChanged(
+        new BrailleCharacter(matchTouchToTargetNumbers(multitouchHandler.getHeldPoints())));
     currentlyPressedDots = matchTouchToTargets(multitouchHandler.getActivePoints());
     return result;
   }
@@ -472,7 +476,9 @@ public abstract class BrailleInputPlane {
       }
       case MultitouchResult.TYPE_HOLD -> {
         return customOnGestureListener.detect(
-            Optional.of(BrailleInputPlaneResult.createHold(touchResult.heldPoints.size())));
+            Optional.of(BrailleInputPlaneResult.createHold(
+                new BrailleCharacter(matchTouchToTargetNumbers(touchResult.heldPoints)),
+                touchResult.heldPoints.size())));
       }
       case MultitouchResult.TYPE_CALIBRATION_HOLD -> {
         if (twoStepCalibrationState != NONE) {
@@ -494,10 +500,18 @@ public abstract class BrailleInputPlane {
         }
       }
       case MultitouchResult.TYPE_HOLD_AND_SWIPE -> {
+        Swipe swipe = touchResult.swipe;
+        if (swipe != null && swipe.getTouchCount() == 1
+            && touchResult.releasedPoints != null && !touchResult.releasedPoints.isEmpty()) {
+          Set<Integer> dots = matchTouchToTargetNumbers(touchResult.releasedPoints);
+          if (!dots.isEmpty()) {
+            swipe = new Swipe(swipe.getDirection(), 1, dots.iterator().next());
+          }
+        }
         return customOnGestureListener.detect(
             Optional.of(
                 createDotHoldAndSwipe(
-                    touchResult.swipe,
+                    swipe,
                     new BrailleCharacter(matchTouchToTargetNumbers(touchResult.heldPoints)))));
       }
       case MultitouchResult.TYPE_INVALID -> {

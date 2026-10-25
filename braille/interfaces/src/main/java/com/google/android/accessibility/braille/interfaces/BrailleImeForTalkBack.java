@@ -27,6 +27,9 @@ public interface BrailleImeForTalkBack {
   /** Callbacks when TalkBack state changes from inactive or suspended to active. */
   void onTalkBackResumed();
 
+  /** Commits pending braille only if the requested editor still owns the input connection. */
+  default void commitPendingInput(String packageName, int fieldId) {}
+
   /** Returns whether braille keyboard is in full screen and touch interacting. */
   boolean isTouchInteracting();
 

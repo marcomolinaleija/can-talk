@@ -281,6 +281,10 @@ class MultitouchHandler {
                         getRecentlyInactivatedInitialPoints(SystemClock.uptimeMillis()));
                 isProcessed = multitouchResultListener.detect(Optional.of(result));
                 BrailleImeLog.d(TAG, "hold and swipe result: " + isProcessed);
+                if (isProcessed) {
+                  // A subsequent swipe belongs to a new command, even within the recency window.
+                  inactivePointers.clear();
+                }
                 handler.removeCallbacksAndMessages(null);
               }
             }
@@ -464,7 +468,7 @@ class MultitouchHandler {
         .findFirst();
   }
 
-  private ImmutableList<PointF> getHeldPoints() {
+  ImmutableList<PointF> getHeldPoints() {
     return activePointers.values().stream()
         .filter(pointerWithHistory -> pointerWithHistory.isHoldInProgress)
         .map(pointerWithHistory -> pointerWithHistory.pointCurrent)

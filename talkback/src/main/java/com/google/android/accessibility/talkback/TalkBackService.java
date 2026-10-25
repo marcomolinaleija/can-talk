@@ -1447,6 +1447,9 @@ public class TalkBackService extends AccessibilityServiceCompat
     if (!isServiceActive() || PauseController.isPaused()) {
       return false;
     }
+    if (com.google.android.accessibility.talkback.remote.NvdaRemoteActivity.handleGesture(gestureId)) {
+      return true;
+    }
     Performance perf = Performance.getInstance();
     EventId eventId = perf.onGestureEventReceived(gestureId);
     primesController.startTimer(TimerAction.GESTURE_EVENT);
@@ -2720,6 +2723,17 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   private BrailleImeForTalkBack getBrailleImeForTalkBack() {
     return brailleImeForTalkBackProvider.getBrailleImeForTalkBack();
+  }
+
+  /** Flushes the braille keyboard before an activity reads its own focused editor. */
+  public void commitPendingBrailleInput(String packageName, int fieldId) {
+    if (brailleImeForTalkBackProvider == null) {
+      return;
+    }
+    BrailleImeForTalkBack ime = getBrailleImeForTalkBack();
+    if (ime != null) {
+      ime.commitPendingInput(packageName, fieldId);
+    }
   }
 
   private boolean isBrailleKeyboardActivated() {

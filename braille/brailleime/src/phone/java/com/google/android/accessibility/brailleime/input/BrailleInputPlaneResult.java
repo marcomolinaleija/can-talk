@@ -78,6 +78,12 @@ class BrailleInputPlaneResult {
     return result;
   }
 
+  static BrailleInputPlaneResult createHold(BrailleCharacter dots, int pointersHeldCount) {
+    BrailleInputPlaneResult result = createHold(pointersHeldCount);
+    result.heldBrailleCharacter = dots;
+    return result;
+  }
+
   static BrailleInputPlaneResult createSwipe(Swipe swipe) {
     BrailleInputPlaneResult result = new BrailleInputPlaneResult();
     result.type = TYPE_SWIPE;
