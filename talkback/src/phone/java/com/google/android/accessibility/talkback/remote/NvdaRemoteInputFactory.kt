@@ -27,6 +27,8 @@ import com.google.android.accessibility.brailleime.input.Swipe
 import com.google.android.accessibility.brailleime.R as BrailleR
 
 object NvdaRemoteInputFactory {
+  fun dotCount(context: Context): Int = BrailleUserPreferences.getCurrentTypingLanguageType(context).dotCount
+
   fun create(context: Context, size: Size, listener: NvdaRemoteInput.Listener): NvdaRemoteInput =
     RemoteBrailleView(context, size, listener)
 }

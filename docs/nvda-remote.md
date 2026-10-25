@@ -98,6 +98,12 @@ cierra la sesión; los fallos requieren reconexión manual.
 
 ## Reasignación y aprendizaje
 
+El botón **Aprender a usar NVDA Remote** abre un tutorial con una computadora
+simulada, sin conexión. Incluye lecciones, práctica libre, progreso guardado y
+salida con confirmación. Se ofrece antes de conectar mientras queden lecciones
+pendientes, salvo que se elija **No mostrar de nuevo**.
+Consulta [el tutorial de NVDA Remote](nvda-remote-tutorial.md).
+
 **Reasignar gestos remotos** funciona incluso sin conectar una PC. Elegir un
 modo muestra sus asignaciones y permite capturar un gesto nuevo. La captura
 y el aprendizaje no envían comandos a la PC. Se admiten puntos, acordes,

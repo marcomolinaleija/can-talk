@@ -44,13 +44,14 @@ android {
         // a watch, so they are not debuggable. Debug logging in the libraries stays on.
         debug {
             debuggable = false
-            signingConfig signingConfigs.shared
+            // The independent test app keeps the local key used by existing phone installs.
+            signingConfig canTalkTestBuild ? signingConfigs.debug : signingConfigs.shared
             // Shrinks and optimizes the libraries, so there is less code to load and compile.
             minifyEnabled = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         release {
-            signingConfig signingConfigs.shared
+            signingConfig canTalkTestBuild ? signingConfigs.debug : signingConfigs.shared
         }
     }
     packaging {

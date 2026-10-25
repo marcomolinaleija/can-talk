@@ -1685,7 +1685,8 @@ public class TalkBackService extends AccessibilityServiceCompat
         prefs, FormFactorUtils.isAndroidWear(), gestureId)) {
       return false;
     }
-    if (com.google.android.accessibility.talkback.remote.NvdaRemoteActivity.handleGesture(gestureId)) {
+    if (com.google.android.accessibility.talkback.remote.NvdaRemoteActivity.handleGesture(gestureId)
+        || com.google.android.accessibility.talkback.remote.NvdaRemoteTutorialActivity.handleGesture()) {
       return true;
     }
     Performance perf = Performance.getInstance();

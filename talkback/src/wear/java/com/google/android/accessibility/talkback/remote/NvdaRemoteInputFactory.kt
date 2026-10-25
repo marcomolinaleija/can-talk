@@ -6,5 +6,7 @@ import android.util.Size
 
 /** The six-dot remote surface requires a phone or tablet. */
 object NvdaRemoteInputFactory {
+  fun dotCount(context: Context): Int = 0
+
   fun create(context: Context, size: Size, listener: NvdaRemoteInput.Listener): NvdaRemoteInput? = null
 }

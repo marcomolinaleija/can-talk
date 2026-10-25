@@ -666,16 +666,14 @@ public class GestureController {
         && action.equals(
             service.getString(R.string.shortcut_value_announce_current_time_and_date))) {
       result =
-          pipeline.returnFeedback(
-              eventId, Feedback.speech(DateTimeUtils.getCurrentTimeAndDate(service)));
+          announceRequestedInformation(eventId, DateTimeUtils.getCurrentTimeAndDate(service));
     } else if (FeatureFlagReader.enableAnnounceBatteryState(service)
         && action.equals(service.getString(R.string.shortcut_value_announce_battery_state))) {
       result =
-          pipeline.returnFeedback(
-              eventId, Feedback.speech(batteryMonitor.getBatteryStateDescription()));
+          announceRequestedInformation(eventId, batteryMonitor.getBatteryStateDescription());
     } else if (action.equals(service.getString(R.string.shortcut_value_announce_status))) {
       result =
-          pipeline.returnFeedback(eventId, Feedback.speech(statusReader.describe()));
+          announceRequestedInformation(eventId, statusReader.describe());
     } else if (FeatureFlagReader.enableAnnounceCurrentTitle(service)
         && action.equals(service.getString(R.string.shortcut_value_announce_current_title))) {
       result =
@@ -930,6 +928,14 @@ public class GestureController {
     } else {
       return null;
     }
+  }
+
+  /** Explicit information requests remain audible during media playback and calls. */
+  private boolean announceRequestedInformation(EventId eventId, CharSequence text) {
+    return pipeline.returnFeedback(
+        eventId,
+        Feedback.speech(
+            text, SpeakOptions.create().setFlags(FeedbackItem.FLAG_FORCE_FEEDBACK_ALL)));
   }
 
   /** voice feedback function */
