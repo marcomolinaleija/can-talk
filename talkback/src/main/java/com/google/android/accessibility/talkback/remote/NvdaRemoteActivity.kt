@@ -4,6 +4,7 @@ package com.google.android.accessibility.talkback.remote
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.Rect
 import android.graphics.Region
 import android.os.Build
@@ -45,6 +46,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
   private lateinit var text: EditText
   private lateinit var connectButton: Button
   private lateinit var remoteSpeechButton: Button
+  private lateinit var tutorialButton: Button
   private lateinit var nvdaModifier: Button
   private lateinit var showKey: CheckBox
   private val remoteButtons = mutableListOf<Button>()
@@ -54,6 +56,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
   private var lastReady: Boolean? = null
   private var modifier = 0x2D // Insert; can be changed to Caps Lock for laptop layouts.
   private var certificateDialog: AlertDialog? = null
+  private var tutorialInvitation: AlertDialog? = null
   private var uiDialog: AlertDialog? = null
   private lateinit var bindings: NvdaRemoteBindings
   private var surface: NvdaRemoteInput? = null
@@ -126,7 +129,10 @@ class NvdaRemoteActivity : AppCompatActivity() {
     form.addView(showKey)
     status = label(R.string.nvda_remote_disconnected)
     connectButton = button(R.string.nvda_remote_connect) {
-      if (session == null) finishInput { if (session == null) connect() } else disconnect()
+      if (session == null) finishInput { if (session == null) requestConnection() } else disconnect()
+    }
+    tutorialButton = button(R.string.nvda_tutorial_title) {
+      finishInput { startActivity(Intent(this, NvdaRemoteTutorialActivity::class.java)) }
     }
     remoteSpeechButton = button(R.string.nvda_remote_mute_speech, true) { toggleRemoteSpeech() }
     button(R.string.nvda_remote_gestures, true) { finishInput { setControl(true) } }
@@ -244,6 +250,26 @@ class NvdaRemoteActivity : AppCompatActivity() {
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     updateButtons()
     created.start()
+  }
+
+  private fun requestConnection() {
+    if (!resumed || session != null || tutorialInvitation?.isShowing == true) return
+    val progress = NvdaRemoteTutorial.Progress(this)
+    if (!progress.shouldOffer()) { connect(); return }
+    val invitation = AlertDialog.Builder(this)
+      .setTitle(R.string.nvda_tutorial_invitation_title)
+      .setMessage(R.string.nvda_tutorial_invitation_body)
+      .setPositiveButton(if (progress.hasStarted()) R.string.nvda_tutorial_resume else R.string.nvda_tutorial_start) { _, _ ->
+        startActivity(Intent(this, NvdaRemoteTutorialActivity::class.java).putExtra("resume", true))
+      }
+      .setNegativeButton(R.string.nvda_tutorial_connect_without) { _, _ -> connect() }
+      .setNeutralButton(R.string.nvda_tutorial_hide_invitation) { _, _ ->
+        progress.hideInvitation()
+        connect()
+      }.create()
+    tutorialInvitation = invitation
+    invitation.setOnDismissListener { if (tutorialInvitation === invitation) tutorialInvitation = null }
+    invitation.show()
   }
 
   private fun receive(message: JSONObject) {
@@ -593,7 +619,8 @@ class NvdaRemoteActivity : AppCompatActivity() {
   }
 
   private fun showCommands() {
-    val actions = listOf("mode", "toggle_remote_speech", "learn", "clear", "settings", "exit") + listOf(
+    val actions = listOf("mode", "toggle_remote_speech", "learn", "clear", "settings", "exit") +
+      NvdaRemoteBindings.modifierActions + listOf(
       NvdaRemoteBindings.key(0x54, listOf("nvda")), NvdaRemoteBindings.key(0x09, listOf("nvda")),
       NvdaRemoteBindings.key(0x28, listOf("nvda")), NvdaRemoteBindings.key(0x09, listOf("alt"))) +
       NvdaRemoteBindings.keys.filter { it < 0x41 || it in 0x70..0x7B || it == 0x5B }.map { NvdaRemoteBindings.key(it) }
@@ -679,6 +706,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
     remoteSpeechButton.setText(remoteSpeechActionLabel())
     host.isEnabled = !connecting; port.isEnabled = !connecting; key.isEnabled = !connecting
     showKey.isEnabled = !connecting
+    tutorialButton.isEnabled = !connecting
     remoteButtons.forEach { it.isEnabled = session?.ready == true }
   }
 
@@ -715,6 +743,8 @@ class NvdaRemoteActivity : AppCompatActivity() {
     removeSurface()
     certificateDialog?.dismiss()
     certificateDialog = null
+    tutorialInvitation?.dismiss()
+    tutorialInvitation = null
     uiDialog?.dismiss()
     uiDialog = null
     super.onPause()
