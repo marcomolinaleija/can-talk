@@ -184,17 +184,20 @@ class BrailleWebNavigationController(
       }
       return
     }
-    gesture.dots?.let { dots ->
+    val command = bindings.resolve(gesture)
+    gesture.dots?.takeIf { command == null }?.let { dots ->
       val target = BrailleWebTarget.fromDots(dots)
       if (target == null) speak(R.string.braille_web_unknown_letter)
       else { lastTarget = target; navigate(target, true) }
       return
     }
-    when (bindings.resolve(gesture)) {
+    when (command) {
       BrailleWebAction.PREVIOUS -> repeat(false)
       BrailleWebAction.NEXT -> repeat(true)
       BrailleWebAction.PREVIOUS_ITEM -> linear(false)
       BrailleWebAction.NEXT_ITEM -> linear(true)
+      BrailleWebAction.TOP -> jumpToBoundary(true)
+      BrailleWebAction.BOTTOM -> jumpToBoundary(false)
       BrailleWebAction.ACTIVATE -> activate()
       BrailleWebAction.MENU -> showMenu()
       BrailleWebAction.EXIT -> dismiss()
@@ -223,6 +226,19 @@ class BrailleWebNavigationController(
         .setGranularity(CursorGranularity.DEFAULT)
         .setInputMode(INPUT_MODE_BRAILLE_KEYBOARD).setWrap(false).setScroll(true)
         .setDefaultToInputFocus(false))
+  }
+
+  private fun jumpToBoundary(top: Boolean) {
+    if (currentPivot() == null) {
+      dismiss(false)
+      speak(R.string.braille_web_no_page)
+      return
+    }
+    val feedback = if (top) Feedback.focusTop(INPUT_MODE_BRAILLE_KEYBOARD)
+      else Feedback.focusBottom(INPUT_MODE_BRAILLE_KEYBOARD)
+    if (!pipeline.returnFeedback(EVENT_ID_UNTRACKED, feedback)) {
+      speak(R.string.braille_web_jump_failed)
+    }
   }
 
   private fun activate() {

@@ -31,11 +31,14 @@
   <string name="braille_web_next">Next element of the selected type</string>
   <string name="braille_web_previous_item">Previous item</string>
   <string name="braille_web_next_item">Next item</string>
+  <string name="braille_web_top">Go to the beginning of the page</string>
+  <string name="braille_web_bottom">Go to the end of the page</string>
+  <string name="braille_web_jump_failed">Could not move to the beginning or end of this page</string>
   <string name="braille_web_activate">Activate current element</string>
   <string name="braille_web_menu">Open navigation menu</string>
   <string name="braille_web_exit">Close web navigation</string>
   <string name="braille_web_help">Help</string>
-  <string name="braille_web_help_body">Use uncontracted braille letters: h headings, k links, l lists, i list items, b buttons, e text fields, f form controls, t tables, g images, d page regions, x checkboxes, c combo boxes, r radio buttons.\nEach letter jumps forward. One finger up or down repeats the selected type backward or forward. One finger left or right reads the previous or next item. Two fingers right activates the current element. Finding a text field only reads it; activating it opens writing.\nThree fingers up always opens this menu. Two fingers left always closes navigation. Back also closes it. Two fingers down closes it by default. You can assign additional gestures from this menu.\nWhile writing, use Web navigation in the braille keyboard menu to return. Its default shortcut is to hold dots 4, 5 and 6 and swipe left with one finger; you can change it in the keyboard gesture settings.</string>
+  <string name="braille_web_help_body">Use uncontracted braille letters: h headings, k links, l lists, i list items, b buttons, e text fields, f form controls, t tables, g images, d page regions, x checkboxes, c combo boxes, r radio buttons.\nTap dot 3 alone to go to the beginning of the page, or dot 6 alone to go to the end. Each letter jumps forward. One finger up or down repeats the selected type backward or forward. One finger left or right reads the previous or next item. Two fingers right activates the current element. Finding a text field only reads it; activating it opens writing.\nThree fingers up always opens this menu. Two fingers left always closes navigation. Back also closes it. Two fingers down closes it by default. You can assign additional gestures from this menu.\nWhile writing, use Web navigation in the braille keyboard menu to return. Its default shortcut is to hold dots 4, 5 and 6 and swipe left with one finger; you can change it in the keyboard gesture settings.</string>
   <string name="braille_web_resume">Keep navigating</string>
   <string name="braille_web_assign">Assign an additional gesture</string>
   <string name="braille_web_capture">Perform a swipe for: %1$s. Back cancels. Three fingers up and two fingers left are reserved.</string>

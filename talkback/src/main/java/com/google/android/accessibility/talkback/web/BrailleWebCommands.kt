@@ -32,6 +32,8 @@ enum class BrailleWebAction(val label: Int) {
   NEXT(R.string.braille_web_next),
   PREVIOUS_ITEM(R.string.braille_web_previous_item),
   NEXT_ITEM(R.string.braille_web_next_item),
+  TOP(R.string.braille_web_top),
+  BOTTOM(R.string.braille_web_bottom),
   ACTIVATE(R.string.braille_web_activate),
   MENU(R.string.braille_web_menu),
   EXIT(R.string.braille_web_exit)
@@ -41,6 +43,11 @@ class BrailleWebBindings(context: Context) {
   private val prefs = context.getSharedPreferences("braille_web_gestures_v1", Context.MODE_PRIVATE)
 
   fun resolve(gesture: NvdaRemoteGesture): BrailleWebAction? {
+    if (gesture.dots != null) return when (gesture.dots) {
+      "3" -> BrailleWebAction.TOP
+      "6" -> BrailleWebAction.BOTTOM
+      else -> null
+    }
     // Keep an accessible menu and an exit even after a mistaken custom assignment.
     if (gesture.held.isEmpty() && gesture.fingers == 3 && gesture.direction == "UP")
       return BrailleWebAction.MENU
