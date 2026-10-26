@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nvda_computers_title">Saved computers</string>
+  <string name="nvda_computer_save_checkbox">Save this computer</string>
+  <string name="nvda_computer_update_checkbox">Update computer: %1$s</string>
+  <string name="nvda_computer_save_title">Save computer</string>
+  <string name="nvda_computer_name">Computer name</string>
+  <string name="nvda_computer_remember_key">Remember key on this phone</string>
+  <string name="nvda_computers_empty">No saved computers. To add one, check Save this computer in the connection form.</string>
+  <string name="nvda_computer_connect">Connect to %1$s</string>
+  <string name="nvda_computer_options">Options for %1$s</string>
+  <string name="nvda_computer_manual">Manual connection</string>
+  <string name="nvda_computer_edit">Edit computer</string>
+  <string name="nvda_computer_delete">Delete computer</string>
+  <string name="nvda_computer_save">Save</string>
+  <string name="nvda_computer_saved">Computer saved: %1$s.</string>
+  <string name="nvda_computer_deleted">Computer deleted: %1$s.</string>
+  <string name="nvda_computer_delete_message">Delete %1$s from saved computers?</string>
+  <string name="nvda_computer_switch">Switch computer</string>
+  <string name="nvda_computer_switch_message">Disconnect the current session and connect to %1$s?</string>
+  <string name="nvda_computer_name_required">Enter a name for this computer.</string>
+  <string name="nvda_computer_duplicate">A computer already has this name. Choose another name.</string>
+  <string name="nvda_computer_error">Could not read or save the computer list. Try again.</string>
+  <string name="nvda_computer_connection_changed">The connection details changed. Press Connect again.</string>
+  <string name="nvda_computers_help">Check Save this computer before connecting. You will be asked for a name and whether to remember the key. The computer is saved when the PC connects. Saved computers lets you connect, edit or delete entries. The last computer used appears first. If its key was not saved, you will be asked for it when connecting. Manual connection returns to the form to add another computer.</string>
+</resources>

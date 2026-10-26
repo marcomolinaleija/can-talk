@@ -916,6 +916,7 @@ public class TalkBackService extends AccessibilityServiceCompat
   @Override
   public boolean onUnbind(Intent intent) {
     LogUtils.d(TAG, "onUnbind start");
+    com.google.android.accessibility.talkback.remote.NvdaRemoteConnection.shutdown();
     final long turningOffTime = System.currentTimeMillis();
     interruptAllFeedback(/* stopTtsSpeechCompletely= */ false);
     storeTalkBackUserUsage();
@@ -952,6 +953,7 @@ public class TalkBackService extends AccessibilityServiceCompat
 
   @Override
   public void onDestroy() {
+    com.google.android.accessibility.talkback.remote.NvdaRemoteConnection.shutdown();
     if (brailleSuggestionsController != null) {
       brailleSuggestionsController.clear();
       brailleSuggestionsController = null;

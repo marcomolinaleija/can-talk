@@ -33,10 +33,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.accessibility.talkback.R
 import com.google.android.accessibility.talkback.TalkBackService
-import org.json.JSONObject
-import java.net.URI
+import com.google.android.accessibility.talkback.remote.NvdaRemoteConnection.LockBehavior
 
-/** Foreground-only experimental client. Leaving this screen disconnects the session. */
+/** Remote controls. The reader owns the connection independently of this screen. */
 class NvdaRemoteActivity : AppCompatActivity() {
   private lateinit var form: LinearLayout
   private lateinit var content: FrameLayout
@@ -49,15 +48,23 @@ class NvdaRemoteActivity : AppCompatActivity() {
   private lateinit var text: EditText
   private lateinit var connectButton: Button
   private lateinit var remoteSpeechButton: Button
+  private lateinit var lockBehaviorButton: Button
   private lateinit var tutorialButton: Button
   private lateinit var nvdaModifier: Button
   private lateinit var showKey: CheckBox
+  private lateinit var saveComputer: CheckBox
+  private lateinit var computers: NvdaRemoteComputersDialog
+  private var selectedComputer: NvdaRemoteComputer? = null
+  private var pendingComputer: NvdaRemoteComputer?
+    get() = NvdaRemoteConnection.pendingComputer
+    set(value) { NvdaRemoteConnection.pendingComputer = value }
   private val remoteButtons = mutableListOf<Button>()
-  private var session: NvdaRemoteSession? = null
+  private val session get() = NvdaRemoteConnection.session
   private var resumed = false
   private var controlling = false
-  private var lastReady: Boolean? = null
-  private var modifier = 0x2D // Insert; can be changed to Caps Lock for laptop layouts.
+  private var modifier: Int
+    get() = NvdaRemoteConnection.modifier
+    set(value) { NvdaRemoteConnection.modifier = value }
   private var certificateDialog: AlertDialog? = null
   private var tutorialInvitation: AlertDialog? = null
   private var uiDialog: AlertDialog? = null
@@ -66,7 +73,25 @@ class NvdaRemoteActivity : AppCompatActivity() {
   private var mode = NvdaRemoteMode.CONTROL
   private var captureMode: NvdaRemoteMode? = null
   private var learning = false
-  private var remoteSpeechMuted = false
+  private var remoteSpeechMuted: Boolean
+    get() = NvdaRemoteConnection.speechMuted
+    set(value) { NvdaRemoteConnection.speechMuted = value }
+  private var lockBehavior: LockBehavior
+    get() = NvdaRemoteConnection.lockBehavior
+    set(value) { NvdaRemoteConnection.lockBehavior = value }
+  private val screenLocked get() = NvdaRemoteConnection.screenLocked
+  private var renderedRequest: NvdaRemoteConnection.Request? = null
+  private var observedProfileRevision = -1L
+  private var shownFailure: NvdaRemoteConnection.Failure? = null
+  private val connectionListener = object : NvdaRemoteConnection.Listener {
+    override fun onChanged(announce: Boolean) = renderConnection(announce)
+    override fun onClipboard(text: String) = receiveClipboard(text)
+    override fun onFailure(failure: NvdaRemoteConnection.Failure) = showCertificateFailure(failure)
+    override fun onProfileResult(message: String) {
+      status.text = message
+      if (resumed) announce(message)
+    }
+  }
   private var pendingBraille = false
   private var ownsTouchRegion = false
   private val preparedModifiers = linkedSetOf<String>()
@@ -83,10 +108,28 @@ class NvdaRemoteActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    NvdaRemoteConnection.initialize(this)
     title = getString(R.string.nvda_remote_title)
     bindings = NvdaRemoteBindings(this)
+    computers = NvdaRemoteComputersDialog(this, ::dialog, { resumed && !screenLocked },
+      { message -> status.text = message; if (resumed) announce(message) },
+      ::connectToComputer,
+      { selectedComputer = null; saveComputer.isChecked = false; updateSaveComputerLabel() },
+      { computer ->
+        NvdaRemoteConnection.updateProfile(computer)
+        if (selectedComputer?.id == computer.id) { selectedComputer = computer; updateSaveComputerLabel() }
+        if (pendingComputer?.id == computer.id) { pendingComputer = null; saveComputer.isChecked = false }
+      },
+      { id ->
+        NvdaRemoteConnection.deleteProfile(id)
+        if (selectedComputer?.id == id) { selectedComputer = null; saveComputer.isChecked = false; updateSaveComputerLabel() }
+        if (pendingComputer?.id == id) { pendingComputer = null; saveComputer.isChecked = false }
+      })
     mode = runCatching { NvdaRemoteMode.valueOf(getPreferences(MODE_PRIVATE).getString("input_mode", "CONTROL")!!) }
       .getOrDefault(NvdaRemoteMode.CONTROL)
+    lockBehavior = runCatching {
+      LockBehavior.valueOf(getPreferences(MODE_PRIVATE).getString("lock_behavior", "DISCONNECT")!!)
+    }.getOrDefault(LockBehavior.DISCONNECT)
     onBackPressedDispatcher.addCallback(this, controlBack)
     val root = LinearLayout(this).apply {
       orientation = LinearLayout.VERTICAL
@@ -130,7 +173,16 @@ class NvdaRemoteActivity : AppCompatActivity() {
       }
     }
     form.addView(showKey)
+    saveComputer = CheckBox(this).apply {
+      isSaveEnabled = false
+      setText(R.string.nvda_computer_save_checkbox)
+      setOnCheckedChangeListener { _, checked ->
+        if (checked && session?.ready == true) finishInput { prepareConnection(saveOnly = true) }
+      }
+    }
+    form.addView(saveComputer)
     status = label(R.string.nvda_remote_disconnected)
+    button(R.string.nvda_computers_title) { finishInput { setControl(false, false); computers.show() } }
     connectButton = button(R.string.nvda_remote_connect) {
       if (session == null) finishInput { if (session == null) requestConnection() } else disconnect()
     }
@@ -138,6 +190,14 @@ class NvdaRemoteActivity : AppCompatActivity() {
       finishInput { startActivity(Intent(this, NvdaRemoteTutorialActivity::class.java)) }
     }
     remoteSpeechButton = button(R.string.nvda_remote_mute_speech, true) { toggleRemoteSpeech() }
+    lockBehaviorButton = button(R.string.nvda_remote_lock_disconnect) {
+      val choices = LockBehavior.values()
+      lockBehavior = choices[(lockBehavior.ordinal + 1) % choices.size]
+      getPreferences(MODE_PRIVATE).edit().putString("lock_behavior", lockBehavior.name).apply()
+      updateLockBehaviorButton()
+      announce(lockBehaviorButton.text.toString())
+    }
+    updateLockBehaviorButton()
     button(R.string.nvda_remote_gestures, true) { finishInput { setControl(true) } }
     button(R.string.nvda_remote_assign_gestures) { chooseBindingsMode() }
     button(R.string.nvda_remote_commands, true) {
@@ -160,13 +220,14 @@ class NvdaRemoteActivity : AppCompatActivity() {
     lastSpeech = label(R.string.nvda_remote_last_speech)
     button(R.string.nvda_remote_help) {
       AlertDialog.Builder(this).setTitle(R.string.nvda_remote_title)
-        .setMessage(getString(R.string.nvda_remote_help_text) + "\n\n" + getString(R.string.nvda_remote_hold_help))
+        .setMessage(getString(R.string.nvda_remote_help_text) + "\n\n" + getString(R.string.nvda_remote_hold_help) +
+          "\n\n" + getString(R.string.nvda_remote_lock_help) + "\n\n" + getString(R.string.nvda_computers_help))
         .setPositiveButton(android.R.string.ok, null).show()
     }
     formScroll = ScrollView(this).apply { addView(root) }
     content = FrameLayout(this).apply { addView(formScroll, FrameLayout.LayoutParams(-1, -1)) }
     setContentView(content)
-    updateButtons()
+    renderConnection(false)
   }
 
   private fun finishInput(action: () -> Unit) {
@@ -195,128 +256,181 @@ class NvdaRemoteActivity : AppCompatActivity() {
   }
 
   private fun connect(trustedFingerprint: String? = null) {
-    val address = host.text.toString().trim()
-    val endpoint = try {
-      // Accept host:port and bracketed IPv6, as in NVDA's connection dialog.
-      val authority = if (!address.startsWith("[") && address.count { it == ':' } > 1) "[$address]" else address
-      URI("nvda://$authority").takeIf {
-        it.host != null && it.rawUserInfo == null && it.rawQuery == null && it.rawFragment == null && it.rawPath.isNullOrEmpty()
-      }
-    } catch (_: Exception) { null }
-    val hostname = endpoint?.host?.removeSurrounding("[", "]")
-    val number = if (endpoint != null && endpoint.port != -1) endpoint.port else port.text.toString().trim().toIntOrNull()
+    val endpoint = NvdaRemoteEndpoint.parse(host.text.toString(), port.text.toString())
     val password = key.text.toString() // A channel key must be kept exactly as entered.
-    if (hostname.isNullOrBlank() ||
-        number == null || number !in 1..65535 || password.isBlank() || password.length > 1024) {
+    if (endpoint == null || password.isBlank() || password.length > 1024) {
+      pendingComputer = null
       announce(R.string.nvda_remote_invalid_connection)
       return
     }
+    val hostname = endpoint.host
+    val number = endpoint.port
     if (TalkBackService.getInstance() == null) { announce(R.string.nvda_remote_reader_required); return }
     host.setText(hostname)
     port.setText(number.toString())
     showKey.isChecked = false
     getPreferences(Context.MODE_PRIVATE).edit().putString("host", hostname).putString("port", number.toString()).apply()
-    lastReady = null
-    lastSpeech.setText(R.string.nvda_remote_last_speech)
-    val pin = trustedFingerprint ?: getTrustedCertificate(hostname)
-    lateinit var created: NvdaRemoteSession
-    fun onUi(action: () -> Unit) { runOnUiThread { if (session === created && !isFinishing) action() } }
-    created = NvdaRemoteSession(hostname, number, password, pin, object : NvdaRemoteSession.Listener {
-      override fun onState(ready: Boolean) = onUi {
-        if (!ready) setControl(false, false)
-        val message = when {
-          ready -> R.string.nvda_remote_ready
-          password != password.trim() -> R.string.nvda_remote_waiting_spaces
-          else -> R.string.nvda_remote_waiting
-        }
-        status.setText(message)
-        if (lastReady != ready && resumed) announce(message)
-        lastReady = ready
-        updateButtons()
+    val profile = selectedComputer?.takeIf {
+      it.host.equals(hostname, true) && it.port == number &&
+        (it.password == null || it.password == password)
+    }
+    NvdaRemoteConnection.connect(NvdaRemoteConnection.Request(hostname, number, password,
+      trustedFingerprint ?: getTrustedCertificate(hostname)), profile)
+  }
+
+  private fun renderConnection(speak: Boolean) {
+    val connection = NvdaRemoteConnection
+    val request = connection.request
+    if (request != null && request !== renderedRequest) {
+      renderedRequest = request
+      host.setText(request.host); port.setText(request.port.toString()); key.setText(request.password)
+      showKey.isChecked = false
+      selectedComputer = connection.profile
+      saveComputer.isChecked = pendingComputer != null && session?.ready != true
+      updateSaveComputerLabel()
+    }
+    if (observedProfileRevision != connection.profileRevision) {
+      observedProfileRevision = connection.profileRevision
+      if (session != null) {
+        selectedComputer = connection.profile
+        saveComputer.isChecked = pendingComputer != null && session?.ready != true
+        updateSaveComputerLabel()
       }
-      override fun onMessage(message: JSONObject) = onUi {
-        if (resumed) receive(message)
-      }
-      override fun onFailure(failure: NvdaRemoteSession.Failure, fingerprint: String?) = onUi {
-        disconnect(false)
-        val message = when (failure) {
-          NvdaRemoteSession.Failure.CERTIFICATE -> R.string.nvda_remote_certificate_error
-          NvdaRemoteSession.Failure.CONNECTION -> R.string.nvda_remote_connection_error
-          NvdaRemoteSession.Failure.DISCONNECTED -> R.string.nvda_remote_connection_lost
-          NvdaRemoteSession.Failure.PROTOCOL -> R.string.nvda_remote_protocol_error
-          NvdaRemoteSession.Failure.MULTIPLE_COMPUTERS -> R.string.nvda_remote_multiple_computers
-        }
-        status.setText(message)
-        if (resumed) announce(message)
-        if (resumed && failure == NvdaRemoteSession.Failure.CERTIFICATE && fingerprint != null && (trustedFingerprint == null || trustedFingerprint != fingerprint)) {
-          certificateDialog = AlertDialog.Builder(this@NvdaRemoteActivity)
-            .setTitle(R.string.nvda_remote_certificate_error)
-            .setMessage(getString(R.string.nvda_remote_certificate_message, hostname, fingerprint))
-            .setPositiveButton(R.string.nvda_remote_trust_always) { _, _ ->
-              saveTrustedCertificate(hostname, fingerprint)
-              connect(fingerprint)
-            }
-            .setNeutralButton(R.string.nvda_remote_trust_once) { _, _ -> connect(fingerprint) }
-            .setNegativeButton(android.R.string.cancel, null)
-            .create().also { it.show() }
-        }
-      }
-    })
-    session = created
-    status.setText(R.string.nvda_remote_connecting)
-    announce(R.string.nvda_remote_connecting)
-    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+    if (session?.ready != true || screenLocked) {
+      setControl(false, false)
+      captureMode = null
+      removeSurface()
+    }
+    nvdaModifier.setText(if (modifier == 0x2D) R.string.nvda_remote_modifier_insert else R.string.nvda_remote_modifier_caps)
+    status.setText(connection.status)
+    lastSpeech.text = connection.lastSpeech?.let { getString(R.string.nvda_remote_output, it.toString()) }
+      ?: getString(R.string.nvda_remote_last_speech)
+    if (session != null) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     updateButtons()
-    created.start()
+    if (speak && resumed) announce(connection.status)
+  }
+
+  private fun showCertificateFailure(failure: NvdaRemoteConnection.Failure) {
+    val request = NvdaRemoteConnection.request ?: return
+    val fingerprint = failure.fingerprint ?: return
+    if (!resumed || shownFailure === failure || failure.reason != NvdaRemoteSession.Failure.CERTIFICATE ||
+      request.fingerprint == fingerprint) return
+    shownFailure = failure
+    fun retry() {
+      host.setText(request.host); port.setText(request.port.toString()); key.setText(request.password)
+      pendingComputer = failure.retryComputer
+      connect(fingerprint)
+    }
+    certificateDialog = AlertDialog.Builder(this)
+      .setTitle(R.string.nvda_remote_certificate_error)
+      .setMessage(getString(R.string.nvda_remote_certificate_message, request.host, fingerprint))
+      .setPositiveButton(R.string.nvda_remote_trust_always) { _, _ ->
+        saveTrustedCertificate(request.host, fingerprint)
+        retry()
+      }
+      .setNeutralButton(R.string.nvda_remote_trust_once) { _, _ -> retry() }
+      .setNegativeButton(android.R.string.cancel, null)
+      .create().also { dialog ->
+        dialog.setOnDismissListener { if (certificateDialog === dialog) certificateDialog = null }
+        dialog.show()
+      }
   }
 
   private fun requestConnection() {
     if (!resumed || session != null || tutorialInvitation?.isShowing == true) return
     val progress = NvdaRemoteTutorial.Progress(this)
-    if (!progress.shouldOffer()) { connect(); return }
+    if (!progress.shouldOffer()) { prepareConnection(); return }
     val invitation = AlertDialog.Builder(this)
       .setTitle(R.string.nvda_tutorial_invitation_title)
       .setMessage(R.string.nvda_tutorial_invitation_body)
       .setPositiveButton(if (progress.hasStarted()) R.string.nvda_tutorial_resume else R.string.nvda_tutorial_start) { _, _ ->
         startActivity(Intent(this, NvdaRemoteTutorialActivity::class.java).putExtra("resume", true))
       }
-      .setNegativeButton(R.string.nvda_tutorial_connect_without) { _, _ -> connect() }
+      .setNegativeButton(R.string.nvda_tutorial_connect_without) { _, _ -> prepareConnection() }
       .setNeutralButton(R.string.nvda_tutorial_hide_invitation) { _, _ ->
         progress.hideInvitation()
-        connect()
+        prepareConnection()
       }.create()
     tutorialInvitation = invitation
     invitation.setOnDismissListener { if (tutorialInvitation === invitation) tutorialInvitation = null }
     invitation.show()
   }
 
-  private fun receive(message: JSONObject) {
-    when (message.optString("type")) {
-      "speak" -> {
-        val sequence = message.optJSONArray("sequence") ?: return
-        val spoken = NvdaRemoteSpeech.text(sequence)
-        lastSpeech.text = getString(R.string.nvda_remote_output, spoken.toString())
-        if (!remoteSpeechMuted) NvdaRemoteSpeech.speak(spoken, message.optInt("priority") == 2)
+  private fun updateSaveComputerLabel() {
+    saveComputer.text = selectedComputer?.let { getString(R.string.nvda_computer_update_checkbox, it.name) }
+      ?: getString(R.string.nvda_computer_save_checkbox)
+  }
+
+  private fun prepareConnection(saveOnly: Boolean = false) {
+    if (!resumed || (saveOnly && session?.ready != true) || (!saveOnly && session != null)) return
+    val endpoint = NvdaRemoteEndpoint.parse(host.text.toString(), port.text.toString())
+    val password = key.text.toString()
+    if (endpoint == null || password.isBlank() || password.length > 1024) {
+      announce(R.string.nvda_remote_invalid_connection); return
+    }
+    if (!saveComputer.isChecked) {
+      if (!saveOnly) { pendingComputer = null; connect() }
+      return
+    }
+    val connection = NvdaRemoteComputer("", "", endpoint.host, endpoint.port, modifier, password)
+    val currentSession = session
+    val selection = selectedComputer
+    computers.prepareSave(connection, selection, !saveOnly) { candidate ->
+      val currentEndpoint = NvdaRemoteEndpoint.parse(host.text.toString(), port.text.toString())
+      if (currentEndpoint != endpoint || key.text.toString() != password || modifier != connection.nvdaModifier ||
+        selectedComputer?.id != selection?.id) {
+        announce(R.string.nvda_computer_connection_changed); return@prepareSave
       }
-      // Muted remote output must not interrupt or pause CAN Talk's local announcements.
-      "cancel" -> if (!remoteSpeechMuted) NvdaRemoteSpeech.cancel()
-      "pause_speech" -> if (!remoteSpeechMuted) NvdaRemoteSpeech.pause(message.optBoolean("switch"))
-      "set_clipboard_text" -> {
-        // Receiving text is an explicit local action; it is not copied automatically.
-        val value = message.optString("text").take(8192)
-        setControl(false, false)
-        AlertDialog.Builder(this).setTitle(R.string.nvda_remote_clipboard)
-          .setMessage(R.string.nvda_remote_clipboard_message)
-          .setNegativeButton(android.R.string.cancel, null)
-          .setPositiveButton(R.string.nvda_remote_copy) { _, _ ->
-            (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("NVDA", value))
-          }.show()
+      if (saveOnly) {
+        if (session !== currentSession || session?.ready != true) return@prepareSave
+        NvdaRemoteConnection.saveComputer(candidate)
+      } else if (session == null) {
+        pendingComputer = candidate
+        connect()
       }
     }
   }
 
+  private fun connectToComputer(computer: NvdaRemoteComputer, password: String) {
+    uiDialog?.setOnDismissListener(null); uiDialog?.dismiss(); uiDialog = null
+    fun applyComputer() {
+      selectedComputer = computer
+      saveComputer.isChecked = false
+      updateSaveComputerLabel()
+      host.setText(computer.host); port.setText(computer.port.toString()); key.setText(password)
+      showKey.isChecked = false
+      modifier = computer.nvdaModifier
+      nvdaModifier.setText(if (modifier == 0x2D) R.string.nvda_remote_modifier_insert else R.string.nvda_remote_modifier_caps)
+      requestConnection()
+    }
+    if (session == null) applyComputer()
+    else dialog(AlertDialog.Builder(this).setTitle(R.string.nvda_computer_switch)
+      .setMessage(getString(R.string.nvda_computer_switch_message, computer.name))
+      .setNegativeButton(android.R.string.cancel, null)
+      .setPositiveButton(R.string.nvda_remote_connect) { _, _ -> disconnect(false); applyComputer() })
+  }
+
+  private fun receiveClipboard(value: String) {
+    if (!resumed || screenLocked) return
+    setControl(false, false)
+    dialog(AlertDialog.Builder(this).setTitle(R.string.nvda_remote_clipboard)
+      .setMessage(R.string.nvda_remote_clipboard_message)
+      .setNegativeButton(android.R.string.cancel, null)
+      .setPositiveButton(R.string.nvda_remote_copy) { _, _ ->
+        (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("NVDA", value))
+      })
+  }
+
   private fun remoteSpeechActionLabel(): Int = if (remoteSpeechMuted)
     R.string.nvda_remote_unmute_speech else R.string.nvda_remote_mute_speech
+
+  private fun updateLockBehaviorButton() {
+    lockBehaviorButton.text = getString(R.string.nvda_remote_lock_button, getString(lockBehavior.label))
+  }
+
+  private fun refreshScreenLock() = NvdaRemoteConnection.refreshScreenLock()
 
   private fun toggleRemoteSpeech() {
     if (session?.ready != true) { announce(R.string.nvda_remote_not_ready); return }
@@ -667,7 +781,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
   }
 
   /** All dialogs restore normal touch exploration; no gesture on a dialog reaches the PC. */
-  private fun dialog(builder: AlertDialog.Builder) {
+  private fun dialog(builder: AlertDialog.Builder): AlertDialog {
     uiDialog?.setOnDismissListener(null)
     uiDialog?.dismiss()
     removeSurface()
@@ -680,6 +794,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
       }
     }
     created.show()
+    return created
   }
 
   private fun showCommands() {
@@ -770,24 +885,17 @@ class NvdaRemoteActivity : AppCompatActivity() {
     remoteSpeechButton.setText(remoteSpeechActionLabel())
     host.isEnabled = !connecting; port.isEnabled = !connecting; key.isEnabled = !connecting
     showKey.isEnabled = !connecting
+    saveComputer.isEnabled = !connecting || session?.ready == true
     tutorialButton.isEnabled = !connecting
     remoteButtons.forEach { it.isEnabled = session?.ready == true }
   }
 
   private fun disconnect(speak: Boolean = true) {
-    val previous = session
-    session = null // Invalidate queued callbacks before closing its worker threads.
-    remoteSpeechMuted = false
-    previous?.close()
     setControl(false, false)
     captureMode = null
     pendingBraille = false
     removeSurface()
-    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-    if (previous != null) NvdaRemoteSpeech.cancel()
-    status.setText(R.string.nvda_remote_disconnected)
-    updateButtons()
-    if (speak) announce(R.string.nvda_remote_disconnected)
+    NvdaRemoteConnection.disconnect(speak)
   }
 
   private fun announce(resource: Int) {
@@ -798,13 +906,26 @@ class NvdaRemoteActivity : AppCompatActivity() {
     else status.announceForAccessibility(message)
   }
 
-  override fun onResume() { super.onResume(); resumed = true; active = this }
+  override fun onStart() {
+    super.onStart()
+    NvdaRemoteConnection.addListener(connectionListener)
+    renderConnection(false)
+  }
+  override fun onResume() {
+    super.onResume()
+    resumed = true
+    active = this
+    refreshScreenLock()
+    NvdaRemoteConnection.failure?.let(::showCertificateFailure)
+  }
   override fun onPause() {
     resumed = false
     if (active === this) active = null
+    refreshScreenLock()
     setControl(false, false)
     captureMode = null
     removeSurface()
+    if (certificateDialog?.isShowing == true) shownFailure = null
     certificateDialog?.dismiss()
     certificateDialog = null
     tutorialInvitation?.dismiss()
@@ -813,8 +934,15 @@ class NvdaRemoteActivity : AppCompatActivity() {
     uiDialog = null
     super.onPause()
   }
-  override fun onStop() { disconnect(false); super.onStop() }
-  override fun onDestroy() { session?.close(); super.onDestroy() }
+  override fun onStop() {
+    NvdaRemoteConnection.removeListener(connectionListener)
+    super.onStop()
+  }
+  override fun onDestroy() {
+    NvdaRemoteConnection.removeListener(connectionListener)
+    removeSurface()
+    super.onDestroy()
+  }
 
   companion object {
     private var active: NvdaRemoteActivity? = null // Accessed only on the Android main thread.

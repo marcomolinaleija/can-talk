@@ -11,7 +11,8 @@ En NVDA, elegir **Permitir controlar este equipo**. En CAN Talk, abrir
 **NVDA Remote (experimental)** dentro de Controles y usar el mismo servidor,
 puerto y clave. Se acepta `nvdaremote.com:6837`, o el servidor sin puerto y
 el campo Puerto aparte. La clave distingue mayúsculas y espacios. No se
-guarda en preferencias ni en el estado de la actividad. Mostrar clave permite
+guarda en preferencias ni en el estado de la actividad. Solo se conserva si se
+elige **Recordar clave en este teléfono** al guardar un equipo. Mostrar clave permite
 revisarla y vuelve a ocultarse al conectar. El teclado braille no añade
 mayúsculas automáticas en contraseñas ni direcciones.
 
@@ -22,6 +23,44 @@ Para certificados no verificables se permite comparar SHA-256 y confiar
 en el certificado una vez o confiar permanentemente en el servidor guardando
 su huella por nombre de host. Si el certificado cambia, se vuelve a solicitar
 confirmación.
+
+## Equipos guardados
+
+El formulario añade una casilla **Guardar este equipo**, desmarcada al abrir,
+y un botón **Equipos guardados**. La lista y la edición permanecen en diálogos
+aparte, sin añadir filas por computadora a la pantalla principal.
+
+Al marcar la casilla y pulsar Conectar se pide el nombre y se permite elegir
+**Recordar clave en este teléfono**. Esta opción también empieza desmarcada
+para un equipo nuevo. Se guardan servidor, puerto y tecla NVDA solo cuando
+la computadora controlada está presente. Una conexión fallida o un servidor
+sin PC no crean registros. Si la sesión ya está lista, marcar la casilla
+permite guardarla sin desconectar.
+
+La lista pone primero el último equipo usado y ofrece **Conectar a nombre**
+y **Opciones de nombre**. Las opciones permiten editar o eliminar, con
+confirmación para eliminar. Si no se guardó la clave, se pide al conectar.
+Cambiar desde una sesión activa requiere confirmar su desconexión. Se
+mantiene la invitación al tutorial cuando corresponde.
+
+Al seleccionar un equipo, la casilla cambia a **Actualizar equipo: nombre**.
+Marcarla actualiza ese registro sin duplicarlo. **Conexión manual**, dentro
+de la lista, vuelve al formulario sin un equipo seleccionado para guardar uno
+nuevo. No se admiten nombres repetidos. Los gestos y la acción al bloquear
+siguen siendo ajustes generales, independientes de cada computadora.
+
+Editar permite cambiar nombre, servidor, puerto, clave recordada y tecla NVDA.
+La clave está oculta y se puede revelar explícitamente. Desmarcar Recordar
+clave y guardar elimina la clave de ese registro. Editar no cambia los datos
+de una conexión en curso; se aplican al siguiente intento.
+
+`NvdaRemoteComputersStore` guarda un archivo cifrado AES-GCM con una clave de
+Android Keystore en el directorio privado `noBackupFilesDir`. No utiliza
+preferencias ni los almacenes exportados por la copia de seguridad de CAN Talk.
+Las lecturas y escrituras se realizan fuera del hilo de interfaz; la escritura
+es atómica y los errores no sustituyen una lista que no se pueda descifrar.
+`NvdaRemoteComputersDialog` contiene la lista y los formularios secundarios.
+Referencia: [Android Keystore y AES-GCM](https://developer.android.com/reference/android/security/keystore/KeyGenParameterSpec).
 
 ## Superficie braille y modos
 
@@ -101,8 +140,38 @@ y 7+8 confirman sin espacio.
 Navegar confirma primero el braille pendiente en el mismo lote que la tecla;
 cambiar de modo también lo confirma. La tabla de NVDA puede ser distinta a
 la de CAN Talk. Una desconexión puede interrumpir un lote o dejar entrada
-pendiente en NVDA. Salir, bloquear el teléfono o pasar a otra aplicación
-cierra la sesión; los fallos requieren reconexión manual.
+pendiente en NVDA. Salir, ir a Inicio o Recientes y usar otra aplicación conserva
+la sesión y la voz remota. Al bloquear se aplica la opción elegida en el
+formulario. Los fallos requieren reconexión manual.
+
+## Al bloquear la pantalla
+
+El botón **Al bloquear pantalla** cambia entre tres opciones con cada pulsación
+y guarda la elección para las siguientes sesiones:
+
+- **Desconectar**: cierra la sesión. Es el valor inicial.
+- **Solo silenciar**: conserva la conexión y descarta la voz remota mientras la
+  pantalla esté apagada o bloqueada. Al desbloquear vuelve al estado de voz
+  anterior; un silenciado manual sigue activo. No reproduce mensajes atrasados.
+- **No hacer nada y seguir conectado**: conserva la conexión y el estado de la
+  voz, incluido el silenciado manual si estaba activo.
+
+En los dos modos que conservan la conexión, el teclado remoto se retira y las
+teclas mantenidas se liberan al bloquear. Los gestos y los diálogos del
+portapapeles remoto no se activan sobre la pantalla de bloqueo. Al volver se
+muestra el formulario, donde se puede abrir de nuevo el teclado remoto.
+La conexión pertenece al lector y se mantiene al salir de Remote, incluso con
+Atrás, y al volver se recuperan el estado, la voz silenciada y el equipo activo.
+Los gestos y las teclas mantenidas se liberan al dejar la pantalla. El botón
+**Desconectar**, desactivar CAN Talk o un fallo de red terminan la sesión. La
+clave de la conexión se conserva en memoria; solo se guarda en disco si se
+acepta recordarla para un equipo. No hay reconexión automática.
+
+La detección combina los avisos de pantalla apagada, encendida y desbloqueada
+con el estado interactivo y el bloqueo del sistema. La detección sigue activa
+mientras exista una conexión, aunque no se muestre Remote. Referencias de Android:
+[avisos de pantalla](https://developer.android.com/reference/android/content/Intent#ACTION_SCREEN_OFF)
+y [estado de bloqueo](https://developer.android.com/reference/android/app/KeyguardManager#isKeyguardLocked()).
 
 ## Reasignación y aprendizaje
 
@@ -210,6 +279,88 @@ Instalada posteriormente por ADB con `Success` en el Samsung SM-S928B.
 Versión verificada en el dispositivo y actualización registrada a las
 22:08:19 del 24 de octubre de 2026. Pendiente comprobar silenciado y
 reactivación en una sesión real con NVDA.
+
+Comportamiento de bloqueo añadido el 25 de octubre de 2026. Se verificaron
+los tres XML y los nombres y parámetros de los cinco textos nuevos en inglés,
+español y español latinoamericano. `git diff --check` terminó sin errores.
+Compilación `:assemblePhoneDebug` con `-Prueba`: `BUILD SUCCESSFUL` en
+7 min 19 s, sin lint ni pruebas unitarias. Registro:
+`.git/preparacion/nvda-bloqueo-pantalla-build.log`.
+
+APK: `build/apks/cantalk-nvda-bloqueo-prueba.apk`. Versión
+`TfPu_release_16_2-2026_10_25_1932`, código `70000300`, paquete
+`fyi.quin.backtalk.cantalktest`. Firma APK v2 verificada con la clave de la
+instalación existente. `adb install -r` terminó con `Success`; el Samsung
+SM-S928B confirmó la versión y la actualización a las 19:40:17. CAN Talk
+quedó conectado como servicio de accesibilidad, sin servicios caídos.
+
+Pendiente probar las tres opciones con una sesión real: bloquear y desbloquear,
+comprobar que el silenciado manual se conserva, salir a otra aplicación y
+bloquear manteniendo un modificador. También falta comprobar la persistencia
+de la elección al volver a abrir NVDA Remote. Estas pruebas de uso no se han
+realizado todavía.
+
+Equipos guardados añadidos el 25 de octubre de 2026. Se verificaron los seis
+XML afectados y los 23 textos nuevos con los mismos nombres y parámetros en
+los tres idiomas. La revisión del formulario confirma dos controles nuevos:
+la casilla de guardar/actualizar y el botón que abre la lista.
+
+Compilación `:assemblePhoneDebug` con `-Prueba`: `BUILD SUCCESSFUL` en
+6 min 35 s, sin lint ni pruebas unitarias de Gradle. Registro:
+`.git/preparacion/nvda-equipos-guardados-build.log`.
+APK: `build/apks/cantalk-nvda-equipos-guardados-prueba.apk`. Versión
+`TfPu_release_16_2-2026_10_25_2018`, código `70000300`. Firma APK v2 verificada
+con la clave de pruebas existente. `adb install -r` terminó con `Success` y el
+Samsung SM-S928B confirmó la actualización a las 20:26:14. CAN Talk quedó
+conectado, sin servicios de accesibilidad caídos.
+
+Un verificador temporal utilizó las clases compiladas de producción del almacén
+en una aplicación aislada, sin permisos de red ni acceso a los datos de CAN Talk.
+Pasaron 23 comprobaciones en Android: crear y volver a leer, conservar una clave
+con espacios y Unicode, no guardar una clave opcional, ausencia de campos en
+texto plano, ubicación fuera de copias automáticas, nombres duplicados,
+actualización sin duplicar, eliminación de la clave recordada, orden por uso,
+borrado persistente, IPv6, validación de direcciones y puertos, rechazo de un
+archivo alterado y conservación de un archivo que no se puede descifrar.
+El verificador fue desinstalado después de las comprobaciones.
+
+La prueba de navegación de la interfaz quedó inconclusa porque el teléfono
+estaba en reposo y mostraba la pantalla de bloqueo. Se observó la casilla
+desmarcada como control marcable, pero no se confirma el recorrido completo
+por la lista. Quedan pendientes las pruebas con una PC real: guardar solo tras
+conectar, conectar con y sin clave recordada, editar y eliminar desde la lista,
+y confirmar el cambio desde otra sesión activa.
+
+El usuario confirmó el funcionamiento de equipos guardados. Detectó después
+que ir a Inicio, Recientes u otra pantalla desconectaba la sesión.
+
+La corrección separa la conexión y la voz de `NvdaRemoteActivity`. Las pantallas
+se vinculan mientras están visibles y se desvinculan al detenerse, sin cerrar
+TLS. La conexión se cierra explícitamente o al desactivar el servicio lector.
+Los datos de conexión y el silenciado se mantienen en memoria al recrear la
+pantalla; los gestos y las teclas mantenidas se liberan al dejarla.
+
+Un verificador temporal reutilizó las clases compiladas de conexión y protocolo
+en una aplicación con datos aislados y un servidor TLS local de prueba. Pasaron
+23 comprobaciones: conexión verificada, voz recibida sin una pantalla vinculada,
+restauración del estado al vincular otra pantalla, silenciado y reactivación sin
+interfaz, las tres opciones de bloqueo, conservación del silenciado manual al
+desbloquear, desconexión explícita, cierre al apagar el lector y fallo de red
+sin interfaz. La salida de voz se contó con un sustituto del sintetizador; no
+se usó una computadora real con NVDA. El verificador se desinstaló y se retiró
+el reenvío de red después de la prueba.
+
+Compilación de la corrección: `:assemblePhoneDebug` con `-Prueba`,
+`BUILD SUCCESSFUL` en 6 min 34 s, sin lint ni pruebas unitarias de Gradle.
+Registro: `.git/preparacion/nvda-session-background-build.log`.
+APK: `build/apks/cantalk-nvda-conexion-persistente-prueba.apk`.
+Versión `TfPu_release_16_2-2026_10_25_2114`, código `70000300`. Firma
+verificada con la clave de pruebas existente. `adb install -r` terminó con
+`Success`; el Samsung SM-S928B confirmó la actualización a las 21:22:28.
+CAN Talk quedó vinculado como servicio de accesibilidad, sin servicios caídos.
+Los seis XML de Remote y equipos guardados se analizaron sin errores y
+`git diff --check` pasó. Queda la comprobación de uso con la PC del usuario:
+Inicio, Recientes, otra aplicación, Atrás y volver a Remote.
 
 Referencias de protocolo y comportamiento:
 [sesiones](https://github.com/nvaccess/nvda/blob/master/source/_remoteClient/session.py),
