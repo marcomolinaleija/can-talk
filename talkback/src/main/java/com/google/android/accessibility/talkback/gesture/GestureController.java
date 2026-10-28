@@ -48,6 +48,7 @@ import static com.google.android.accessibility.talkback.Feedback.FocusDirection.
 import static com.google.android.accessibility.talkback.Feedback.FocusDirection.Action.SCROLL_UP;
 import static com.google.android.accessibility.talkback.Feedback.PassThroughMode.Action.ENABLE_PASSTHROUGH;
 import static com.google.android.accessibility.talkback.Feedback.PassThroughMode.Action.PASSTHROUGH_CONFIRM_DIALOG;
+import static com.google.android.accessibility.talkback.Feedback.Speech.Action.APPEND_LAST;
 import static com.google.android.accessibility.talkback.Feedback.Speech.Action.COPY_LAST;
 import static com.google.android.accessibility.talkback.Feedback.Speech.Action.REPEAT_LAST;
 import static com.google.android.accessibility.talkback.Feedback.Speech.Action.SPELL_LAST;
@@ -559,6 +560,10 @@ public class GestureController {
       result = service.showBrailleAppSearch();
     } else if (action.equals(service.getString(R.string.shortcut_value_braille_web_navigation))) {
       result = service.showBrailleWebNavigation();
+    } else if (action.equals(
+        service.getString(R.string.shortcut_value_append_last_spoken_phrase))) {
+      pipeline.returnFeedback(
+          eventId, Feedback.part().setSpeech(Feedback.Speech.create(APPEND_LAST)));
     } else if (action.equals(service.getString(R.string.shortcut_value_braille_keyboard))) {
       String inputMethodInfoId = KeyboardUtils.getEnabledImeId(service, service.getPackageName());
       if (!TextUtils.isEmpty(inputMethodInfoId)) {
