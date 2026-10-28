@@ -154,6 +154,8 @@ public class ContextMenuFragment extends TalkbackBaseFragment {
       translateLastPreference.setVisible(
           !FormFactorUtils.isAndroidWear() && !FormFactorUtils.isAndroidTv());
     }
+
+    collapseCategories();
   }
 
   @Override
