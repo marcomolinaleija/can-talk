@@ -1987,4 +1987,6 @@
   </string-array>
   <item type="id" name="pause_backtalk" />
   <item type="id" name="notification_backtalk_paused" />
+  <string name="pref_restore_focus_on_back_key">pref_restore_focus_on_back</string>
+  <string name="pref_scroll_to_restore_previous_focus_key">pref_scroll_to_restore_previous_focus</string>
 </resources>
