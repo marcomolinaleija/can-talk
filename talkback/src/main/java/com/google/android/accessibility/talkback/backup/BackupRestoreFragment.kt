@@ -271,6 +271,9 @@ class BackupRestoreFragment : TalkbackBaseFragment(R.xml.backup_restore_preferen
     BackupCategory.CLIPBOARD_HISTORY -> R.string.backup_category_clipboard
     BackupCategory.CUSTOM_LABELS -> R.string.backup_category_labels
     BackupCategory.SOUND_THEMES -> R.string.backup_category_themes
+    BackupCategory.NVDA_REMOTE_SETTINGS -> R.string.backup_category_nvda_remote_settings
+    BackupCategory.NVDA_REMOTE_GESTURES -> R.string.backup_category_nvda_remote_gestures
+    BackupCategory.NVDA_REMOTE_COMPUTERS -> R.string.backup_category_nvda_remote_computers
   }
   private fun errorString(failure: BackupFailure): Int = when (failure) {
     BackupFailure.INVALID_FORMAT -> R.string.backup_error_invalid_format

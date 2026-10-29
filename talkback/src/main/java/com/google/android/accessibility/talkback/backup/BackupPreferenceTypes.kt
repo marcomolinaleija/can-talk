@@ -10,6 +10,20 @@ internal object BackupPreferenceTypes {
     if (store == BackupStore.READER && key == "pref_speak_nav_bar_buttons") {
       return TalkBackBackup.PrefType.BOOLEAN
     }
+    if (store == BackupStore.NVDA_REMOTE_GESTURES) return TalkBackBackup.PrefType.STRING
+    if (store == BackupStore.NVDA_REMOTE_SETTINGS) {
+      return if (key in setOf("host", "port", "input_mode", "lock_behavior") || key.startsWith("trusted_cert_")) {
+        TalkBackBackup.PrefType.STRING
+      } else null
+    }
+    if (store == BackupStore.NVDA_REMOTE_TUTORIAL) {
+      return when {
+        key == "last_lesson" -> TalkBackBackup.PrefType.STRING
+        key == "hide_invitation" -> TalkBackBackup.PrefType.BOOLEAN
+        key.startsWith("done/") -> TalkBackBackup.PrefType.STRING_SET
+        else -> null
+      }
+    }
     val definitions = when (store) {
       BackupStore.READER -> reader
       BackupStore.BRAILLE -> braille

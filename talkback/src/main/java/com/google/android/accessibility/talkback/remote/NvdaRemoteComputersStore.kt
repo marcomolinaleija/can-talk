@@ -66,6 +66,37 @@ internal class NvdaRemoteComputersStore(context: Context) {
 
   fun delete(id: String): Unit = synchronized(LOCK) { write(read().filterNot { it.id == id }) }
 
+  fun replaceAll(items: List<NvdaRemoteComputer>): Unit = synchronized(LOCK) {
+    require(items.size <= 100)
+    require(items.map { it.id }.distinct().size == items.size)
+    require(items.map { it.name.lowercase() }.distinct().size == items.size)
+    for (computer in items) {
+      require(computer.id.isNotBlank() && computer.name.isNotBlank() && computer.name.length <= 80)
+      require(computer.nvdaModifier in listOf(0x2D, 0x14))
+      require(NvdaRemoteEndpoint.parse(computer.host, computer.port.toString()) != null)
+      require(computer.password == null || (computer.password.isNotBlank() && computer.password.length <= 1024))
+    }
+    write(items)
+  }
+
+  fun merge(imported: List<NvdaRemoteComputer>): Unit = synchronized(LOCK) {
+    val items = read().toMutableList()
+    for (computer in imported) {
+      require(computer.id.isNotBlank() && computer.name.isNotBlank() && computer.name.length <= 80)
+      require(computer.nvdaModifier in listOf(0x2D, 0x14))
+      require(NvdaRemoteEndpoint.parse(computer.host, computer.port.toString()) != null)
+      require(computer.password == null || (computer.password.isNotBlank() && computer.password.length <= 1024))
+      val index = items.indexOfFirst { it.id == computer.id || it.name.equals(computer.name, ignoreCase = true) }
+      if (index >= 0) {
+        items[index] = computer.copy(lastUsed = maxOf(computer.lastUsed, items[index].lastUsed))
+      } else {
+        require(items.size < 100)
+        items.add(computer)
+      }
+    }
+    write(items)
+  }
+
   fun markUsed(id: String): Unit = synchronized(LOCK) {
     val items = read()
     if (items.any { it.id == id }) write(items.map { if (it.id == id) it.copy(lastUsed = System.currentTimeMillis()) else it })

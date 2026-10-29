@@ -4,11 +4,18 @@ package com.google.android.accessibility.talkback.backup
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.ContextCompat
+import com.google.android.accessibility.talkback.remote.NvdaRemoteActivity
+import com.google.android.accessibility.talkback.remote.NvdaRemoteBindings
+import com.google.android.accessibility.talkback.remote.NvdaRemoteGesture
+import com.google.android.accessibility.talkback.remote.NvdaRemoteTutorial
 import com.google.android.accessibility.utils.SharedPreferencesUtils
 
 /** Logical identifiers are portable; a backup never chooses a filesystem or preference filename. */
 internal enum class BackupStore(val id: String) {
-  READER("reader"), BRAILLE("braille"), EMOJI("emoji"), CLIPBOARD("clipboard");
+  READER("reader"), BRAILLE("braille"), EMOJI("emoji"), CLIPBOARD("clipboard"),
+  NVDA_REMOTE_SETTINGS("nvda_remote_settings"),
+  NVDA_REMOTE_GESTURES("nvda_remote_gestures"),
+  NVDA_REMOTE_TUTORIAL("nvda_remote_tutorial");
 
   fun open(context: Context): SharedPreferences = when (this) {
     READER -> SharedPreferencesUtils.getSharedPreferences(context)
@@ -16,6 +23,9 @@ internal enum class BackupStore(val id: String) {
     // These two owners deliberately use credential-protected storage, unlike the reader/braille.
     EMOJI -> context.applicationContext.getSharedPreferences("braille_emoji_preferences", Context.MODE_PRIVATE)
     CLIPBOARD -> context.applicationContext.getSharedPreferences("clipboard_history", Context.MODE_PRIVATE)
+    NVDA_REMOTE_SETTINGS -> NvdaRemoteActivity.preferences(context)
+    NVDA_REMOTE_GESTURES -> NvdaRemoteBindings.preferences(context)
+    NVDA_REMOTE_TUTORIAL -> NvdaRemoteTutorial.Progress.preferences(context)
   }
 
   companion object {
@@ -36,7 +46,10 @@ internal enum class BackupCategory(val id: String, val sensitive: Boolean = fals
   EMOJI_FAVORITES("emoji_favorites"),
   CLIPBOARD_HISTORY("clipboard_history", true),
   CUSTOM_LABELS("custom_labels"),
-  SOUND_THEMES("sound_themes");
+  SOUND_THEMES("sound_themes"),
+  NVDA_REMOTE_SETTINGS("nvda_remote_settings"),
+  NVDA_REMOTE_GESTURES("nvda_remote_gestures"),
+  NVDA_REMOTE_COMPUTERS("nvda_remote_computers", true);
 
   companion object {
     fun fromId(id: String) = entries.firstOrNull { it.id == id }
@@ -63,11 +76,39 @@ internal enum class BackupCategory(val id: String, val sensitive: Boolean = fals
       }
       BackupStore.EMOJI -> if (key == "user_favorite_emojis") EMOJI_FAVORITES else null
       BackupStore.CLIPBOARD -> if (key == "entries_v1") CLIPBOARD_HISTORY else null
+      BackupStore.NVDA_REMOTE_GESTURES -> {
+        val slash = key.indexOf('/')
+        if (slash > 0) {
+          val mode = key.substring(0, slash)
+          val gestureId = key.substring(slash + 1)
+          if ((mode == "CONTROL" || mode == "KEYBOARD") && NvdaRemoteGesture.parse(gestureId) != null) {
+            NVDA_REMOTE_GESTURES
+          } else null
+        } else null
+      }
+      BackupStore.NVDA_REMOTE_SETTINGS -> when {
+        key in setOf("host", "port", "input_mode", "lock_behavior") || key.startsWith("trusted_cert_") -> NVDA_REMOTE_SETTINGS
+        else -> null
+      }
+      BackupStore.NVDA_REMOTE_TUTORIAL -> when {
+        key == "last_lesson" || key == "hide_invitation" || key.startsWith("done/") -> NVDA_REMOTE_SETTINGS
+        else -> null
+      }
     }
   }
 }
 
 internal data class BackupAsset(val path: String, val bytes: ByteArray)
+
+internal data class BackupRemoteComputer(
+  val id: String,
+  val name: String,
+  val host: String,
+  val port: Int,
+  val nvdaModifier: Int,
+  val password: String?,
+  val lastUsed: Long = 0,
+)
 
 /** Database row IDs and screenshot paths are device-local, and are never restored from a file. */
 internal data class BackupLabel(
@@ -86,8 +127,9 @@ internal data class BackupSection(
   val preferences: Map<BackupStore, List<TalkBackBackup.PrefEntry>> = emptyMap(),
   val labels: List<BackupLabel> = emptyList(),
   val assets: List<BackupAsset> = emptyList(),
+  val computers: List<BackupRemoteComputer> = emptyList(),
 ) {
-  val itemCount: Int get() = preferences.values.sumOf { it.size } + labels.size + assets.size
+  val itemCount: Int get() = preferences.values.sumOf { it.size } + labels.size + assets.size + computers.size
 }
 
 internal data class BackupDocument(

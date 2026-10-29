@@ -11,6 +11,8 @@ import android.os.UserManager
 import com.google.android.accessibility.talkback.backup.TalkBackBackup.PrefEntry
 import com.google.android.accessibility.talkback.backup.TalkBackBackup.PrefType
 import com.google.android.accessibility.talkback.labeling.LabelProvider
+import com.google.android.accessibility.talkback.remote.NvdaRemoteComputer
+import com.google.android.accessibility.talkback.remote.NvdaRemoteComputersStore
 import com.google.android.accessibility.talkback.soundthemes.SoundThemes
 import com.google.android.accessibility.utils.labeling.LabelsTable
 import java.io.File
@@ -43,6 +45,8 @@ internal object SelectiveBackup {
     if (labelCount > 0) result[BackupCategory.CUSTOM_LABELS] = labelCount
     val files = themeFiles(context)
     if (files.isNotEmpty()) result[BackupCategory.SOUND_THEMES] = files.size
+    val computers = runCatching { NvdaRemoteComputersStore(context).list() }.getOrNull().orEmpty()
+    if (computers.isNotEmpty()) result[BackupCategory.NVDA_REMOTE_COMPUTERS] = computers.size
     result
   }
 
@@ -91,6 +95,12 @@ internal object SelectiveBackup {
       }
       if (assets.isNotEmpty()) sections[BackupCategory.SOUND_THEMES] = BackupSection(assets = assets)
     }
+    if (BackupCategory.NVDA_REMOTE_COMPUTERS in selected) {
+      val computers = NvdaRemoteComputersStore(context).list().map { pc ->
+        BackupRemoteComputer(pc.id, pc.name, pc.host, pc.port, pc.nvdaModifier, pc.password, pc.lastUsed)
+      }
+      if (computers.isNotEmpty()) sections[BackupCategory.NVDA_REMOTE_COMPUTERS] = BackupSection(computers = computers)
+    }
     if (sections.isEmpty()) throw BackupException(BackupFailure.INVALID_FORMAT)
     BackupDocument(context.packageName, System.currentTimeMillis(), sections)
   }
@@ -119,12 +129,17 @@ internal object SelectiveBackup {
     }
     val labelPlan = planLabels(context, data.sections[BackupCategory.CUSTOM_LABELS]?.labels.orEmpty())
     val themePlan = ThemePlan(context, data.sections[BackupCategory.SOUND_THEMES]?.assets.orEmpty())
+    val hasComputers = BackupCategory.NVDA_REMOTE_COMPUTERS in data.sections
+    val importedComputers = data.sections[BackupCategory.NVDA_REMOTE_COMPUTERS]?.computers.orEmpty()
+    val computerStore = if (hasComputers) NvdaRemoteComputersStore(context) else null
+    val oldComputers = computerStore?.list().orEmpty()
     val touchedStores = mutableListOf<BackupStore>()
     var labelsCommitted = false
+    var computersCommitted = false
     try {
       // Stage all file bytes before modifying any live data.
       themePlan.prepare()
-      BackupRecovery.write(context, recoveryJournal(snapshots, labelPlan, themePlan))
+      BackupRecovery.write(context, recoveryJournal(snapshots, labelPlan, themePlan, if (hasComputers) oldComputers else null))
       for ((store, entries) in byStore) {
         touchedStores.add(store) // commit(false) may still have changed its in-memory map.
         val editor = stores.getValue(store).edit()
@@ -135,6 +150,12 @@ internal object SelectiveBackup {
       if (labelPlan.operations.isNotEmpty()) {
         context.contentResolver.applyBatch(LabelProvider.AUTHORITY, labelPlan.operations)
         labelsCommitted = true
+      }
+      if (hasComputers && importedComputers.isNotEmpty()) {
+        computerStore!!.merge(importedComputers.map { pc ->
+          NvdaRemoteComputer(pc.id, pc.name, pc.host, pc.port, pc.nvdaModifier, pc.password, pc.lastUsed)
+        })
+        computersCommitted = true
       }
       // Check disk commits' visible values before reporting success.
       for ((store, values) in byStore) {
@@ -148,6 +169,9 @@ internal object SelectiveBackup {
       count
     } catch (e: Exception) {
       var rolledBack = true
+      if (computersCommitted) try {
+        computerStore?.replaceAll(oldComputers)
+      } catch (_: Exception) { rolledBack = false }
       if (labelsCommitted) try {
         rollbackLabels(context, labelPlan)
       } catch (_: Exception) { rolledBack = false }
@@ -173,7 +197,7 @@ internal object SelectiveBackup {
       return@synchronized false
     try {
       val journal = BackupRecovery.read(context)
-      BackupJson.fields(journal, setOf("version", "preferences", "oldLabels", "insertedLabels", "themes"))
+      BackupJson.fields(journal, setOf("version", "preferences", "oldLabels", "insertedLabels", "themes", "computers"))
       if (BackupJson.integer(journal.opt("version")) != 1L) throw BackupException(BackupFailure.UNSUPPORTED_VERSION)
       val prefs = journal.getJSONObject("preferences")
       for (id in prefs.keys()) {
@@ -218,13 +242,30 @@ internal object SelectiveBackup {
             .withExpectedCount(1).build())
       }
       if (operations.isNotEmpty()) context.contentResolver.applyBatch(LabelProvider.AUTHORITY, operations)
+      if (journal.has("computers")) {
+        val compArray = journal.getJSONArray("computers")
+        val compList = (0 until compArray.length()).map {
+          val obj = compArray.getJSONObject(it)
+          NvdaRemoteComputer(
+            obj.getString("id"), obj.getString("name"), obj.getString("host"),
+            obj.getInt("port"), obj.getInt("nvdaModifier"),
+            if (obj.isNull("password")) null else obj.getString("password"), obj.getLong("lastUsed")
+          )
+        }
+        NvdaRemoteComputersStore(context).replaceAll(compList)
+      }
       ThemePlan.recover(context, journal.getJSONObject("themes"))
       BackupRecovery.clear(context)
       true
     } catch (_: Exception) { throw BackupException(BackupFailure.ROLLBACK_FAILED) }
   }
 
-  private fun recoveryJournal(snapshots: Map<BackupStore, Map<String, Any?>>, labels: LabelPlan, themes: ThemePlan): JSONObject {
+  private fun recoveryJournal(
+    snapshots: Map<BackupStore, Map<String, Any?>>,
+    labels: LabelPlan,
+    themes: ThemePlan,
+    computers: List<NvdaRemoteComputer>? = null
+  ): JSONObject {
     val prefs = JSONObject()
     for ((store, values) in snapshots) prefs.put(store.id, JSONObject()
       .put("old", BackupCodec.encodePreferences(values.mapNotNull { (key, value) -> value?.let { entry(key, it) } }))
@@ -234,9 +275,20 @@ internal object SelectiveBackup {
       oldLabels.put(JSONObject().put("id", row.id).put("values", JSONObject(
         row.values().valueSet().associate { it.key to (it.value ?: JSONObject.NULL) })))
     }
-    return JSONObject().put("version", 1).put("preferences", prefs).put("oldLabels", oldLabels)
+    val root = JSONObject().put("version", 1).put("preferences", prefs).put("oldLabels", oldLabels)
       .put("insertedLabels", JSONArray(labels.inserted.map { JSONArray(it.identity()) }))
       .put("themes", themes.journal())
+    if (computers != null) {
+      val compArray = JSONArray()
+      for (pc in computers) {
+        compArray.put(JSONObject()
+          .put("id", pc.id).put("name", pc.name).put("host", pc.host).put("port", pc.port)
+          .put("nvdaModifier", pc.nvdaModifier).put("password", pc.password ?: JSONObject.NULL)
+          .put("lastUsed", pc.lastUsed))
+      }
+      root.put("computers", compArray)
+    }
+    return root
   }
 
   private fun validateEntry(context: Context, store: BackupStore, value: PrefEntry, current: Any?) {
@@ -246,9 +298,24 @@ internal object SelectiveBackup {
       || expected == null && current != null && entry(value.key, current).type != value.type)
       throw BackupException(BackupFailure.TYPE_MISMATCH)
     if (store == BackupStore.EMOJI || store == BackupStore.CLIPBOARD
+      || store == BackupStore.NVDA_REMOTE_GESTURES || store == BackupStore.NVDA_REMOTE_SETTINGS
       || value.key == "pref_bd_gesture_action_key" || value.key == "pref_gemini_api_key"
       || value.key.startsWith("pref_brailleime_calibration_points_") || value.key.startsWith("pref_shortcut_")) {
       if (value.type != PrefType.STRING) throw BackupException(BackupFailure.TYPE_MISMATCH)
+    }
+    if (store == BackupStore.NVDA_REMOTE_GESTURES) {
+      val action = value.value as String
+      if (action.length > 256 || action.any { it.isISOControl() }) throw BackupException(BackupFailure.INVALID_FORMAT)
+    }
+    if (store == BackupStore.NVDA_REMOTE_SETTINGS) {
+      val str = value.value as String
+      if (str.length > 512 || str.any { it.isISOControl() }) throw BackupException(BackupFailure.INVALID_FORMAT)
+      when (value.key) {
+        "input_mode" -> if (str !in listOf("CONTROL", "KEYBOARD")) throw BackupException(BackupFailure.INVALID_FORMAT)
+        "lock_behavior" -> if (str !in listOf("DISCONNECT", "MUTE", "KEEP")) throw BackupException(BackupFailure.INVALID_FORMAT)
+        "port" -> if (str.toIntOrNull() !in 1..65535) throw BackupException(BackupFailure.INVALID_FORMAT)
+        "host" -> if (str.isBlank() || str.length > 253) throw BackupException(BackupFailure.INVALID_FORMAT)
+      }
     }
     if (value.key.endsWith("|key_combo_code") && value.type != PrefType.LONG)
       throw BackupException(BackupFailure.TYPE_MISMATCH)

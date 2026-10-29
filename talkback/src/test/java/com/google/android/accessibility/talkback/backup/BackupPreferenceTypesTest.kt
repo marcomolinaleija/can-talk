@@ -46,4 +46,25 @@ class BackupPreferenceTypesTest {
       BackupPreferenceTypes.expected(context, BackupStore.READER, context.getString(R.string.pref_speech_rate_key)),
     )
   }
+
+  @Test
+  fun nvdaRemoteSettingsAndGesturesTypes() {
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.NVDA_REMOTE_SETTINGS, "host"))
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.NVDA_REMOTE_SETTINGS, "port"))
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.NVDA_REMOTE_SETTINGS, "input_mode"))
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.NVDA_REMOTE_SETTINGS, "lock_behavior"))
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.NVDA_REMOTE_SETTINGS, "trusted_cert_nvdaremote.com"))
+    assertEquals(BackupCategory.NVDA_REMOTE_SETTINGS, BackupCategory.forKey(BackupStore.NVDA_REMOTE_SETTINGS, "host"))
+    assertEquals(BackupCategory.NVDA_REMOTE_SETTINGS, BackupCategory.forKey(BackupStore.NVDA_REMOTE_SETTINGS, "trusted_cert_nvdaremote.com"))
+
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.NVDA_REMOTE_GESTURES, "CONTROL/tap_1"))
+    assertEquals(BackupCategory.NVDA_REMOTE_GESTURES, BackupCategory.forKey(BackupStore.NVDA_REMOTE_GESTURES, "CONTROL/tap_1"))
+    assertEquals(BackupCategory.NVDA_REMOTE_GESTURES, BackupCategory.forKey(BackupStore.NVDA_REMOTE_GESTURES, "KEYBOARD/hold_5"))
+
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.NVDA_REMOTE_TUTORIAL, "last_lesson"))
+    assertEquals(TalkBackBackup.PrefType.BOOLEAN, BackupPreferenceTypes.expected(context, BackupStore.NVDA_REMOTE_TUTORIAL, "hide_invitation"))
+    assertEquals(TalkBackBackup.PrefType.STRING_SET, BackupPreferenceTypes.expected(context, BackupStore.NVDA_REMOTE_TUTORIAL, "done/basics"))
+    assertEquals(BackupCategory.NVDA_REMOTE_SETTINGS, BackupCategory.forKey(BackupStore.NVDA_REMOTE_TUTORIAL, "last_lesson"))
+    assertEquals(BackupCategory.NVDA_REMOTE_SETTINGS, BackupCategory.forKey(BackupStore.NVDA_REMOTE_TUTORIAL, "done/basics"))
+  }
 }

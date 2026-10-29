@@ -62,7 +62,7 @@ object NvdaRemoteTutorial {
   )
 
   class Progress(context: Context) {
-    private val prefs = context.getSharedPreferences("nvda_remote_tutorial_v1", Context.MODE_PRIVATE)
+    private val prefs = preferences(context)
     fun completed(lesson: Lesson) = nextStep(lesson) >= lesson.steps.size
     fun nextStep(lesson: Lesson): Int {
       val done = prefs.getStringSet("done/${lesson.id}", emptySet()).orEmpty()
@@ -86,5 +86,11 @@ object NvdaRemoteTutorial {
       edit.apply()
     }
     fun hasStarted() = prefs.contains("last_lesson")
+
+    companion object {
+      const val PREFS_NAME = "nvda_remote_tutorial_v1"
+      fun preferences(context: Context): android.content.SharedPreferences =
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
   }
 }

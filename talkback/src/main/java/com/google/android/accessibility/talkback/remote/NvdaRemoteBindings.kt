@@ -66,7 +66,7 @@ data class NvdaRemoteGesture(
 }
 
 class NvdaRemoteBindings(private val context: Context) {
-  private val prefs = context.getSharedPreferences("nvda_remote_gestures_v1", Context.MODE_PRIVATE)
+  private val prefs = preferences(context)
   private fun preference(mode: NvdaRemoteMode, gesture: NvdaRemoteGesture) = "${mode.name}/${gesture.id}"
 
   fun toBrailleGesture(gesture: NvdaRemoteGesture): com.google.android.accessibility.brailleime.input.Gesture? {
@@ -345,5 +345,8 @@ class NvdaRemoteBindings(private val context: Context) {
     fun modifierLabel(modifier: String): String = when (modifier) {
       "ctrl" -> "Control"; "alt" -> "Alt"; "shift" -> "Shift"; "nvda" -> "NVDA"; else -> "Windows"
     }
+    const val PREFS_NAME = "nvda_remote_gestures_v1"
+    fun preferences(context: Context): android.content.SharedPreferences =
+      context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
   }
 }

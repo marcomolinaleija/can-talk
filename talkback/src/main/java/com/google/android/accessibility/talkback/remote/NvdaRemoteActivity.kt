@@ -125,10 +125,10 @@ class NvdaRemoteActivity : AppCompatActivity() {
         if (selectedComputer?.id == id) { selectedComputer = null; saveComputer.isChecked = false; updateSaveComputerLabel() }
         if (pendingComputer?.id == id) { pendingComputer = null; saveComputer.isChecked = false }
       })
-    mode = runCatching { NvdaRemoteMode.valueOf(getPreferences(MODE_PRIVATE).getString("input_mode", "CONTROL")!!) }
+    mode = runCatching { NvdaRemoteMode.valueOf(preferences(this).getString("input_mode", "CONTROL")!!) }
       .getOrDefault(NvdaRemoteMode.CONTROL)
     lockBehavior = runCatching {
-      LockBehavior.valueOf(getPreferences(MODE_PRIVATE).getString("lock_behavior", "DISCONNECT")!!)
+      LockBehavior.valueOf(preferences(this).getString("lock_behavior", "DISCONNECT")!!)
     }.getOrDefault(LockBehavior.DISCONNECT)
     onBackPressedDispatcher.addCallback(this, controlBack)
     val root = LinearLayout(this).apply {
@@ -159,9 +159,9 @@ class NvdaRemoteActivity : AppCompatActivity() {
     }
     label(R.string.nvda_remote_description)
     host = input(R.string.nvda_remote_host, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
-    host.setText(getPreferences(Context.MODE_PRIVATE).getString("host", "nvdaremote.com"))
+    host.setText(preferences(this).getString("host", "nvdaremote.com"))
     port = input(R.string.nvda_remote_port, InputType.TYPE_CLASS_NUMBER)
-    port.setText(getPreferences(Context.MODE_PRIVATE).getString("port", "6837"))
+    port.setText(preferences(this).getString("port", "6837"))
     key = input(R.string.nvda_remote_key, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
     showKey = CheckBox(this).apply {
       setText(R.string.nvda_remote_show_key)
@@ -193,7 +193,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
     lockBehaviorButton = button(R.string.nvda_remote_lock_disconnect) {
       val choices = LockBehavior.values()
       lockBehavior = choices[(lockBehavior.ordinal + 1) % choices.size]
-      getPreferences(MODE_PRIVATE).edit().putString("lock_behavior", lockBehavior.name).apply()
+      preferences(this).edit().putString("lock_behavior", lockBehavior.name).apply()
       updateLockBehaviorButton()
       announce(lockBehaviorButton.text.toString())
     }
@@ -247,12 +247,12 @@ class NvdaRemoteActivity : AppCompatActivity() {
 
   private fun getTrustedCertificate(hostname: String?): String? {
     if (hostname.isNullOrBlank()) return null
-    return getPreferences(Context.MODE_PRIVATE).getString("trusted_cert_$hostname", null)
+    return preferences(this).getString("trusted_cert_$hostname", null)
   }
 
   private fun saveTrustedCertificate(hostname: String?, fingerprint: String) {
     if (hostname.isNullOrBlank()) return
-    getPreferences(Context.MODE_PRIVATE).edit().putString("trusted_cert_$hostname", fingerprint).apply()
+    preferences(this).edit().putString("trusted_cert_$hostname", fingerprint).apply()
   }
 
   private fun connect(trustedFingerprint: String? = null) {
@@ -269,7 +269,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
     host.setText(hostname)
     port.setText(number.toString())
     showKey.isChecked = false
-    getPreferences(Context.MODE_PRIVATE).edit().putString("host", hostname).putString("port", number.toString()).apply()
+    preferences(this).edit().putString("host", hostname).putString("port", number.toString()).apply()
     val profile = selectedComputer?.takeIf {
       it.host.equals(hostname, true) && it.port == number &&
         (it.password == null || it.password == password)
@@ -723,7 +723,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
         releaseHeldModifiers()
         if (!finishRemoteBraille()) return
         mode = if (mode == NvdaRemoteMode.CONTROL) NvdaRemoteMode.KEYBOARD else NvdaRemoteMode.CONTROL
-        getPreferences(MODE_PRIVATE).edit().putString("input_mode", mode.name).apply()
+        preferences(this).edit().putString("input_mode", mode.name).apply()
         preparedModifiers.clear()
         updateSurfaceDescription()
         vibrate(if (mode == NvdaRemoteMode.CONTROL) 40 else 20)
@@ -945,6 +945,25 @@ class NvdaRemoteActivity : AppCompatActivity() {
   }
 
   companion object {
+    const val PREFS_NAME = "com.google.android.accessibility.talkback.remote.NvdaRemoteActivity"
+    private const val LEGACY_PREFS_NAME = "remote.NvdaRemoteActivity"
+
+    fun preferences(context: Context): android.content.SharedPreferences {
+      val app = context.applicationContext
+      val current = app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+      if (current.all.isEmpty()) {
+        val legacy = app.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
+        if (legacy.all.isNotEmpty()) {
+          val edit = current.edit()
+          legacy.all.forEach { (k, v) ->
+            if (v is String) edit.putString(k, v)
+          }
+          edit.apply()
+        }
+      }
+      return current
+    }
+
     private var active: NvdaRemoteActivity? = null // Accessed only on the Android main thread.
     @JvmStatic fun handleGesture(id: Int): Boolean = active?.let {
       it.resumed && it.surface != null && it.hasWindowFocus()

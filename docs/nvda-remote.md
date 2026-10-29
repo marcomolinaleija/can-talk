@@ -55,12 +55,19 @@ clave y guardar elimina la clave de ese registro. Editar no cambia los datos
 de una conexión en curso; se aplican al siguiente intento.
 
 `NvdaRemoteComputersStore` guarda un archivo cifrado AES-GCM con una clave de
-Android Keystore en el directorio privado `noBackupFilesDir`. No utiliza
-preferencias ni los almacenes exportados por la copia de seguridad de CAN Talk.
+Android Keystore en el directorio privado `noBackupFilesDir` (evitando su inclusión
+en copias automáticas del sistema operativo en texto plano).
+En las copias de seguridad selectivas de CAN Talk, los equipos guardados se exportan
+como una sección sensible protegida obligatoriamente por la contraseña de copia del
+usuario (cifrado PBKDF2 y AES-GCM en el contenedor JSON), combinándose al restaurar sin
+duplicar nombres existentes.
 Las lecturas y escrituras se realizan fuera del hilo de interfaz; la escritura
 es atómica y los errores no sustituyen una lista que no se pueda descifrar.
 `NvdaRemoteComputersDialog` contiene la lista y los formularios secundarios.
 Referencia: [Android Keystore y AES-GCM](https://developer.android.com/reference/android/security/keystore/KeyGenParameterSpec).
+Asimismo, las opciones generales de NVDA Remote (servidor predeterminado, puerto,
+bloqueo, modo de entrada y huellas SHA-256 de servidores de confianza) y las asignaciones
+de gestos remotos se integran como áreas de copia de seguridad independientes.
 
 ## Superficie braille y modos
 

@@ -3,6 +3,7 @@ package com.google.android.accessibility.talkback.backup
 
 import com.google.android.accessibility.talkback.backup.TalkBackBackup.PrefEntry
 import com.google.android.accessibility.talkback.backup.TalkBackBackup.PrefType
+import com.google.android.accessibility.talkback.remote.NvdaRemoteEndpoint
 import com.google.android.accessibility.talkback.soundthemes.SoundThemes
 import com.google.android.accessibility.talkback.soundthemes.SoundThemeManifest
 import org.json.JSONArray
@@ -35,8 +36,19 @@ internal object BackupCodec {
         files.put(JSONObject().put("path", it.path).put("sha256", BackupJson.hash(it.bytes))
           .put("data", BackupCrypto.encode(it.bytes)))
       }
+      val computers = JSONArray()
+      section.computers.sortedWith(compareBy({ it.name.lowercase() }, { it.host }, { it.port })).forEach { pc ->
+        computers.put(JSONObject()
+          .put("id", pc.id)
+          .put("name", pc.name)
+          .put("host", pc.host)
+          .put("port", pc.port)
+          .put("nvdaModifier", pc.nvdaModifier)
+          .put("password", pc.password ?: JSONObject.NULL)
+          .put("lastUsed", pc.lastUsed))
+      }
       sections.put(JSONObject().put("id", category.id).put("stores", stores)
-        .put("labels", labels).put("files", files))
+        .put("labels", labels).put("files", files).put("computers", computers))
     }
     root.put("sections", sections)
     root.put("checksum", BackupJson.hash(BackupJson.canonical(root).toByteArray(Charsets.UTF_8)))
@@ -87,7 +99,7 @@ internal object BackupCodec {
     var items = 0
     for (i in 0 until array.length()) {
       val obj = array.optJSONObject(i) ?: throw BackupException(BackupFailure.INVALID_FORMAT)
-      BackupJson.fields(obj, setOf("id", "stores", "labels", "files"))
+      BackupJson.fields(obj, setOf("id", "stores", "labels", "files", "computers"))
       val category = BackupCategory.fromId(BackupJson.string(obj, "id", 80))
         ?: throw BackupException(BackupFailure.UNSUPPORTED_VERSION)
       if (category in sections) throw BackupException(BackupFailure.INVALID_FORMAT)
@@ -145,7 +157,31 @@ internal object BackupCodec {
           catch (_: Exception) { throw BackupException(BackupFailure.INVALID_FORMAT) }
         }
       }
-      val section = BackupSection(prefs, labels, files)
+      val computerArray = obj.optJSONArray("computers") ?: JSONArray()
+      if (computerArray.length() > 100) throw BackupException(BackupFailure.TOO_LARGE)
+      val computers = (0 until computerArray.length()).map {
+        val item = computerArray.optJSONObject(it) ?: throw BackupException(BackupFailure.INVALID_FORMAT)
+        BackupJson.fields(item, setOf("id", "name", "host", "port", "nvdaModifier", "password", "lastUsed"))
+        val id = BackupJson.string(item, "id", 64)
+        val name = BackupJson.string(item, "name", 80)
+        val host = BackupJson.string(item, "host", 253)
+        val port = BackupJson.integer(item.opt("port")).toInt()
+        val modifier = BackupJson.integer(item.opt("nvdaModifier")).toInt()
+        val password = if (item.isNull("password")) null else BackupJson.string(item, "password", 1024)
+        val lastUsed = BackupJson.integer(item.opt("lastUsed"))
+        if (id.isBlank() || name.isBlank() || modifier !in listOf(0x2D, 0x14) || port !in 1..65535
+          || host.isBlank() || (password != null && password.isBlank()) || lastUsed < 0
+          || NvdaRemoteEndpoint.parse(host, port.toString()) == null) {
+          throw BackupException(BackupFailure.INVALID_FORMAT)
+        }
+        BackupRemoteComputer(id, name, host, port, modifier, password, lastUsed)
+      }
+      if (computers.isNotEmpty() && category != BackupCategory.NVDA_REMOTE_COMPUTERS
+        || computers.map { it.id }.distinct().size != computers.size
+        || computers.map { it.name.lowercase() }.distinct().size != computers.size) {
+        throw BackupException(BackupFailure.INVALID_FORMAT)
+      }
+      val section = BackupSection(prefs, labels, files, computers)
       if (section.itemCount == 0) throw BackupException(BackupFailure.INVALID_FORMAT)
       items += section.itemCount
       if (items > BackupJson.MAX_ITEMS) throw BackupException(BackupFailure.TOO_LARGE)

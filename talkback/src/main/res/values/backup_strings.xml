@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright 2026 can-talk contributors. SPDX-License-Identifier: Apache-2.0 -->
 <resources>
-  <string name="backup_export_selection_info">Choose the areas to save. Only checked areas will be exported. A password is optional unless you include an API key or clipboard history.</string>
+  <string name="backup_export_selection_info">Choose the areas to save. Only checked areas will be exported. A password is optional unless you include an API key, clipboard history or saved remote computers.</string>
   <string name="backup_import_selection_info">Choose which areas to restore. Only values present in checked areas will replace matching values; missing and unchecked settings stay unchanged. The reader may restart briefly to apply startup settings.</string>
   <string name="backup_exclusions">Copies do not include Android permissions, enabled services, the default keyboard, installed speech engines, downloaded AI models or temporary caches. Install engines and download models separately.</string>
   <string name="backup_legacy_warning">This older copy contains only reader preferences, not the separate braille settings. It may contain an unprotected API key. Only the areas actually found below can be restored.</string>
-  <string name="backup_sensitive_warning">API keys and clipboard history are unchecked by default and require a password when exported. Other settings, prompts and labels may also contain private text. Protect copies you share. A forgotten backup password cannot be recovered.</string>
+  <string name="backup_sensitive_warning">API keys, clipboard history and saved remote computers are unchecked by default and require a password when exported. Other settings, prompts and labels may also contain private text. Protect copies you share. A forgotten backup password cannot be recovered.</string>
   <string name="backup_calibration_warning">Dot calibration is unchecked by default. Restore it only on the same device/layout; on another screen, calibrate the dots again.</string>
   <string name="backup_select_all">Select all</string>
   <string name="backup_encrypt">Protect the entire backup with a password</string>
@@ -39,4 +39,7 @@
   <string name="backup_category_clipboard">Clipboard history and favorites</string>
   <string name="backup_category_labels">Custom accessibility labels</string>
   <string name="backup_category_themes">Sound themes, audio files and licenses</string>
+  <string name="backup_category_nvda_remote_settings">NVDA Remote settings and trusted servers</string>
+  <string name="backup_category_nvda_remote_gestures">NVDA Remote gestures</string>
+  <string name="backup_category_nvda_remote_computers">NVDA Remote saved computers</string>
 </resources>
