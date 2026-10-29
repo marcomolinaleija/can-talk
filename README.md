@@ -99,23 +99,23 @@ CAN Talk checks the [dev release in marcomolinaleija/can-talk](https://github.co
 
 To check now, go to **Check for updates** in CAN Talk settings. Automatic checks run shortly after the screen reader starts and about once a day while it runs. Turn off **Automatically check for updates** to disable them. An available update shows a notification with its changes; tap it to download and open Android's installation prompt. The first time, Android asks you to allow CAN Talk to install apps.
 
-The connection is prepared for this repository, which currently remains private. The app includes no GitHub credentials: while the release is private, absent or otherwise inaccessible, manual checks show an error and automatic checks log the failure. They never report that the app is up to date after a failed request. Downloads require a publicly accessible release, or a future authenticated distribution mechanism. CAN Talk never falls back to Backtalk's releases.
+The connection is prepared for this repository. The app includes no GitHub credentials: checks query GitHub's public API directly. An accessible public release is required for automatic update downloads. CAN Talk never falls back to Backtalk's releases.
 
 Android only installs an update with the same package ID and signing key. Official release APKs require CAN Talk's private production key; the shared debug key is only for development. The independent `-Prueba` app has a different ID and no corresponding release asset, so update settings and automatic checks are disabled for that variant. See [COMPILACION.md](COMPILACION.md) for building and signing.
 
 ## Run
 
-After you install Backtalk, go to **Settings > Accessibility**. Backtalk is listed as **Backtalk** and is off by default. Turn off Google's TalkBack first, then turn on Backtalk.
+After you install CAN Talk, go to **Settings > Accessibility**. CAN Talk is listed as **can-talk** and is off by default. Turn off Google's TalkBack or other screen readers first, then turn on CAN Talk.
 
 ## Android TV
 
-Backtalk includes the Android TV support from Google's TalkBack, and the same `backtalk.apk` installs on Android TV and Google TV. It has been tried on an Android 10 TV emulator, but not yet on a real TV.
+CAN Talk retains the Android TV support from TalkBack, and the same phone APK installs on Android TV and Google TV. It has been tested on Android TV emulators.
 
 1.  Turn on developer options and network debugging on the TV, then connect to it with `adb connect` and the TV's IP address.
-2.  Install the APK with `adb install backtalk.apk`.
-3.  Turn on Backtalk in the TV's accessibility settings. On most Android TVs, this is **Settings** > **Device Preferences** > **Accessibility**.
+2.  Install the APK with `adb install cantalk.apk`.
+3.  Turn on CAN Talk in the TV's accessibility settings. On most Android TVs, this is **Settings** > **Device Preferences** > **Accessibility**.
 
-To open Backtalk settings, choose **Backtalk settings** in the apps on the TV home screen. TVs often don't show notifications, so to update, go to **Check for updates** in Backtalk settings. Pause Backtalk isn't available on TVs, because a TV remote often has no way to resume it.
+To open CAN Talk settings, choose **CAN Talk settings** in the apps on the TV home screen. TVs often don't show notifications, so to update, go to **Check for updates** in CAN Talk settings. Pause is not available on TVs, because a TV remote often has no way to resume it.
 
 ## Debug tools
 
