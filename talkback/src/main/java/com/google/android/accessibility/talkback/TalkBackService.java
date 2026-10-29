@@ -979,7 +979,6 @@ public class TalkBackService extends AccessibilityServiceCompat
     if (translationController != null) {
       translationController.close();
     }
-    unlockedBootHandler.removeCallbacks(checkUnlockedBoot);
     if (screenFocusRestorer != null) {
       screenFocusRestorer.shutdown();
       screenFocusRestorer = null;
