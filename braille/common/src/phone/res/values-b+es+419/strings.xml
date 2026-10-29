@@ -2,7 +2,7 @@
 <resources>
   <string name="dont_show_again">No volver a mostrar</string>
   <string name="number_announcement">Número</string>
-  <string name="capitalize_announcement">Cap</string>
+  <string name="capitalize_announcement">Mayúscula</string>
   <string name="read_out_deleted">Se borró %s</string>
   <plurals name="braille_dots">
     <item quantity="one">punto %s</item>

@@ -5,6 +5,7 @@
   <string name="untitled_window">sin título</string>
   <string name="template_shorten_text">%1$d caracteres de %2$s a %3$s</string>
   <string name="template_text_copied">Se ha copiado %1$s</string>
+  <string name="template_text_appended">Se agregó al portapapeles: <xliff:g id="text">%1$s</xliff:g></string>
   <string name="template_capital_letter">%1$s mayúscula</string>
   <string name="character_collapse_template"> %1$d %2$s﻿</string>
   <string name="template_current_tts_engine">Estás usando %1$s</string>

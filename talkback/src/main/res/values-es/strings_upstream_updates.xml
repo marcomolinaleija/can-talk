@@ -39,4 +39,19 @@
     <string name="item_details_order_footer">can-talk anuncia los detalles de los elementos en este orden. Para cambiarlo, mantén pulsado un detalle y arrástralo hacia arriba o abajo. Con can-talk activado, toca dos veces y mantén pulsado; después arrastra. También puedes usar las acciones Subir y Bajar.</string>
     <string name="gemini_api_terms_link">Condiciones adicionales del servicio de la API de Gemini</string>
     <string name="notification_channel_backtalk_paused">can-talk en pausa</string>
+    <string name="category_collapsed">Contraído</string>
+    <string name="category_expanded">Expandido</string>
+    <string name="title_selector_vertical_navigation">Navegación vertical</string>
+    <string name="summary_selector_vertical_navigation">Ve al elemento de abajo o de arriba, omitiendo los demás elementos de la fila.</string>
+    <string name="title_pref_direct_click">Clic directo</string>
+    <string name="summary_pref_direct_click">Al presionar dos veces, toca el elemento enfocado en la pantalla como si usaras un dedo, en lugar de pedirle a la app que lo active. Ayuda con botones que no responden al doble toque. Los campos de texto y los controles deslizantes se siguen activando de la forma habitual.</string>
+    <string name="title_pref_restore_focus_on_back">Restaurar el foco al volver</string>
+    <string name="summary_pref_restore_focus_on_back">Vuelve al último elemento enfocado al regresar a una pantalla.</string>
+    <string name="title_pref_scroll_to_restore_previous_focus">Desplazar para restaurar el foco anterior</string>
+    <string name="summary_pref_scroll_to_restore_previous_focus">Desplaza la pantalla hasta el último elemento enfocado al regresar a ella.</string>
+    <string name="title_append_last_spoken_phrase">Agregar la última frase pronunciada al portapapeles</string>
+    <string name="keycombo_menu_other_append_last_spoken_phrase">Agregar la última frase pronunciada al portapapeles</string>
+    <string name="summary_append_last_spoken_phrase">Agrega la última frase que dijo can-talk al texto copiado, en una línea nueva, para reunir varias frases en el portapapeles.</string>
+    <string name="title_edittext_clear">Borrar texto</string>
+    <string name="cannot_clear_feedback">No se pudo borrar el texto</string>
 </resources>

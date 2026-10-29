@@ -1,4 +1,4 @@
-### Bash script for building the Backtalk APKs, for phones and watches
+### Bash script for building the CAN Talk phone APK
 ###
 ### The following environment variables must be set before executing this script
 ###   ANDROID_SDK           # path to local copy of Android SDK
@@ -56,14 +56,14 @@ if [[ "$GRADLE_DEBUG" = "--debug" ]]; then
   echo
 fi
 
-echo "#### gradlew $GRADLE_DEBUG $GRADLE_STACKTRACE assembleDebug"
-./gradlew ${GRADLE_DEBUG} ${GRADLE_STACKTRACE} assembleDebug
+echo "#### gradlew $GRADLE_DEBUG $GRADLE_STACKTRACE :assemblePhoneDebug"
+./gradlew ${GRADLE_DEBUG} ${GRADLE_STACKTRACE} :assemblePhoneDebug
 BUILD_EXIT_CODE=$?
 echo
 
 if [[ $BUILD_EXIT_CODE -eq 0 ]]; then
-  echo "#### find . -name *.apk"
-  find . -name "*.apk"
+  echo "#### Phone debug APKs"
+  find build/outputs/apk/phone/debug -name "*.apk"
   echo
 fi
 

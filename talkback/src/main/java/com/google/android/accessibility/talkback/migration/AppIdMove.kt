@@ -17,7 +17,8 @@
 package com.google.android.accessibility.talkback.migration
 
 /**
- * The move from the app ID com.android.talkback to fyi.quin.backtalk.
+ * The historical Backtalk move from com.android.talkback to fyi.quin.backtalk.
+ * These protocol IDs are not CAN Talk's current application ID.
  *
  * Some phones ship TalkBack as a system app named com.android.talkback, so Backtalk could not
  * install there. The old app installs the new one, shares its settings with it through
@@ -74,7 +75,7 @@ object AppIdMove {
     when {
       apkPackage.isNullOrEmpty() -> InstallKind.REFUSE
       apkPackage == ownPackage -> InstallKind.UPDATE
-      apkPackage == NEW_PACKAGE && sameSigner -> InstallKind.MOVE
+      ownPackage == OLD_PACKAGE && apkPackage == NEW_PACKAGE && sameSigner -> InstallKind.MOVE
       else -> InstallKind.REFUSE
     }
 }

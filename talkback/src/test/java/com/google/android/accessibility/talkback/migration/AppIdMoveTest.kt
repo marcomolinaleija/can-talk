@@ -44,6 +44,8 @@ class AppIdMoveTest {
   fun otherPackagesAreRefused() {
     assertEquals(InstallKind.REFUSE, AppIdMove.installKind("com.example.app", old, true))
     assertEquals(InstallKind.REFUSE, AppIdMove.installKind(old, new, true))
+    assertEquals(InstallKind.REFUSE, AppIdMove.installKind(new, "can.cantalk", true))
+    assertEquals(InstallKind.UPDATE, AppIdMove.installKind("can.cantalk", "can.cantalk", true))
     assertEquals(InstallKind.REFUSE, AppIdMove.installKind(null, old, true))
     assertEquals(InstallKind.REFUSE, AppIdMove.installKind("", old, true))
   }

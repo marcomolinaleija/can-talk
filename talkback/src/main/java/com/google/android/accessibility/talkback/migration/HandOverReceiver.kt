@@ -33,8 +33,8 @@ class HandOverReceiver : BroadcastReceiver() {
     if (intent.action != AppIdMove.ACTION_HAND_OVER) {
       return
     }
-    // The new app never hands over to anyone.
-    if (context.packageName == AppIdMove.NEW_PACKAGE) {
+    // Only the historical source app participates in this hand-over protocol.
+    if (context.packageName != AppIdMove.OLD_PACKAGE) {
       return
     }
     val service = TalkBackService.getInstance()

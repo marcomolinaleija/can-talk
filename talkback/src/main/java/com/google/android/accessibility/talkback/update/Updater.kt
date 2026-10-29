@@ -53,19 +53,19 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
- * Checks for new development builds, shows a notification when one is available, and installs it.
+ * Checks CAN Talk's own releases, shows a notification when a newer build is available, and
+ * installs it after user confirmation.
  *
  * Automatic checks run when the service starts, and then about once a day while it runs.
  *
- * While this app has the old app ID, a build under the app ID fyi.quin.backtalk installs next to
- * it. The accessibility settings for the new app then open, so the user can turn it on.
+ * The independent test app has no matching published APK, so it does not check for updates.
  */
 object Updater {
   private const val TAG = "Updater"
   private const val NOTIFICATION_ID = 0x0BAC7A1C
   internal const val PREF_LAST_CHECK_TIME = "update_last_check_time"
   internal const val PREF_LAST_NOTIFIED_BUILD = "update_last_notified_build"
-  private const val APK_FILE_NAME = "backtalk.apk"
+  private const val APK_FILE_NAME = "cantalk.apk"
   private val CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(1)
   private val POLL_INTERVAL_MS = TimeUnit.HOURS.toMillis(3)
   // Gives the network time to come up when the service starts at boot.
@@ -96,7 +96,13 @@ object Updater {
   /** Starts automatic checks. Called when the service starts. */
   @JvmStatic
   fun startAutomaticChecks(context: Context) {
-    // Disabled: this fork is unlinked from upstream backtalk updates.
+    stopAutomaticChecks()
+    if (!UpdateChecker.supportsPackage(context.packageName)) {
+      return
+    }
+    serviceContext = context.applicationContext
+    mainHandler.postDelayed(startupCheck, STARTUP_DELAY_MS)
+    mainHandler.postDelayed(periodicCheck, POLL_INTERVAL_MS)
   }
 
   /** Stops automatic checks. Called when the service stops. */
@@ -110,25 +116,87 @@ object Updater {
   /** Sets up the "Check for updates" preference in the main settings screen. */
   @JvmStatic
   fun setUpPreferences(fragment: PreferenceFragmentCompat) {
-    fragment.findPreference<Preference>(fragment.getString(R.string.pref_check_for_updates_key))?.let {
-      it.isVisible = false
-    }
+    val supported = UpdateChecker.supportsPackage(fragment.requireContext().packageName)
     fragment.findPreference<Preference>(fragment.getString(R.string.pref_auto_update_check_key))?.let {
-      it.isVisible = false
+      it.isVisible = supported
+    }
+    val preference =
+      fragment.findPreference<Preference>(fragment.getString(R.string.pref_check_for_updates_key))
+        ?: return
+    preference.isVisible = supported
+    preference.summary =
+      fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.COMMIT_COUNT)
+    preference.setOnPreferenceClickListener {
+      fragment.activity?.let { checkManually(it) }
+      true
     }
   }
 
-  private fun isAutomaticCheckEnabled(context: Context): Boolean = false
+  private fun isAutomaticCheckEnabled(context: Context): Boolean =
+    SharedPreferencesUtils.getBooleanPref(
+      SharedPreferencesUtils.getSharedPreferences(context),
+      context.resources,
+      R.string.pref_auto_update_check_key,
+      R.bool.pref_auto_update_check_default,
+    )
 
   private fun checkAutomatically(context: Context, ignoreInterval: Boolean) {
-    // Disabled: this fork is unlinked from upstream backtalk updates.
+    if (!isAutomaticCheckEnabled(context)) {
+      return
+    }
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+    val now = System.currentTimeMillis()
+    val lastCheck = prefs.getLong(PREF_LAST_CHECK_TIME, 0)
+    // A clock that moved back also makes a check due.
+    if (!ignoreInterval && now >= lastCheck && now - lastCheck < CHECK_INTERVAL_MS) {
+      return
+    }
+    executor.execute {
+      val update =
+        try {
+          UpdateChecker.check(context)
+        } catch (e: Exception) {
+          LogUtils.w(TAG, "Automatic update check failed: %s", e)
+          return@execute
+        }
+      prefs.edit().putLong(PREF_LAST_CHECK_TIME, System.currentTimeMillis()).apply()
+      if (update != null && update.build > prefs.getInt(PREF_LAST_NOTIFIED_BUILD, 0)) {
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+          LogUtils.w(TAG, "Build %d is available, but notifications are off", update.build)
+          return@execute
+        }
+        showNotification(context, update)
+        prefs.edit().putInt(PREF_LAST_NOTIFIED_BUILD, update.build).apply()
+      }
+    }
   }
 
   /** Checks now, and offers to install a newer build. */
   @JvmStatic
   fun checkManually(activity: Activity) {
     val context = activity.applicationContext
-    toast(context, R.string.update_up_to_date)
+    toast(context, R.string.update_checking)
+    executor.execute {
+      val update =
+        try {
+          UpdateChecker.check(context)
+        } catch (e: Exception) {
+          LogUtils.w(TAG, "Update check failed: %s", e)
+          mainHandler.post { toast(context, R.string.update_check_failed) }
+          return@execute
+        }
+      SharedPreferencesUtils.getSharedPreferences(context)
+        .edit()
+        .putLong(PREF_LAST_CHECK_TIME, System.currentTimeMillis())
+        .apply()
+      mainHandler.post {
+        when {
+          update == null -> toast(context, R.string.update_up_to_date)
+          activity.isFinishing || activity.isDestroyed -> showNotification(context, update)
+          else -> showUpdateDialog(activity, update)
+        }
+      }
+    }
   }
 
   private fun notificationText(context: Context, update: UpdateInfo): String =

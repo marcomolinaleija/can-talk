@@ -18,7 +18,7 @@ every line or every unrelated feature has been audited.
 
 | Area | Responsibility and relevance |
 | --- | --- |
-| Root application | Packages the phone/wear variants; test package is `fyi.quin.backtalk.cantalktest`. |
+| Root application | Packages the phone/wear variants; test package is `can.cantalk.cantalktest`. |
 | `talkback` | Accessibility service, event interpretation, compositor, feedback pipeline, actors, navigation, menus, gestures, preferences, AI descriptions, and updates. Owns translation policy and UI. |
 | `utils` | Shared speech processing, queue, history, TTS, language handling, sounds, haptics, event and node utilities. Needs a provider-neutral speech integration boundary. |
 | `braille` | IME, display, interfaces, translation tables and native liblouis. Braille translation is a different feature and must not be replaced by natural-language translation. |

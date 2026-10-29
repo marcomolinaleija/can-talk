@@ -402,7 +402,7 @@ Like VoiceOver on iPhone, Backtalk can move a call to the speaker when you take 
 Android lets only certain apps, such as smartwatch companions, change where call audio goes, so you need to grant Backtalk permission once, with adb or [Shizuku](https://shizuku.rikka.app):
 
 ```
-adb shell appops set fyi.quin.backtalk MANAGE_ONGOING_CALLS allow
+adb shell appops set can.cantalk MANAGE_ONGOING_CALLS allow
 ```
 
 Then turn on **Sound and vibration** > **Speaker when away from your ear**. Until you grant the permission, the setting is unavailable and shows the command. This feature requires Android 12 or later.
@@ -531,7 +531,7 @@ Backtalk doesn't stop on a slider's title as a separate item when you swipe thro
 
 ### Separate app
 
-Backtalk installs as `fyi.quin.backtalk`, so it installs next to Google's TalkBack, with settings of its own. For more information, see [Install](README.md#install).
+CAN Talk installs as `can.cantalk`, so it installs next to Google's TalkBack and Backtalk, with settings of its own. For more information, see [Install](README.md#install).
 
 ### Built-in updates
 
