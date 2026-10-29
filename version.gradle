@@ -1,5 +1,5 @@
-// The 1.0.0 release of CAN Talk. Keep the inherited variable name for build compatibility.
-ext { talkbackVersionName = "1.0.0" }
+// The 1.0.1 release of CAN Talk. Keep the inherited variable name for build compatibility.
+ext { talkbackVersionName = "1.0.1" }
 
 // Git details for the in-app updater. Builds outside a git checkout fall back to build 1 and no hash.
 def gitOutput = { List<String> args ->

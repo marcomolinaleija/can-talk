@@ -94,7 +94,6 @@ android {
         // a watch, so they are not debuggable. Debug logging in the libraries stays on.
         debug {
             debuggable = false
-            versionNameSuffix = "-dev-" + BUILD_TIMESTAMP
             // The independent test app keeps the local key used by existing phone installs.
             signingConfig canTalkTestBuild ? signingConfigs.debug : signingConfigs.shared
             // Shrinks and optimizes the libraries, so there is less code to load and compile.

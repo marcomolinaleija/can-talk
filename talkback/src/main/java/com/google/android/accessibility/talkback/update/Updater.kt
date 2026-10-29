@@ -125,7 +125,7 @@ object Updater {
         ?: return
     preference.isVisible = supported
     preference.summary =
-      fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.COMMIT_COUNT)
+      fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.VERSION_NAME)
     preference.setOnPreferenceClickListener {
       fragment.activity?.let { checkManually(it) }
       true

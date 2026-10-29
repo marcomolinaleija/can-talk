@@ -63,7 +63,7 @@ class UpdaterPreferencesTest {
       assertTrue(manual.isVisible)
       assertTrue(automatic.isVisible)
       assertNotNull(manual.onPreferenceClickListener)
-      assertEquals(fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.COMMIT_COUNT), manual.summary)
+      assertEquals(fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.VERSION_NAME), manual.summary)
       assertTrue(automatic.isChecked)
       automatic.isChecked = false
       val prefs = SharedPreferencesUtils.getSharedPreferences(fragment.requireContext())
