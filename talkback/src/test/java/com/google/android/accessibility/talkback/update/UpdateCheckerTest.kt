@@ -34,8 +34,8 @@ class UpdateCheckerTest {
         JSONArray()
           .put(
             JSONObject()
-              .put("name", "backtalk.apk")
-              .put("browser_download_url", "https://example.com/backtalk.apk")
+              .put("name", "cantalk.apk")
+              .put("browser_download_url", "https://example.com/cantalk.apk")
           ),
       )
       .toString()
@@ -63,9 +63,12 @@ class UpdateCheckerTest {
   }
 
   @Test
-  fun channels() {
-    assertEquals("latest", UpdateChecker.OLD_CHANNEL)
-    assertEquals("dev", UpdateChecker.NEW_CHANNEL)
+  fun onlyPublishedPackageSupportsUpdates() {
+    assertTrue(UpdateChecker.supportsPackage("can.cantalk"))
+    assertFalse(UpdateChecker.supportsPackage("can.cantalk.cantalktest"))
+    assertFalse(UpdateChecker.supportsPackage("fyi.quin.backtalk"))
+    assertFalse(UpdateChecker.supportsPackage("fyi.quin.backtalk.cantalktest"))
+    assertFalse(UpdateChecker.supportsPackage("com.android.talkback"))
   }
 
   private fun releaseWithBothBuilds(build: Int): String {
@@ -74,8 +77,8 @@ class UpdateCheckerTest {
       .getJSONArray("assets")
       .put(
         JSONObject()
-          .put("name", "backtalk-wear.apk")
-          .put("browser_download_url", "https://example.com/backtalk-wear.apk")
+          .put("name", "cantalk-wear.apk")
+          .put("browser_download_url", "https://example.com/cantalk-wear.apk")
       )
     return release.toString()
   }
@@ -84,11 +87,11 @@ class UpdateCheckerTest {
   fun eachDeviceGetsItsOwnBuild() {
     val json = releaseWithBothBuilds(11)
     assertEquals(
-      "https://example.com/backtalk.apk",
+      "https://example.com/cantalk.apk",
       UpdateChecker.parseRelease(json, 10, "", UpdateChecker.PHONE_APK_NAME)!!.downloadUrl,
     )
     assertEquals(
-      "https://example.com/backtalk-wear.apk",
+      "https://example.com/cantalk-wear.apk",
       UpdateChecker.parseRelease(json, 10, "", UpdateChecker.WATCH_APK_NAME)!!.downloadUrl,
     )
   }
@@ -96,5 +99,25 @@ class UpdateCheckerTest {
   @Test(expected = JSONException::class)
   fun aWatchNeverTakesThePhoneBuild() {
     UpdateChecker.parseRelease(release(11), 10, "", UpdateChecker.WATCH_APK_NAME)
+  }
+
+  @Test(expected = JSONException::class)
+  fun upstreamAssetNamesAreNotAccepted() {
+    val json = release(11).replace("cantalk.apk", "backtalk.apk")
+    UpdateChecker.parseRelease(json, 10, "")
+  }
+
+  @Test(expected = JSONException::class)
+  fun releaseWithoutBuildNumberIsAnError() {
+    UpdateChecker.parseRelease(
+      JSONObject(release(11)).put("body", "No build number").toString(), 10, "")
+  }
+
+  @Test
+  fun missingCurrentHashLimitsChangesToNewBuilds() {
+    val update =
+      UpdateChecker.parseRelease(
+        release(12, "ccccccc Three", "bbbbbbb Two", "aaaaaaa One"), 10, "")
+    assertEquals(listOf("Three", "Two"), update!!.changes)
   }
 }

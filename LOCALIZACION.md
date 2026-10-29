@@ -12,10 +12,12 @@ Para añadir mensajes, crea el recurso predeterminado y su equivalente en `value
 
 La lista de incidencias históricas de lint (`lint-baseline.xml`) conserva las traducciones pendientes en otros idiomas. Al completar estas traducciones, se retiró únicamente el español de los mensajes existentes; no se agregaron incidencias ni se desactivó la comprobación de traducciones.
 
+La revisión del 29 de octubre de 2026 añade 16 recursos que faltaban en español general y latinoamericano: clic directo, navegación vertical, restauración del foco, estados de categorías y acciones del portapapeles y borrado de texto. También traduce el anuncio «Cap» a «Mayúscula» en español latinoamericano, «Copyright» a «Derechos de autor» en ambas variantes y las tres instrucciones del arreglo de desplazamiento del tutorial de Wear OS. Se verifican los XML y los marcadores de formato sin compilar ni instalar una nueva versión.
+
 En Windows, ejecuta las comprobaciones y compila el paquete de prueba siguiendo [COMPILACION.md](COMPILACION.md):
 
 ```powershell
 .\compilar.ps1 -Prueba -Tareas @('testPhoneDebugUnitTest', ':assemblePhoneDebug', ':lintPhoneDebug')
 ```
 
-Instala con `adb install -r` para conservar los ajustes de la app de prueba. El paquete es `fyi.quin.backtalk.cantalktest` y su etiqueta es «can-talk — prueba».
+Instala con `adb install -r` para conservar los ajustes de la app de prueba. El paquete es `can.cantalk.cantalktest` y su etiqueta es «can-talk — prueba».

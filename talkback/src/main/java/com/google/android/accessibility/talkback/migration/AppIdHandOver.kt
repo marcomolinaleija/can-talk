@@ -69,7 +69,8 @@ object AppIdHandOver {
    */
   @JvmStatic
   fun onServiceConnected(context: Context, onOldServiceGone: Runnable) {
-    if (context.packageName == AppIdMove.OLD_PACKAGE) {
+    // CAN Talk is a separate app and must not take over Backtalk's legacy installation.
+    if (context.packageName != AppIdMove.NEW_PACKAGE) {
       return
     }
     try {

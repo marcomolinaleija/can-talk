@@ -5,6 +5,11 @@ braille/brltty/src/phone/res/raw/keytables.zip
 ## special build files
 local.properties
 entorno.local.json
+*.jks
+*.keystore
+*.p12
+keystore.properties
+signing.properties
 .gradle/
 .kotlin/
 .atl/

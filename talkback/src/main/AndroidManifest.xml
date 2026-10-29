@@ -86,9 +86,7 @@
     <!-- Granted by the user with adb, for the speakerphone setting. -->
     <uses-permission android:name="android.permission.MANAGE_ONGOING_CALLS" />
 
-    <!-- Guards the settings that Backtalk shares when it moves from the app ID
-         com.android.talkback to fyi.quin.backtalk. Both apps declare and hold it, and are signed
-         with the same key. -->
+    <!-- Protects the settings export with this app variant's own signature permission. -->
     <permission
         android:name="${migrationPermission}"
         android:protectionLevel="signature" />
@@ -408,7 +406,7 @@
             android:permission="${migrationPermission}"
             android:directBootAware="true" />
 
-        <!-- Turns this screen reader off when Backtalk under its new app ID is on. -->
+        <!-- Historical Backtalk hand-over; ignored by CAN Talk's separate app identity. -->
         <receiver
             android:name="com.google.android.accessibility.talkback.migration.HandOverReceiver"
             android:exported="true"
