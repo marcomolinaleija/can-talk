@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="title_call_speech_volume_enabled">Estabilizar voz durante llamadas (experimental)</string>
-  <string name="summary_call_speech_volume_enabled">Intenta mantener estable la voz de can-talk al cambiar el volumen de llamada. La voz empieza más baja para dejar margen de compensación. El resultado depende del teléfono y del motor de voz.</string>
-  <string name="title_call_speech_volume_percent">Volumen de voz durante llamadas (%)</string>
-  <string name="summary_call_speech_volume_percent">Porcentaje del volumen de voz habitual al empezar cada llamada. Un valor menor deja más margen para compensar. Los cambios se aplican a la siguiente frase.</string>
+  <string name="title_call_speech_volume_enabled">Estabilizar audio durante llamadas (experimental)</string>
+  <string name="summary_call_speech_volume_enabled">Intenta mantener estables la voz y los sonidos de can-talk al cambiar el volumen de llamada. El audio empieza más bajo para dejar margen de compensación. El resultado depende del teléfono y del motor de voz.</string>
+  <string name="title_call_speech_volume_percent">Volumen del lector durante llamadas (%)</string>
+  <string name="summary_call_speech_volume_percent">Nivel de voz y sonidos del lector durante llamadas, de 5 a 100 %. Cada paso de 5 puntos reduce el audio de forma más marcada. Durante una llamada, mantén un dedo en la pantalla y pulsa los botones de volumen para ajustarlo. Los cambios se aplican a la siguiente frase y al siguiente sonido del lector.</string>
+  <string name="call_speech_volume_announcement">Volumen del lector durante la llamada: %1$d por ciento</string>
 </resources>

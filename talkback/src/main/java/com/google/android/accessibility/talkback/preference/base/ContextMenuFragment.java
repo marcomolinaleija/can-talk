@@ -25,6 +25,8 @@ import com.google.android.accessibility.talkback.actor.ImageCaptioner;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiConfiguration;
 import com.google.android.accessibility.talkback.flags.FeatureFlagReader;
 import com.google.android.accessibility.talkback.preference.PreferencesActivityUtils;
+import com.google.android.accessibility.utils.FeatureSupport;
+import com.google.android.accessibility.utils.FormFactorUtils;
 import com.google.android.accessibility.utils.SharedPreferencesUtils;
 
 /** Panel holding a set of context menu preferences. */
@@ -124,6 +126,36 @@ public class ContextMenuFragment extends TalkbackBaseFragment {
       keyboardShortcutsPreference.setVisible(
           FeatureFlagReader.enableShowKeyboardShortcutsDialog(context));
     }
+
+    // For clipboard history menu item.
+    Preference clipboardHistoryPreference =
+        findPreference(
+            context.getString(R.string.pref_show_context_menu_clipboard_history_setting_key));
+    if (clipboardHistoryPreference != null) {
+      clipboardHistoryPreference.setVisible(
+          FeatureSupport.supportPassthrough()
+              && !FormFactorUtils.isAndroidWear()
+              && !FormFactorUtils.isAndroidTv());
+    }
+
+    // For translation menu items.
+    Preference toggleTranslationPreference =
+        findPreference(
+            context.getString(R.string.pref_show_context_menu_toggle_translation_setting_key));
+    if (toggleTranslationPreference != null) {
+      toggleTranslationPreference.setVisible(
+          !FormFactorUtils.isAndroidWear() && !FormFactorUtils.isAndroidTv());
+    }
+
+    Preference translateLastPreference =
+        findPreference(
+            context.getString(R.string.pref_show_context_menu_translate_last_setting_key));
+    if (translateLastPreference != null) {
+      translateLastPreference.setVisible(
+          !FormFactorUtils.isAndroidWear() && !FormFactorUtils.isAndroidTv());
+    }
+
+    collapseCategories();
   }
 
   @Override

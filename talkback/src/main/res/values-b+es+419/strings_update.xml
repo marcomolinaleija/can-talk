@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string name="summary_pref_auto_update_check">Buscar una vez al día y mostrar una notificación cuando haya una compilación nueva disponible</string>
-  <string name="summary_pref_check_for_updates">Compilación <xliff:g id="build" example="96">%1$d</xliff:g></string>
+  <string name="summary_pref_check_for_updates">Versión <xliff:g id="version" example="1.0.1">%1$s</xliff:g></string>
   <string name="title_pref_auto_update_check">Buscar actualizaciones automáticamente</string>
   <string name="title_pref_check_for_updates">Buscar actualizaciones</string>
   <string name="update_allow_install">Permite que can-talk instale apps y vuelve a intentar la actualización</string>

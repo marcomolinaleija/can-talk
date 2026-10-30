@@ -20,9 +20,7 @@ import android.content.Context
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import com.google.android.accessibility.talkback.BuildConfig
-import com.google.android.accessibility.talkback.migration.AppIdMove
 import com.google.android.accessibility.utils.FormFactorUtils
-import com.google.android.libraries.accessibility.utils.log.LogUtils
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -44,29 +42,22 @@ data class UpdateInfo(
 /**
  * Checks a rolling pre-release on GitHub for a newer development build.
  *
- * Builds with the app ID fyi.quin.backtalk are on the "dev" pre-release. The "latest" pre-release
- * holds builds with the old app ID com.android.talkback, and stays on the build that moves to the
- * new app ID, so old builds always pass through it. That build offers the move whenever "dev"
- * exists.
+ * CAN Talk publishes phone and watch APKs on its own "dev" pre-release. No request is sent to
+ * Backtalk's repository. The release must be publicly readable for checks without credentials.
  *
  * CI writes the release notes as a line "build: <commit count>", then one line per commit as "-
  * <7-character hash> <subject>", newest first. A release is newer only when its commit count is
  * higher, so a local build of a newer commit is never offered an older build.
  */
 object UpdateChecker {
-  private const val TAG = "UpdateChecker"
-  private const val RELEASES_URL = "https://api.github.com/repos/trypsynth/backtalk/releases/tags/"
-
-  /** The pre-release for the old app ID com.android.talkback. */
-  const val OLD_CHANNEL = "latest"
-
-  /** The pre-release for the app ID fyi.quin.backtalk. */
-  const val NEW_CHANNEL = "dev"
+  @VisibleForTesting
+  internal const val RELEASE_URL =
+    "https://api.github.com/repos/marcomolinaleija/can-talk/releases/tags/dev"
 
   /** The phone build, which is also what builds before the watch build was published look for. */
-  @VisibleForTesting const val PHONE_APK_NAME = "backtalk.apk"
+  @VisibleForTesting const val PHONE_APK_NAME = "cantalk.apk"
   /** The watch build, so that a watch never installs the phone app. */
-  @VisibleForTesting const val WATCH_APK_NAME = "backtalk-wear.apk"
+  @VisibleForTesting const val WATCH_APK_NAME = "cantalk-wear.apk"
   private const val SHORT_HASH_LENGTH = 7
   private const val MAX_CHANGES = 50
   private const val TIMEOUT_MS = 30_000
@@ -76,48 +67,35 @@ object UpdateChecker {
   /**
    * Returns the newer build, or null if this build is current. This blocks on the network.
    *
-   * @throws IOException if GitHub cannot be reached or returns an error.
+   * @throws IOException if the release is inaccessible, or this app uses an unpublished app ID.
    * @throws JSONException if the release is not in the expected format.
    */
   @WorkerThread
-  fun check(context: Context): UpdateInfo? {
-    val channel =
-      if (context.packageName == AppIdMove.OLD_PACKAGE) {
-        checkMove(context)?.let {
-          return it
-        }
-        OLD_CHANNEL
-      } else {
-        NEW_CHANNEL
-      }
-    val json = fetchRelease(context, channel) ?: throw IOException("GitHub has no $channel release")
+  fun check(context: Context): UpdateInfo? = check(context, ::openConnection)
+
+  /** The independent test app has no matching APK on the published release. */
+  internal fun supportsPackage(packageName: String): Boolean =
+    packageName == BuildConfig.PUBLISHED_APPLICATION_ID
+
+  @VisibleForTesting
+  @WorkerThread
+  internal fun check(
+    context: Context,
+    connectionFactory: (Context, String) -> HttpURLConnection,
+  ): UpdateInfo? {
+    if (!supportsPackage(context.packageName)) {
+      throw IOException("No published updates for ${context.packageName}")
+    }
+    val json = fetchRelease(connectionFactory(context, RELEASE_URL))
     return parseRelease(json, BuildConfig.COMMIT_COUNT, BuildConfig.COMMIT_HASH, apkName())
   }
 
-  /**
-   * Returns the newest build under the new app ID, whatever its build number, since the new app
-   * is always the way forward. Returns null if there is none yet or it cannot be read, so the old
-   * app still gets updates of its own.
-   */
+  /** An inaccessible release is an error, never evidence that the installed build is current. */
   @WorkerThread
-  private fun checkMove(context: Context): UpdateInfo? =
-    try {
-      fetchRelease(context, NEW_CHANNEL)?.let { parseMove(it, BuildConfig.COMMIT_HASH, apkName()) }
-    } catch (e: Exception) {
-      LogUtils.w(TAG, "Cannot check for the new app: %s", e)
-      null
-    }
-
-  /** Returns the release with the [tag] as JSON, or null if GitHub has no such release. */
-  @WorkerThread
-  private fun fetchRelease(context: Context, tag: String): String? {
-    val connection = openConnection(context, RELEASES_URL + tag)
+  private fun fetchRelease(connection: HttpURLConnection): String {
     try {
       connection.setRequestProperty("Accept", "application/vnd.github+json")
       val code = connection.responseCode
-      if (code == HttpURLConnection.HTTP_NOT_FOUND) {
-        return null
-      }
       if (code != HttpURLConnection.HTTP_OK) {
         throw IOException("GitHub returned HTTP $code")
       }
@@ -127,7 +105,7 @@ object UpdateChecker {
     }
   }
 
-  /** Parses a release under the new app ID as a move, which is offered whatever its build. */
+  /** Parses a legacy app-ID migration; normal CAN Talk checks never offer a migration. */
   @VisibleForTesting
   fun parseMove(
     json: String,
@@ -140,7 +118,7 @@ object UpdateChecker {
     val connection = URL(url).openConnection() as HttpURLConnection
     connection.connectTimeout = TIMEOUT_MS
     connection.readTimeout = TIMEOUT_MS
-    connection.setRequestProperty("User-Agent", "Backtalk/${versionName(context)}")
+    connection.setRequestProperty("User-Agent", "CAN-Talk/${versionName(context)}")
     return connection
   }
 

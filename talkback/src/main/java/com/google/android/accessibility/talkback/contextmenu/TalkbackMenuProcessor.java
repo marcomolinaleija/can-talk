@@ -74,9 +74,9 @@ public class TalkbackMenuProcessor {
   private static final int ORDER_ACTIONS = 2;
   private static final int ORDER_PAGE_NAVIGATION = 4;
   public static final int ORDER_LABELS = 5;
-  public static final int ORDER_SUMMARIZE_VIEW = 6;
   public static final int ORDER_IMAGE_CAPTION = 6;
-  private static final int ORDER_NAVIGATION = 7;
+  public static final int ORDER_SUMMARIZE_VIEW = 7;
+  private static final int ORDER_NAVIGATION = 8;
   public static final int ORDER_TEXT_FORMATTING = 13;
   private static final int ORDER_LANGUAGES = 14;
   private static final int ORDER_EMOJI = 15;
@@ -205,13 +205,25 @@ public class TalkbackMenuProcessor {
     setSkipRefocusAndWindowAnnounce(menu, R.id.translate_last, true);
     setMenuItemDeferredType(menu, R.id.toggle_translation, DeferredType.WINDOWS_STABLE);
     setMenuItemDeferredType(menu, R.id.translate_last, DeferredType.WINDOWS_STABLE);
+    setSkipRefocusAndWindowAnnounce(menu, R.id.clipboard_history, true);
+    setMenuItemDeferredType(menu, R.id.clipboard_history, DeferredType.WINDOWS_STABLE);
+    setSkipRefocusAndWindowAnnounce(menu, R.id.braille_web_navigation, true);
+    setMenuItemDeferredType(menu, R.id.braille_web_navigation, DeferredType.WINDOWS_STABLE);
+    if (!FeatureSupport.supportPassthrough()
+        || FormFactorUtils.isAndroidWear() || FormFactorUtils.isAndroidTv()) {
+      menu.removeItem(R.id.clipboard_history);
+      menu.removeItem(R.id.braille_web_navigation);
+    }
     if (com.google.android.accessibility.utils.FormFactorUtils.isAndroidWear()
         || com.google.android.accessibility.utils.FormFactorUtils.isAndroidTv()) {
       menu.removeItem(R.id.toggle_translation);
       menu.removeItem(R.id.translate_last);
     } else if (service.getTranslationController() != null) {
-      menu.findItem(R.id.toggle_translation).setTitle(service.getTranslationController().getContinuous()
-          ? R.string.translation_stop : R.string.translation_start);
+      @Nullable ContextMenuItem toggleItem = menu.findItem(R.id.toggle_translation);
+      if (toggleItem != null) {
+        toggleItem.setTitle(service.getTranslationController().getContinuous()
+            ? R.string.translation_stop : R.string.translation_start);
+      }
     }
     setSkipRefocusAndWindowAnnounce(menu, R.id.copy_last_utterance_to_clipboard, true);
     setSkipRefocusAndWindowAnnounce(menu, R.id.audio_ducking, true);
@@ -262,6 +274,12 @@ public class TalkbackMenuProcessor {
     }
 
     if (!showMenuItem(
+        R.string.pref_show_context_menu_append_last_spoken_phrase_setting_key,
+        R.bool.pref_show_context_menu_append_last_spoken_phrase_default)) {
+      menu.removeItem(R.id.append_last_utterance_to_clipboard);
+    }
+
+    if (!showMenuItem(
         R.string.pref_show_context_menu_spell_last_spoken_phrase_setting_key,
         R.bool.pref_show_context_menu_spell_last_spoken_phrase_default)) {
       menu.removeItem(R.id.spell_last_utterance);
@@ -271,6 +289,24 @@ public class TalkbackMenuProcessor {
         R.string.pref_show_context_menu_repeat_last_spoken_phrase_setting_key,
         R.bool.pref_show_context_menu_repeat_last_spoken_phrase_default)) {
       menu.removeItem(R.id.repeat_last_utterance);
+    }
+
+    if (!showMenuItem(
+        R.string.pref_show_context_menu_clipboard_history_setting_key,
+        R.bool.pref_show_context_menu_clipboard_history_default)) {
+      menu.removeItem(R.id.clipboard_history);
+    }
+
+    if (!showMenuItem(
+        R.string.pref_show_context_menu_toggle_translation_setting_key,
+        R.bool.pref_show_context_menu_toggle_translation_default)) {
+      menu.removeItem(R.id.toggle_translation);
+    }
+
+    if (!showMenuItem(
+        R.string.pref_show_context_menu_translate_last_setting_key,
+        R.bool.pref_show_context_menu_translate_last_default)) {
+      menu.removeItem(R.id.translate_last);
     }
 
     // Removes screen search if this is watch or uncheck show item.
@@ -414,7 +450,7 @@ public class TalkbackMenuProcessor {
       return;
     }
 
-    if (currentNode == null) {
+    if (currentNode == null && itemId != R.id.summarize_view_menu) {
       return;
     }
     AccessibilityNodeInfoCompat node = currentNode;

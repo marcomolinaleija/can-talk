@@ -41,6 +41,19 @@ public interface EditBuffer {
    */
   String appendBraille(ImeConnection imeConnection, BrailleCharacter brailleCharacter);
 
+  /**
+   * Appends a {@link BrailleCharacter} to the end of the buffer, with optional auto-capitalization.
+   */
+  default String appendBraille(
+      ImeConnection imeConnection, BrailleCharacter brailleCharacter, boolean autoCapitalize) {
+    return appendBraille(imeConnection, brailleCharacter);
+  }
+
+  /** Returns whether the last appended character was auto-capitalized. */
+  default boolean wasLastAutoCapitalized() {
+    return false;
+  }
+
   /** Appends a space (' ') to the end of the buffer, possibly mutating the IME Editor. */
   void appendSpace(ImeConnection imeConnection);
 

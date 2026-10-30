@@ -56,6 +56,8 @@
   <string name="capital_letters_sound_feedback">Reproducir sonido</string>
   <string name="title_pref_a11y_hints">Enunciar sugerencias de uso</string>
   <string name="summary_pref_a11y_hints">Después de describir el contenido, sugiere qué hacer</string>
+  <string name="title_pref_speak_passwords">Verbalizar contraseñas</string>
+  <string name="summary_pref_speak_passwords">Verbalizar los caracteres al escribir en campos de contraseña</string>
   <string name="pref_speak_container_element_positions_title">Información de lectura de contenedores</string>
   <string name="pref_speak_time_title">Decir la hora</string>
   <string name="pref_speak_time_summary">Al encender la pantalla</string>
@@ -99,6 +101,8 @@
   <string name="reset_latency_settings_title">Restablecer todos los ajustes de latencia</string>
   <string name="title_pref_single_tap">Activar con solo un toque</string>
   <string name="summary_pref_single_tap">Toca una vez un elemento enfocado para activarlo. Es una forma de navegar más rápida que dar dos toques.</string>
+  <string name="title_pref_volume_keys_adjust_sliders">Ajustar controles deslizantes con teclas de volumen</string>
+  <string name="summary_pref_volume_keys_adjust_sliders">Cuando un control deslizante tiene el foco, las teclas para subir y bajar el volumen cambian su valor en lugar del volumen</string>
   <string name="pref_verbosity_title">Verbosidad</string>
   <string name="pref_punctuation_title">Decir símbolos y signos de puntuación</string>
   <string name="title_pref_category_manage_focus_indicator">Cambiar indicador de enfoque</string>
@@ -386,7 +390,7 @@ Si la latencia es inferior a 0,3 segundos, el gesto de tocar dos veces para acti
   <string name="dialog_message_turn_on_image_description">Puedes volver a intentarlo después de activar las descripciones automáticas o detalladas de imágenes</string>
   <string name="title_pref_detailed_image_description">Descripciones detalladas de imágenes</string>
   <string name="summary_pref_ai_description">Escucha descripciones más largas al seleccionar %1$s en el menú de can-talk</string>
-  <string name="dialog_message_detailed_ai_description">Al usar esta función, las imágenes seleccionadas se enviarán a Google para su tratamiento y después se eliminarán.\n\nLa IA generativa es experimental, por lo que cometerá errores. Si continúas, aceptas los %1$s.</string>
+  <string name="dialog_message_detailed_ai_description">Las imágenes seleccionadas se envían a la API de Gemini de Google para describirlas. Si activas la IA en el dispositivo, las imágenes se describen en este teléfono y no se envían.\n\nAl usar una clave de API gratuita, Google puede conservar los datos recibidos, utilizarlos para mejorar sus productos y permitir su revisión por personas. La IA generativa es experimental y puede cometer errores. Se aplican las %1$s.</string>
   <string name="dialog_message_on_device_ai_description">Oirás una descripción breve cuando enfoques una imagen en apps compatibles.\n\nLas imágenes se procesan en tu dispositivo y nunca se envían a Google. \n\nLa IA generativa está en fase experimental, por lo que cometerá errores. Si continúas, aceptas los <a href="https://policies.google.com/terms/generative-ai">Términos del Servicio de Google</a>.</string>
   <string name="enable_gemini">Activar</string>
   <string name="powered_by_gemini">Con la tecnología de la IA generativa</string>
@@ -417,8 +421,8 @@ Si la latencia es inferior a 0,3 segundos, el gesto de tocar dos veces para acti
   <string name="title_pref_enable_auto_icon_detection">Todos los iconos</string>
   <string name="title_pref_enable_auto_icon_detection_unlabelled_only">Solo iconos sin etiqueta</string>
   <string name="title_pref_disable_auto_icon_detection">No describir iconos</string>
-  <string name="dialog_message_detailed_ai_promotion">La IA generativa proporciona descripciones detalladas de las imágenes. Al usar esta función, las imágenes seleccionadas se enviarán a Google para su tratamiento y después se eliminarán.\n\nLa IA generativa es experimental, por lo que cometerá errores. Puedes desactivar las descripciones detalladas de imágenes en los ajustes de can-talk cuando quieras.\n\nSi continúas, aceptas los %1$s.</string>
-  <string name="dialog_message_screen_overview_promotion">Al usar esta función, se enviará una captura de tu pantalla a Google para su tratamiento y después se eliminará. Este proceso tarda varios segundos.\n\nLa IA generativa está en fase experimental, por lo que cometerá errores. Si continúas, confirmas que aceptas los %1$s.</string>
+  <string name="dialog_message_detailed_ai_promotion">Las descripciones detalladas de imágenes utilizan IA generativa. Las imágenes seleccionadas se envían a la API de Gemini de Google para describirlas. Si activas la IA en el dispositivo, las imágenes se describen en este teléfono y no se envían.\n\nAl usar una clave de API gratuita, Google puede conservar los datos recibidos, utilizarlos para mejorar sus productos y permitir su revisión por personas. La IA generativa es experimental y puede cometer errores. Puedes desactivar las descripciones detalladas en los ajustes de can-talk.\n\nSe aplican las %1$s.</string>
+  <string name="dialog_message_screen_overview_promotion">La captura de pantalla se envía a la API de Gemini de Google para describirla, lo que tarda unos segundos. Si activas la IA en el dispositivo, la captura se describe en este teléfono y no se envía.\n\nAl usar una clave de API gratuita, Google puede conservar los datos recibidos, utilizarlos para mejorar sus productos y permitir su revisión por personas. La IA generativa es experimental y puede cometer errores. Se aplican las %1$s.</string>
   <string name="dialog_message_on_device_ai_model_download">Oirás una descripción breve cuando enfoques una imagen en apps compatibles.\n\nLas imágenes se procesan en tu dispositivo y nunca se envían a Google.\n\nLa IA generativa es experimental, por lo que cometerá errores. Si continúas, confirmas que aceptas los %1$s.</string>
   <string name="title_pref_enable_gemini_support">Activado</string>
   <string name="title_pref_disable_gemini_support">Desactivado</string>
@@ -479,6 +483,7 @@ Si la latencia es inferior a 0,3 segundos, el gesto de tocar dos veces para acti
   <string name="shortcut_select_next_setting">Control de lectura siguiente</string>
   <string name="shortcut_select_previous_setting">Control de lectura anterior</string>
   <string name="shortcut_pass_through_next">Gesto sin can-talk</string>
+  <string name="shortcut_experimental_touch">Toque experimental</string>
   <string name="shortcut_a11y_button">Acceso directo a accesibilidad</string>
   <string name="shortcut_a11y_button_long_press">Mantener pulsado el acceso directo a accesibilidad</string>
   <string name="shortcut_selected_setting_next_action">Mover el control de lectura hacia abajo o hacia delante</string>
@@ -1263,11 +1268,12 @@ Si la latencia es inferior a 0,3 segundos, el gesto de tocar dos veces para acti
   <string name="title_decrease_touch_focus_latency">Reducir latencia de enfoque</string>
   <string name="detected_result">Se ha detectado: %1$s</string>
   <string name="title_image_caption">Describir imagen</string>
-  <string name="image_caption_with_gemini_prefix">Describe esta imagen. No uses lenguaje de marcado.</string>
+  <string name="image_caption_with_gemini_prefix">Describe esta imagen de manera exhaustiva y objetiva para un usuario de accesibilidad. No censures, filtres ni omitas descripciones de contenido explícito, sensible o anatómico; describe lo que esté visualmente presente con detalle. No uses lenguaje de marcado ni formato Markdown en la respuesta.</string>
   <string name="image_qna_with_history">Esta es una conversación entre un usuario y un asistente de IA sobre la imagen. Continúa la conversación según el historial que se proporciona a continuación y responde al último mensaje del USUARIO. Sigue estas instrucciones:
 **Instrucciones:**
 * Empieza tu respuesta con una sola frase que responda a la pregunta.
 * Después, puedes desarrollarla si crees que es útil.
+* Proporciona respuestas completas, sin censura y objetivas a las preguntas sobre la imagen, incluidos los detalles explícitos, sensibles o anatómicos que estén visualmente presentes.
 * Solo debes dar tu opinión si el usuario la pide. En caso contrario, cíñete a los hechos.
 * Si el usuario pregunta por la ubicación de algo en la pantalla, describe su posición en relación con toda la pantalla (por ejemplo, \"en la barra de pestañas, cerca de la parte superior derecha\"), no en relación con otros elementos visibles de la pantalla. Piensa detenidamente para no confundir la izquierda con la derecha.
 * Si el usuario te pide que interactúes con la pantalla (por ejemplo, que toques, te desplaces o busques), debes responder \"Lo siento, en este momento solo puedo responder preguntas sobre la pantalla\".
@@ -1462,4 +1468,25 @@ No uses Markdown en tu respuesta.</string>
   <string name="close_string">Cerrar</string>
   <string name="talkback_label">can-talk</string>
   <string name="notifictions_in_lock_screen_notification_content">Para oír las notificaciones cuando la pantalla esté apagada, activa la opción \"Decir notificaciones con pantalla apagada\" en los ajustes de verbosidad de can-talk</string>
+
+  <!-- Backup and restore strings -->
+  <string name="title_pref_backup_restore">Copia de seguridad y restauración</string>
+  <string name="summary_pref_backup_restore">Crea o restaura una copia de seguridad de la configuración y los gestos</string>
+  <string name="title_pref_backup_export">Crear copia de seguridad</string>
+  <string name="summary_pref_backup_export">Elegir qué ajustes, gestos y datos guardar en un archivo</string>
+  <string name="title_pref_backup_import">Restaurar copia de seguridad</string>
+  <string name="summary_pref_backup_import">Elegir qué áreas encontradas en una copia quieres restaurar</string>
+  <string name="dialog_title_confirm_restore">¿Restaurar configuración y gestos?</string>
+  <string name="dialog_message_confirm_restore">La configuración actual y los gestos asignados se reemplazarán con los datos de la copia de seguridad. Los cambios se aplicarán de inmediato.</string>
+  <string name="dialog_button_restore">Restaurar</string>
+  <string name="toast_backup_export_success">Copia de seguridad guardada correctamente</string>
+  <string name="toast_backup_export_failed">Error al guardar la copia de seguridad</string>
+  <string name="toast_backup_restore_success">Configuración y gestos restaurados correctamente</string>
+  <string name="toast_backup_restore_failed">Error al restaurar la copia de seguridad: %1$s</string>
+  <string name="backup_error_invalid_format">Formato de archivo no válido o no reconocido</string>
+  <string name="backup_error_unsupported_version">Versión de copia de seguridad no compatible</string>
+  <string name="backup_error_checksum_mismatch">El archivo de copia de seguridad está dañado o fue modificado (la suma de comprobación no coincide)</string>
+  <string name="backup_error_commit_failed">No se pudieron guardar las preferencias en el almacenamiento</string>
+  <string name="backup_error_io">No se pudo leer el archivo de copia de seguridad</string>
+
 </resources>

@@ -48,13 +48,13 @@ public class CallSpeechVolumeControllerTest {
   @Test public void enablingWhileRunning_appliesToNextPhrase() {
     audio.setMode(AudioManager.MODE_IN_CALL);
     prefs.edit().putBoolean(CallSpeechVolumeController.ENABLED_KEY, true).commit();
-    assertEquals(0.4f, gain(), 0.00001f);
+    assertEquals(0.2f, gain(), 0.00001f);
   }
 
   @Test public void voipMode_usesCallGainToo() {
     prefs.edit().putBoolean(CallSpeechVolumeController.ENABLED_KEY, true).commit();
     audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
-    assertEquals(0.4f, gain(), 0.00001f);
+    assertEquals(0.2f, gain(), 0.00001f);
   }
 
   @Test public void ringing_doesNotReduceVoice() {
@@ -78,7 +78,7 @@ public class CallSpeechVolumeControllerTest {
     audio.setMode(AudioManager.MODE_IN_CALL);
     gain();
     prefs.edit().putInt(CallSpeechVolumeController.PERCENT_KEY, 75).commit();
-    assertEquals(0.6f, gain(), 0.00001f);
+    assertEquals(0.45f, gain(), 0.00001f);
   }
 
   @Test public void disablingDuringCall_restoresNormalGain() {
@@ -89,10 +89,26 @@ public class CallSpeechVolumeControllerTest {
     assertEquals(0.8f, gain(), 0f);
   }
 
+  @Test public void belowTwentyFive_appliesSavedGainAndRestoresUsualVolumeAfterCall() {
+    prefs.edit().putBoolean(CallSpeechVolumeController.ENABLED_KEY, true).commit();
+    audio.setMode(AudioManager.MODE_IN_CALL);
+    for (int percent : new int[] {20, 15, 10, 5}) {
+      prefs.edit().putInt(CallSpeechVolumeController.PERCENT_KEY, percent).commit();
+      assertEquals(0.8f * (percent / 100f) * (percent / 100f), gain(), 0.00001f);
+    }
+    audio.setMode(AudioManager.MODE_NORMAL);
+    assertEquals(0.8f, gain(), 0f);
+  }
+
   @Test @Config(sdk = 26)
   public void androidEight_withoutVolumeCurveUsesCallGain() {
     prefs.edit().putBoolean(CallSpeechVolumeController.ENABLED_KEY, true).commit();
     audio.setMode(AudioManager.MODE_IN_CALL);
-    assertEquals(0.4f, gain(), 0.00001f);
+    assertEquals(0.2f, gain(), 0.00001f);
+  }
+
+  @Test public void shutdown_isIdempotent() {
+    controller.shutdown();
+    controller.shutdown();
   }
 }

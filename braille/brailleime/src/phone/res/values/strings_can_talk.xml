@@ -3,4 +3,58 @@
   <!-- These Can Talk additions provide English and Spanish; other locales use the English fallback. -->
   <string name="title_pref_keep_open_after_send" tools:ignore="MissingTranslation">Keep the keyboard open when sending messages</string>
   <string name="summary_pref_keep_open_after_send" tools:ignore="MissingTranslation">After sending a message, continue typing without reopening the braille keyboard.</string>
+  <string name="title_pref_auto_capitalize" tools:ignore="MissingTranslation">Capitalize all sentences and text after a period</string>
+  <string name="summary_pref_auto_capitalize" tools:ignore="MissingTranslation">First letter when activating the keyboard and after a period and space will be capitalized unless deleted.</string>
+  <string name="title_pref_point_recalibration" tools:ignore="MissingTranslation">Dot recalibration</string>
+  <string name="summary_pref_point_recalibration" tools:ignore="MissingTranslation">Tap each of the 6 dots on the screen to recalibrate the keyboard.</string>
+  <string name="recalibrate_intro" tools:ignore="MissingTranslation">Dot recalibration. Touch the screen at the position for dot 1.</string>
+  <string name="recalibrate_touch_dot_prompt" tools:ignore="MissingTranslation">Touch dot %d</string>
+  <string name="recalibrate_dot_saved_prompt" tools:ignore="MissingTranslation">Dot %1$d saved. Touch dot %2$d.</string>
+  <string name="recalibrate_dot_saved" tools:ignore="MissingTranslation">Dot %d saved</string>
+  <string name="recalibrate_completed" tools:ignore="MissingTranslation">Calibration completed successfully.</string>
+  <string name="recalibrate_reset" tools:ignore="MissingTranslation">Reset</string>
+  <string name="recalibrate_cancelled" tools:ignore="MissingTranslation">Calibration cancelled.</string>
+
+  <!-- Preferences and context menu items for instruction manual and tutorial -->
+  <string name="title_pref_brailleime_instruction" tools:ignore="MissingTranslation">Braille keyboard user guide</string>
+  <string name="summary_pref_brailleime_instruction" tools:ignore="MissingTranslation">Learn how to type, navigate, use gestures, recalibrate dots, lock orientation, and more.</string>
+  <string name="title_pref_brailleime_interactive_tutorial" tools:ignore="MissingTranslation">Interactive Braille tutorial</string>
+  <string name="summary_pref_brailleime_interactive_tutorial" tools:ignore="MissingTranslation">Practice step-by-step how to type letters, gestures, and use the Braille keyboard.</string>
+  <string name="context_menu_instruction_selection" tools:ignore="MissingTranslation">Braille keyboard user guide</string>
+
+  <!-- Braille instruction guide UI and content strings -->
+  <string name="instruction_activity_title" tools:ignore="MissingTranslation">Braille Keyboard Guide</string>
+  <string name="instruction_btn_recalibrate" tools:ignore="MissingTranslation">Recalibrate dots now (1 to 6)</string>
+  <string name="instruction_btn_tutorial" tools:ignore="MissingTranslation">Start interactive tutorial</string>
+  <string name="instruction_btn_clear" tools:ignore="MissingTranslation">Clear text</string>
+  <string name="instruction_practice_title" tools:ignore="MissingTranslation">Interactive practice area</string>
+  <string name="instruction_practice_hint" tools:ignore="MissingTranslation">Tap here to practice typing and gestures with the Braille keyboard...</string>
+  <string name="instruction_practice_content_description" tools:ignore="MissingTranslation">Practice text area. Tap to open the Braille keyboard.</string>
+
+  <string name="instruction_section_modes_title" tools:ignore="MissingTranslation">1. Holding modes</string>
+  <string name="instruction_section_modes_body" tools:ignore="MissingTranslation">• Screen-away mode: Hold the device with the screen facing outward (away from you). Grasp both sides with your hands. Your left index, middle, and ring fingers rest on dots 1, 2, and 3; your right index, middle, and ring fingers rest on dots 4, 5, and 6.\n• Tabletop mode: Place the phone flat on a table or desk. Position your hands over the screen with dots arranged naturally under your fingertips.</string>
+
+  <string name="instruction_section_typing_title" tools:ignore="MissingTranslation">2. Basic typing and essential gestures</string>
+  <string name="instruction_section_typing_body" tools:ignore="MissingTranslation">• Type letters: Tap dot combinations simultaneously.\n• Space: Swipe 1 finger to the right.\n• Delete character (Backspace): Swipe 1 finger to the left.\n• New line (Enter): Swipe 2 fingers to the right.\n• Delete whole word: Swipe 2 fingers to the left.</string>
+
+  <string name="instruction_section_recalibration_title" tools:ignore="MissingTranslation">3. Sequential dot recalibration (ABK)</string>
+  <string name="instruction_section_recalibration_body" tools:ignore="MissingTranslation">The legacy TalkBack two-step calibration has been replaced with dot-by-dot sequential calibration.\n• Tap the "Recalibrate dots now" button above or select "Dot recalibration" from Settings or the Options menu.\n• The voice prompt will guide you to tap dot 1, then dot 2, through dot 6 where your fingers comfortably rest.\n• Each tap produces a confirmation beep and vibration, saving your custom layout immediately.</string>
+
+  <string name="instruction_section_orientation_lock_title" tools:ignore="MissingTranslation">4. Keyboard orientation lock</string>
+  <string name="instruction_section_orientation_lock_body" tools:ignore="MissingTranslation">Prevents the Braille dots from rotating unexpectedly when tilting or moving your phone.\n• Gesture: Hold dots 4, 5, and 6 and swipe UP with 1 finger.\n• Speech feedback will confirm whether the orientation is locked or unlocked.</string>
+
+  <string name="instruction_section_emojis_title" tools:ignore="MissingTranslation">5. Emoji mode</string>
+  <string name="instruction_section_emojis_body" tools:ignore="MissingTranslation">• Enter / Exit emoji mode: Hold dots 4, 5, and 6 and swipe RIGHT with 1 finger.\n• Navigate emojis: Use Braille letters A through J or symbols (*, #, $) to choose categories, K through Z for rows, or swipe up and down to explore and insert emojis.</string>
+
+  <string name="instruction_section_voice_title" tools:ignore="MissingTranslation">6. Voice dictation</string>
+  <string name="instruction_section_voice_body" tools:ignore="MissingTranslation">• Quick dictation: Hold dots 4, 5, and 6 and swipe DOWN with 1 finger.\n• Speak your message, and it will be transcribed directly into the active field.</string>
+
+  <string name="instruction_section_navigation_title" tools:ignore="MissingTranslation">7. Cursor and text navigation</string>
+  <string name="instruction_section_navigation_body" tools:ignore="MissingTranslation">• Move by character: Swipe 1 finger UP (previous) or DOWN (next).\n• Move by word: Hold dot 5 and swipe 1 finger UP (previous word) or DOWN (next word).\n• Move by line: Hold dot 4 and swipe 1 finger UP (previous line) or DOWN (next line).\n• Jump to start / end of text: Hold dots 4 and 5 and swipe 1 finger UP (start) or DOWN (end).\n• Change navigation granularity: Swipe 3 fingers LEFT or RIGHT.</string>
+
+  <string name="instruction_section_clipboard_title" tools:ignore="MissingTranslation">8. Clipboard: Copy, Cut, Paste, and Select All</string>
+  <string name="instruction_section_clipboard_body" tools:ignore="MissingTranslation">• Select all text: Hold dot 4 and swipe 3 fingers to the LEFT.\n• Cut text: Hold dot 4 and swipe 3 fingers UP.\n• Copy text: Hold dot 4 and swipe 3 fingers DOWN.\n• Paste text: Hold dot 4 and swipe 3 fingers to the RIGHT.</string>
+
+  <string name="instruction_section_system_title" tools:ignore="MissingTranslation">9. Options menu and system controls</string>
+  <string name="instruction_section_system_body" tools:ignore="MissingTranslation">• Open options context menu: Swipe 3 fingers UP.\n• Hide Braille keyboard: Swipe 2 fingers DOWN.\n• Switch to next input method (e.g. Gboard): Swipe 3 fingers DOWN.\n• Submit / Action (Send): Swipe 2 fingers UP.</string>
 </resources>

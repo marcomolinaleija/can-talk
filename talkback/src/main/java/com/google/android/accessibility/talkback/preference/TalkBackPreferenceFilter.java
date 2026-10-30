@@ -151,6 +151,11 @@ public class TalkBackPreferenceFilter {
         HIDDEN_ON_TV | HIDDEN_SETUP | HIDDEN_ON_XR),
     SINGLE_TAP_ACTIVATION(
         R.string.pref_single_tap_key, HIDDEN_ON_TV | HIDDEN_ON_XR),
+    // Only Backtalk's own gesture detection lets it touch the item on a double tap; without it,
+    // Android clicks the item itself.
+    DIRECT_CLICK(
+        R.string.pref_direct_click_key,
+        HIDDEN_ON_TV | HIDDEN_ON_XR | SHOW_IF_SERVICE_GESTURE_DETECTION),
     REDUCE_WINDOW_DELAY(
         R.string.pref_reduce_window_delay_key, HIDE_IF_NO_USER_DISABLING_OF_GLOBAL_ANIMATIONS),
     KEYBOARD_SHORTCUTS(
@@ -189,7 +194,12 @@ public class TalkBackPreferenceFilter {
         R.string.pref_show_context_menu_pause_backtalk_setting_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
     // A TV has no touchscreen for direct touch, and no gesture for the status readout.
     DIRECT_TOUCH(R.string.pref_direct_touch_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
+    BACKUP_RESTORE(R.string.pref_backup_restore_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
     STATUS_READOUT(R.string.pref_status_readout_key, HIDDEN_ON_TV),
+    RESTORE_FOCUS(
+        R.string.pref_restore_focus_on_back_key, HIDDEN_ON_TV | HIDDEN_ON_WATCH),
+    RESTORE_FOCUS_SCROLL(
+        R.string.pref_scroll_to_restore_previous_focus_key, HIDDEN_ON_TV | HIDDEN_ON_WATCH),
     SPEECH_VOLUME(R.string.pref_speech_volume_key, HIDE_HAS_VOLUME_KEY),
     BRAILLE_KEYBOARD(
         R.string.pref_brailleime_key,
@@ -236,6 +246,8 @@ public class TalkBackPreferenceFilter {
     EXPLORE_BY_TOUCH(R.string.pref_explore_by_touch_reflect_key, HIDDEN_ON_TV | HIDDEN_ON_XR),
     // Gesture/Verbosity Settings.
     CONFIG_PHYSICAL_KEYBOARD_ECHO(R.string.pref_keyboard_echo_physical_key, HIDDEN_ON_WATCH),
+    INTERRUPT_TYPING(R.string.pref_interrupt_typing_key, HIDDEN_ON_WATCH),
+    INTERRUPT_ENTER(R.string.pref_interrupt_enter_key, HIDDEN_ON_WATCH),
     LIMIT_FREQUENT_CONTENT_CHANGE_ANNOUNCEMENT(
         R.string.pref_allow_frequent_content_change_announcement_key, HIDE_FREQUENT_UPDATE_UI_FLAG),
     SPEAK_WHEN_SCREEN_OFF(R.string.pref_screenoff_key, HIDDEN_ON_XR),

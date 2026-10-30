@@ -18,6 +18,7 @@ package com.google.android.accessibility.talkback.menurules;
 
 import android.accessibilityservice.AccessibilityService;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
+import com.google.android.accessibility.talkback.R;
 import com.google.android.accessibility.talkback.compositor.NodeMenuProvider;
 import com.google.android.accessibility.talkback.contextmenu.ContextMenu;
 import com.google.android.accessibility.talkback.contextmenu.ContextMenuItem;
@@ -85,7 +86,7 @@ public class NodeMenuRuleProcessor implements NodeMenuProvider {
    */
   public void prepareTalkbackMenuForNode(
       ContextMenu menu, AccessibilityNodeInfoCompat node, int itemId, int titleId, int itemOrder) {
-    if (node == null) {
+    if (node == null && itemId != R.id.summarize_view_menu) {
       return;
     }
 

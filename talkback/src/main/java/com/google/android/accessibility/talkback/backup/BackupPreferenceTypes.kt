@@ -1,0 +1,170 @@
+/* Copyright 2026 can-talk contributors. SPDX-License-Identifier: Apache-2.0 */
+package com.google.android.accessibility.talkback.backup
+
+import android.content.Context
+
+/** Persisted types derived from the preference owners' typed getters, not preference widget guesses. */
+internal object BackupPreferenceTypes {
+  fun expected(context: Context, store: BackupStore, key: String): TalkBackBackup.PrefType? {
+    // The direct-touch owner uses a literal key instead of a string resource.
+    if (store == BackupStore.READER && key == "pref_speak_nav_bar_buttons") {
+      return TalkBackBackup.PrefType.BOOLEAN
+    }
+    if (store == BackupStore.NVDA_REMOTE_GESTURES) return TalkBackBackup.PrefType.STRING
+    if (store == BackupStore.NVDA_REMOTE_SETTINGS) {
+      return if (key in setOf("host", "port", "input_mode", "lock_behavior") || key.startsWith("trusted_cert_")) {
+        TalkBackBackup.PrefType.STRING
+      } else null
+    }
+    if (store == BackupStore.NVDA_REMOTE_TUTORIAL) {
+      return when {
+        key == "last_lesson" -> TalkBackBackup.PrefType.STRING
+        key == "hide_invitation" -> TalkBackBackup.PrefType.BOOLEAN
+        key.startsWith("done/") -> TalkBackBackup.PrefType.STRING_SET
+        else -> null
+      }
+    }
+    val definitions = when (store) {
+      BackupStore.READER -> reader
+      BackupStore.BRAILLE -> braille
+      else -> return TalkBackBackup.PrefType.STRING
+    }
+    for ((resource, type) in definitions) {
+      val id = context.resources.getIdentifier(resource, "string", context.packageName)
+      if (id != 0 && context.getString(id) == key) return type
+    }
+    return null
+  }
+  private val reader = mapOf(
+    "accessibility_tutorial_talkback_is_off_dialog_do_not_show_again" to TalkBackBackup.PrefType.BOOLEAN,
+    "has_training_page_switched" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_allow_frequent_content_change_announcement_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_audio_output_device_key" to TalkBackBackup.PrefType.STRING,
+    "pref_auto_enter_table_navigation_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_border_color_key" to TalkBackBackup.PrefType.INT,
+    "pref_count_repeated_symbols_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_current_selector_setting_key" to TalkBackBackup.PrefType.STRING,
+    "pref_diagnosis_mode_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_dump_event_mask_key" to TalkBackBackup.PrefType.INT,
+    "pref_echo_recognized_text_speech_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_emoji_repeat_count_key" to TalkBackBackup.PrefType.STRING,
+    "pref_emoji_speech_key" to TalkBackBackup.PrefType.STRING,
+    "pref_explore_by_touch_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_explore_by_touch_reflect_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_formatting_inline_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_gemini_enabled_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_gemini_repeat_opt_in_count_key" to TalkBackBackup.PrefType.INT,
+    "pref_gemini_repeat_opt_in_pop_key" to TalkBackBackup.PrefType.INT,
+    "pref_gesture_set_key" to TalkBackBackup.PrefType.STRING,
+    "pref_interrupt_enter_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_interrupt_typing_key" to TalkBackBackup.PrefType.STRING,
+    "pref_lift_to_activate_key" to TalkBackBackup.PrefType.STRING,
+    "pref_log_overlay_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_multiple_gesture_set_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_must_accept_gesture_change_notification" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_node_desc_order_key" to TalkBackBackup.PrefType.STRING,
+    "pref_performance_stats_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_performance_stats_reflect_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_punctuation_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_punctuation_verbosity" to TalkBackBackup.PrefType.STRING,
+    "pref_reduce_window_delay_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_reserve_vibration_watch_gestures_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_rotor_step_degrees_key" to TalkBackBackup.PrefType.STRING,
+    "pref_select_keymap_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shake_to_read_threshold_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_3finger_swipe_left_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_3finger_swipe_right_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_double_tap_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_down_and_up_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_down_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_fingerprint_down_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_fingerprint_left_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_fingerprint_right_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_fingerprint_up_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_single_tap_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_up_and_down_key" to TalkBackBackup.PrefType.STRING,
+    "pref_shortcut_up_key" to TalkBackBackup.PrefType.STRING,
+    "pref_show_context_menu_typo_suggestions_setting_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_show_continuous_reading_mode_dialog" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_show_dim_screen_confirmation_dialog" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_show_exit_watermark_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_show_pause_confirmation_dialog" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_single_tap_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_smart_browse_mode_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_soundback_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_soundback_volume_key" to TalkBackBackup.PrefType.STRING,
+    "pref_speak_element_ids_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_speak_items_before_scroll_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_speak_notifications_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_speak_time_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_speech_pitch_key" to TalkBackBackup.PrefType.STRING,
+    "pref_speech_rate_key" to TalkBackBackup.PrefType.STRING,
+    "pref_speech_volume_key" to TalkBackBackup.PrefType.STRING,
+    "pref_table_column_headers_key" to TalkBackBackup.PrefType.STRING,
+    "pref_table_speak_row_column_numbers_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_talkback_gesture_detection_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_text_formatting_announcement_mode_key" to TalkBackBackup.PrefType.STRING,
+    "pref_text_formatting_option_bold_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_text_formatting_option_font_family_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_text_formatting_option_italic_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_text_formatting_option_strikethrough_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_text_formatting_option_text_color_hex_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_text_formatting_option_text_color_name_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_text_formatting_option_text_size_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_text_formatting_option_underline_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_thick_border_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_time_feedback_format_key" to TalkBackBackup.PrefType.STRING,
+    "pref_tree_debug_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_tree_debug_reflect_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_tts_overlay_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_two_part_vertical_gestures_key" to TalkBackBackup.PrefType.STRING,
+    "pref_typing_confirmation_key" to TalkBackBackup.PrefType.STRING,
+    "pref_typing_long_press_duration_key" to TalkBackBackup.PrefType.STRING,
+    "pref_update_multi_finger_gestures_shown_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_use_audio_focus_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_used_classic_keymap_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_verbosity_preset_key" to TalkBackBackup.PrefType.STRING,
+    "pref_vibration_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_wrap_around_key" to TalkBackBackup.PrefType.BOOLEAN,
+  )
+  private val braille = mapOf(
+    "pref_bd_auto_adjust_duration_enable_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_auto_scroll_duration_key" to TalkBackBackup.PrefType.INT,
+    "pref_bd_blinking_interval_key" to TalkBackBackup.PrefType.STRING,
+    "pref_bd_caption_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_gesture_action_key" to TalkBackBackup.PrefType.STRING,
+    "pref_bd_output_code" to TalkBackBackup.PrefType.STRING,
+    "pref_bd_popup_announcement_history_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_popup_announcement_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_reverse_panning_buttons" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_show_caption_tutorial_dialog_again" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_show_caption_tutorial_dialog_timestamp" to TalkBackBackup.PrefType.LONG,
+    "pref_bd_show_command_change_dialog" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_show_navigation_command_unavailable_tip" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_show_switch_input_code_gesture_tip" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_show_switch_output_code_gesture_tip" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_show_usb_connect_dialog" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_bd_switch_contracted_count_key" to TalkBackBackup.PrefType.INT,
+    "pref_bd_timed_message_duration_fraction_key" to TalkBackBackup.PrefType.STRING,
+    "pref_braille_contracted_mode" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_braille_overlay_key" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_accumulate_mode" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_auto_capitalize" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_auto_launch_tutorial" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_change_gesture_intro_again" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_exit_keyboard_count" to TalkBackBackup.PrefType.INT,
+    "pref_brailleime_flip_dots_vertically" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_keep_open_after_send" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_keyboard_echo" to TalkBackBackup.PrefType.STRING,
+    "pref_brailleime_layout_mode" to TalkBackBackup.PrefType.STRING,
+    "pref_brailleime_reverse_dots_mode" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_show_option_dialog_count" to TalkBackBackup.PrefType.INT,
+    "pref_brailleime_tablet_held_up_faces_away" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_translator_code" to TalkBackBackup.PrefType.STRING,
+    "pref_brailleime_translator_codes_preferred" to TalkBackBackup.PrefType.STRING_SET,
+    "pref_brailleime_typing_sounds" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_brailleime_voice_allow_profanity" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_search_tutorial_never_show" to TalkBackBackup.PrefType.BOOLEAN,
+    "pref_show_switch_input_code_gesture_tip" to TalkBackBackup.PrefType.BOOLEAN,
+  )
+}

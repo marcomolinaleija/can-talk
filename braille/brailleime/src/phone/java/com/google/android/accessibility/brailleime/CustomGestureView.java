@@ -21,7 +21,6 @@ import androidx.annotation.NonNull;
 import androidx.core.content.res.ResourcesCompat;
 import com.google.android.accessibility.braille.common.BrailleUserPreferences;
 import com.google.android.accessibility.braille.common.BrailleUtils;
-import com.google.android.accessibility.braille.common.Constants.BrailleType;
 import com.google.android.accessibility.braille.common.TouchDots;
 import com.google.android.accessibility.braille.interfaces.BrailleCharacter;
 import com.google.android.accessibility.brailleime.BrailleIme.OrientationSensitive;
@@ -80,10 +79,12 @@ public class CustomGestureView extends FrameLayout
     layoutOrientator.startIfNeeded();
     BrailleInputOptions options =
         BrailleInputOptions.builder()
-            .setTutorialMode(true)
-            .setBrailleType(BrailleType.SIX_DOT)
+            .setTutorialMode(false)
+            .setBrailleType(BrailleUserPreferences.getCurrentTypingLanguageType(context))
+            .setReverseDots(BrailleUserPreferences.readReverseDotsMode(context))
+            .setFlipDotsVertically(BrailleUserPreferences.readFlipDotsVertically(context))
             .build();
-    boolean tableTopMode = isCurrentTableTopMode();
+    tableTopMode = isCurrentTableTopMode();
     inputView =
         new BrailleInputView(context, brailleInputViewCallback, screenSize, options, tableTopMode);
     hintToastAnimation = new AlphaAnimation(/* fromAlpha= */ 0.0f, /* toAlpha= */ 1.0f);
@@ -138,12 +139,8 @@ public class CustomGestureView extends FrameLayout
     Optional<TouchDots> layoutOptional = layoutOrientator.getDetectedLayout();
     TouchDots mode = BrailleUserPreferences.readLayoutMode(getContext());
     return mode == TouchDots.TABLETOP
-        || layoutOptional
-            .map(touchDots -> touchDots == TouchDots.TABLETOP)
-            .orElseGet(
-                () ->
-                    getResources().getConfiguration().orientation
-                        == Configuration.ORIENTATION_LANDSCAPE);
+        || (mode == TouchDots.AUTO_DETECT
+            && layoutOptional.map(touchDots -> touchDots == TouchDots.TABLETOP).orElse(false));
   }
 
   private LayoutParams getTextViewLayoutParams() {
@@ -248,6 +245,11 @@ public class CustomGestureView extends FrameLayout
         @Override
         public boolean onHoldProduced(int pointersHeldCount) {
           return customGestureCallback.onHoldProduced(pointersHeldCount);
+        }
+
+        @Override
+        public boolean wasHeldUprightInScreenAway() {
+          return layoutOrientator.wasHeldUprightInScreenAway();
         }
       };
 

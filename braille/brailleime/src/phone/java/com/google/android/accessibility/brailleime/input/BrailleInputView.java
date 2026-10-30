@@ -115,9 +115,22 @@ public class BrailleInputView extends View
       return true;
     }
 
+    /** Independent braille surfaces can supply their own orientation without taking the IME monitor. */
+    default OrientationMonitor.Orientation getScreenAwayOrientation() {
+      return OrientationMonitor.getInstance().getCurrentOrientation();
+    }
+
     /** Signals that hold has been produced. Returns true if the action is consumed. */
     @CanIgnoreReturnValue
     boolean onHoldProduced(int pointersHeldCount);
+
+    /** Exact held dots for independent surfaces; existing IME clients retain count-based actions. */
+    default boolean onDotsHeld(BrailleCharacter dots, int pointersHeldCount) {
+      return onHoldProduced(pointersHeldCount);
+    }
+
+    /** Called as held fingers are lifted, including cancellation of the touch sequence. */
+    default void onHeldDotsChanged(BrailleCharacter dots) {}
 
     /**
      * Signals that {@link BrailleCharacter} input has been produced.
@@ -213,6 +226,7 @@ public class BrailleInputView extends View
   private AutoPerformer autoPerformer;
   private BrailleInputOptions options;
   private boolean touchInteracting;
+  @Nullable private Boolean pendingTabletopMode;
   private CalibrationTriggeredType calibrationType;
 
   /**
@@ -298,6 +312,8 @@ public class BrailleInputView extends View
 
   @Override
   public void onViewDetachedFromWindow(View view) {
+    inputPlane.cancelTouch();
+    touchInteracting = false;
     if (inTwoStepCalibration()) {
       callback.onCalibrationFailed(calibrationType);
     }
@@ -313,6 +329,11 @@ public class BrailleInputView extends View
 
   /** Sets keyboard to table layout. */
   public void setTabletopMode(boolean enabled) {
+    if (touchInteracting) {
+      pendingTabletopMode = enabled;
+      return;
+    }
+    pendingTabletopMode = null;
     if (tabletopMode != enabled) {
       inputPlane.setTableTopMode(enabled);
       tabletopMode = enabled;
@@ -391,6 +412,11 @@ public class BrailleInputView extends View
   private final CustomOnGestureListener customOnGestureListener =
       new CustomOnGestureListener() {
         @Override
+        public void onHeldDotsChanged(BrailleCharacter dots) {
+          callback.onHeldDotsChanged(dots);
+        }
+
+        @Override
         public boolean detect(Optional<BrailleInputPlaneResult> resultOptional) {
           if (resultOptional.isPresent()) {
             if (shouldPerformCalibrationAnimation(
@@ -419,9 +445,12 @@ public class BrailleInputView extends View
   @Override
   @SuppressWarnings("ClickableViewAccessibility")
   public boolean onTouchEvent(MotionEvent event) {
-    updateTouchAction(event);
     // Decide at the start of each gesture, so a gesture is never turned partway through.
     if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+      touchInteracting = false;
+      if (pendingTabletopMode != null) {
+        setTabletopMode(pendingTabletopMode);
+      }
       updateTurnedAround();
       if (isPhone() && tabletopMode) {
         phoneTabletop.onTabletopTouch();
@@ -429,6 +458,10 @@ public class BrailleInputView extends View
         phoneTabletop.onScreenAwayTouch(
             layoutExpectsPortOnRight() != turnedAround, callback.wasHeldUprightInScreenAway());
       }
+    }
+    // Keep orientation frozen through processing ACTION_UP, not just through ACTION_MOVE.
+    if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+      touchInteracting = true;
     }
     boolean result;
     Matrix layoutToScreen = layoutToScreen();
@@ -442,6 +475,10 @@ public class BrailleInputView extends View
       result = inputPlane.onTouchEvent(turned);
       turned.recycle();
     }
+    if (event.getActionMasked() == MotionEvent.ACTION_UP
+        || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+      touchInteracting = false;
+    }
     invalidate();
     return result;
   }
@@ -454,6 +491,9 @@ public class BrailleInputView extends View
    * #updateQuarterTurns}.
    */
   private void updateTurnedAround() {
+    if (touchInteracting) {
+      return;
+    }
     if (!isPhone()) {
       turnedAround = false;
       updateQuarterTurns();
@@ -716,23 +756,30 @@ public class BrailleInputView extends View
     if (!isPortrait()) {
       return layoutExpectsPortOnRight();
     }
-    return DotsOrientation.heldPortOnRight(OrientationMonitor.getInstance().getCurrentOrientation());
+    return DotsOrientation.heldPortOnRight(callback.getScreenAwayOrientation());
   }
 
-  /** Calibrates dots positions. */
+  /** Calibrates dots positions. In TalkBack this was two steps; now redirects to ABK sequential calibration. */
   public void calibrateByTwoSteps() {
-    inputPlane.calibrateByTwoSteps();
-    calibrationType = CalibrationTriggeredType.MANUAL;
-    callback.onCalibration(CalibrationTriggeredType.MANUAL, FingersPattern.NO_FINGERS);
+    startSequentialCalibration(null);
+  }
+
+  /** Starts sequential dot calibration (dots 1 through 6). */
+  public void startSequentialCalibration(
+      @Nullable BrailleInputPlane.SequentialCalibrationListener listener) {
+    inputPlane.startSequentialCalibration(listener);
     invalidate();
   }
 
-  private void updateTouchAction(MotionEvent event) {
-    switch (event.getAction()) {
-      case MotionEvent.ACTION_DOWN -> touchInteracting = true;
-      case MotionEvent.ACTION_UP -> touchInteracting = false;
-      default -> {}
-    }
+  /** Cancels sequential dot calibration. */
+  public void cancelSequentialCalibration() {
+    inputPlane.cancelSequentialCalibration();
+    invalidate();
+  }
+
+  /** Whether sequential dot calibration is currently active. */
+  public boolean isSequentialCalibrationActive() {
+    return inputPlane.isSequentialCalibrationActive();
   }
 
   private boolean shouldPerformCalibrationAnimation(int type, int heldCount) {
@@ -773,35 +820,11 @@ public class BrailleInputView extends View
       }
       return processed;
     } else if (result.type == MultitouchResult.TYPE_CALIBRATION_HOLD) {
-      if (result.pointersHeldCount == 5) {
-        calibrationType = CalibrationTriggeredType.FIVE_FINGERS;
-        return callback.onCalibration(calibrationType, FingersPattern.FIVE_FINGERS);
-      } else if (result.pointersHeldCount == 6) {
-        calibrationType = CalibrationTriggeredType.SIX_FINGERS;
-        return callback.onCalibration(calibrationType, FingersPattern.SIX_FINGERS);
-      } else if (result.pointersHeldCount == 7) {
-        calibrationType = CalibrationTriggeredType.SEVEN_FINGERS;
-        return callback.onCalibration(calibrationType, FingersPattern.SEVEN_FINGERS);
-      } else if (result.pointersHeldCount == 8) {
-        calibrationType = CalibrationTriggeredType.EIGHT_FINGERS;
-        return callback.onCalibration(calibrationType, FingersPattern.EIGHT_FINGERS);
-      } else if (result.pointersHeldCount == 3) {
-        return callback.onCalibration(
-            calibrationType,
-            result.isLeft
-                ? FingersPattern.FIRST_THREE_FINGERS
-                : FingersPattern.REMAINING_THREE_FINGERS);
-      } else if (result.pointersHeldCount == 4) {
-        return callback.onCalibration(
-            calibrationType,
-            result.isLeft
-                ? FingersPattern.FIRST_FOUR_FINGERS
-                : FingersPattern.REMAINING_FOUR_FINGERS);
-      } else {
-        callback.onCalibrationFailed(calibrationType);
-      }
+      return false;
     } else if (result.type == MultitouchResult.TYPE_HOLD) {
-      return callback.onHoldProduced(result.pointersHeldCount);
+      return result.heldBrailleCharacter == null
+          ? callback.onHoldProduced(result.pointersHeldCount)
+          : callback.onDotsHeld(result.heldBrailleCharacter, result.pointersHeldCount);
     } else if (result.type == MultitouchResult.TYPE_HOLD_AND_SWIPE) {
       return callback.onDotHoldAndDotSwipe(
           new DotHoldSwipe(result.swipe, result.heldBrailleCharacter));

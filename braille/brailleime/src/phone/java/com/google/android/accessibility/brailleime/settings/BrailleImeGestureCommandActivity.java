@@ -18,7 +18,6 @@ package com.google.android.accessibility.brailleime.settings;
 
 import static com.google.android.accessibility.braille.common.BrailleImeAction.HIDE_KEYBOARD;
 import static com.google.android.accessibility.braille.common.BrailleUserPreferences.BRAILLE_SHARED_PREFS_FILENAME;
-import static com.google.android.accessibility.brailleime.BrailleImeGestureAction.getActionWithSameRoot;
 import static com.google.android.accessibility.brailleime.SupportedCommand.Category.TEXT_SELECTION_AND_EDITING;
 import static com.google.android.accessibility.brailleime.SupportedCommand.SubCategory.LINE;
 import static com.google.android.accessibility.brailleime.Utils.collapseNotificationPanel;
@@ -59,8 +58,6 @@ import com.google.android.accessibility.brailleime.dialog.ChangeGestureDialog;
 import com.google.android.accessibility.brailleime.dialog.CustomGestureDialog;
 import com.google.android.accessibility.brailleime.dialog.CustomGestureTalkBackOffDialog;
 import com.google.android.accessibility.brailleime.dialog.CustomGestureTooFewTouchPointsDialog;
-import com.google.android.accessibility.brailleime.dialog.MirroredGestureDialog;
-import com.google.android.accessibility.brailleime.dialog.MirroredGestureDialog.ButtonClickListener;
 import com.google.android.accessibility.brailleime.dialog.ResetToDefaultDialog;
 import com.google.android.accessibility.brailleime.input.DotHoldSwipe;
 import com.google.android.accessibility.brailleime.input.Gesture;
@@ -106,7 +103,6 @@ public class BrailleImeGestureCommandActivity extends PreferencesActivity {
     private CustomGestureTalkBackOffDialog customGestureTalkBackOffDialog;
     private CustomGestureTooFewTouchPointsDialog customGestureTooFewTouchPointsDialog;
     private ResetToDefaultDialog resetToDefaultDialog;
-    private MirroredGestureDialog mirroredGestureDialog;
     private BrailleImeAction brailleImeAction;
     private Gesture assignedGesture;
     private Handler handler;
@@ -195,8 +191,6 @@ public class BrailleImeGestureCommandActivity extends PreferencesActivity {
       customGestureTooFewTouchPointsDialog =
           new CustomGestureTooFewTouchPointsDialog(getContext());
       resetToDefaultDialog = new ResetToDefaultDialog(getContext(), resetToDefaultDialogCallback);
-      mirroredGestureDialog =
-          new MirroredGestureDialog(getContext(), mirroredGestureDialogCallback);
     }
 
     @Override
@@ -247,7 +241,7 @@ public class BrailleImeGestureCommandActivity extends PreferencesActivity {
         removeGestureAndUpdatePreferenceSummary(gesture);
         writeGestureAction(brailleImeAction, ImmutableList.of(gesture.getId()));
         updatePreferenceSummary(brailleImeAction);
-        updateMirroredGesture(gesture);
+        showSnackBar(R.string.braille_keyboard_snackbar_change, Snackbar.LENGTH_LONG);
       } else {
         assignedGesture = null;
         showGestureNotMatchHint();
@@ -256,18 +250,10 @@ public class BrailleImeGestureCommandActivity extends PreferencesActivity {
 
     private void writeGestureAction(BrailleImeAction action, List<String> gestures) {
       BrailleUserPreferences.writeGestureAction(getContext(), new Pair<>(action, gestures));
-      List<BrailleImeAction> sameActions = getActionWithSameRoot(action);
-      for (BrailleImeAction sameAction : sameActions) {
-        BrailleUserPreferences.writeGestureAction(getContext(), new Pair<>(sameAction, gestures));
-      }
     }
 
     private void resetGestureAction(BrailleImeAction action) {
       BrailleUserPreferences.resetGestureAction(getContext(), action);
-      List<BrailleImeAction> sameActions = getActionWithSameRoot(action);
-      for (BrailleImeAction sameAction : sameActions) {
-        BrailleUserPreferences.resetGestureAction(getContext(), sameAction);
-      }
     }
 
     private void removeGestureAndUpdatePreferenceSummary(Gesture gesture) {
@@ -364,20 +350,12 @@ public class BrailleImeGestureCommandActivity extends PreferencesActivity {
       return getString(R.string.custom_gesture_hint_announcement_repeat, performHint, cancelHint);
     }
 
-    private void updateMirroredGesture(Gesture gesture) {
-      if (gesture.equals(gesture.mirrorDots())) {
-        showSnackBar(R.string.braille_keyboard_snackbar_change, Snackbar.LENGTH_LONG);
-      } else {
-        mirroredGestureDialog.setGestureAction(brailleImeAction, gesture);
-        mirroredGestureDialog.show();
-      }
-    }
-
     private ImmutableList<BrailleImeAction> getOtherAction(Gesture gesture) {
       List<BrailleImeAction> brailleImeActionList =
           BrailleImeGestureAction.getAction(getContext(), gesture);
       return brailleImeActionList.stream()
           .filter(action -> !action.equals(brailleImeAction))
+          .filter(action -> BrailleImeGestureAction.isSameGestureContext(action, brailleImeAction))
           .collect(toImmutableList());
     }
 
@@ -578,24 +556,6 @@ public class BrailleImeGestureCommandActivity extends PreferencesActivity {
             resetGestureAction(brailleImeAction);
             updatePreferenceSummary(brailleImeAction);
             showSnackBar(R.string.reset_to_default_dialog_snackbar, Snackbar.LENGTH_LONG);
-          }
-        };
-
-    private final MirroredGestureDialog.ButtonClickListener mirroredGestureDialogCallback =
-        new ButtonClickListener() {
-          @Override
-          public void onMirrored(Gesture gesture) {
-            ImmutableList<BrailleImeAction> action = getOtherAction(gesture.mirrorDots());
-            if (!action.isEmpty()) {
-              // Mirrored is being used.
-              writeGestureAction(action.get(0), ImmutableList.of(UNASSIGNED_GESTURE.getId()));
-              updatePreferenceSummary(action.get(0));
-            }
-            writeGestureAction(
-                brailleImeAction, ImmutableList.of(gesture.getId(), gesture.mirrorDots().getId()));
-            updatePreferenceSummary(brailleImeAction);
-            showSnackBar(
-                R.string.braille_keyboard_snackbar_change_mirrored_gesture, Snackbar.LENGTH_LONG);
           }
         };
 

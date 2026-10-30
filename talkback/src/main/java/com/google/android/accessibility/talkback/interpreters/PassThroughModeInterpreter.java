@@ -57,6 +57,7 @@ public class PassThroughModeInterpreter implements AccessibilityEventListener {
     switch (event.getEventType()) {
       case AccessibilityEvent.TYPE_TOUCH_INTERACTION_END -> {
         if (isInteractionPassThrough) {
+          isInteractionPassThrough = false;
           pipeline.input(eventId, event, new Interpretation.ID(PASS_THROUGH_INTERACTION_END));
         }
       }

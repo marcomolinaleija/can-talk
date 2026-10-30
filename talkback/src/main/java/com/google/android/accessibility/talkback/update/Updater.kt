@@ -53,19 +53,19 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
- * Checks for new development builds, shows a notification when one is available, and installs it.
+ * Checks CAN Talk's own releases, shows a notification when a newer build is available, and
+ * installs it after user confirmation.
  *
  * Automatic checks run when the service starts, and then about once a day while it runs.
  *
- * While this app has the old app ID, a build under the app ID fyi.quin.backtalk installs next to
- * it. The accessibility settings for the new app then open, so the user can turn it on.
+ * The independent test app has no matching published APK, so it does not check for updates.
  */
 object Updater {
   private const val TAG = "Updater"
   private const val NOTIFICATION_ID = 0x0BAC7A1C
   internal const val PREF_LAST_CHECK_TIME = "update_last_check_time"
   internal const val PREF_LAST_NOTIFIED_BUILD = "update_last_notified_build"
-  private const val APK_FILE_NAME = "backtalk.apk"
+  private const val APK_FILE_NAME = "cantalk.apk"
   private val CHECK_INTERVAL_MS = TimeUnit.DAYS.toMillis(1)
   private val POLL_INTERVAL_MS = TimeUnit.HOURS.toMillis(3)
   // Gives the network time to come up when the service starts at boot.
@@ -96,9 +96,11 @@ object Updater {
   /** Starts automatic checks. Called when the service starts. */
   @JvmStatic
   fun startAutomaticChecks(context: Context) {
+    stopAutomaticChecks()
+    if (!UpdateChecker.supportsPackage(context.packageName)) {
+      return
+    }
     serviceContext = context.applicationContext
-    mainHandler.removeCallbacks(startupCheck)
-    mainHandler.removeCallbacks(periodicCheck)
     mainHandler.postDelayed(startupCheck, STARTUP_DELAY_MS)
     mainHandler.postDelayed(periodicCheck, POLL_INTERVAL_MS)
   }
@@ -114,11 +116,16 @@ object Updater {
   /** Sets up the "Check for updates" preference in the main settings screen. */
   @JvmStatic
   fun setUpPreferences(fragment: PreferenceFragmentCompat) {
+    val supported = UpdateChecker.supportsPackage(fragment.requireContext().packageName)
+    fragment.findPreference<Preference>(fragment.getString(R.string.pref_auto_update_check_key))?.let {
+      it.isVisible = supported
+    }
     val preference =
       fragment.findPreference<Preference>(fragment.getString(R.string.pref_check_for_updates_key))
         ?: return
+    preference.isVisible = supported
     preference.summary =
-      fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.COMMIT_COUNT)
+      fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.VERSION_NAME)
     preference.setOnPreferenceClickListener {
       fragment.activity?.let { checkManually(it) }
       true
@@ -154,14 +161,12 @@ object Updater {
         }
       prefs.edit().putLong(PREF_LAST_CHECK_TIME, System.currentTimeMillis()).apply()
       if (update != null && update.build > prefs.getInt(PREF_LAST_NOTIFIED_BUILD, 0)) {
-        // A notification that Android won't show doesn't count, so the build is still announced
-        // once notifications are allowed.
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
           LogUtils.w(TAG, "Build %d is available, but notifications are off", update.build)
           return@execute
         }
-        prefs.edit().putInt(PREF_LAST_NOTIFIED_BUILD, update.build).apply()
         showNotification(context, update)
+        prefs.edit().putInt(PREF_LAST_NOTIFIED_BUILD, update.build).apply()
       }
     }
   }

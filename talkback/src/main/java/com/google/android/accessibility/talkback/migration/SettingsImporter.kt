@@ -47,7 +47,8 @@ object SettingsImporter {
   @JvmStatic
   fun importIfNeeded(application: Application) {
     val context: Context = application
-    if (context.packageName == AppIdMove.OLD_PACKAGE || !isMainProcess(context)) {
+    // This protocol belongs to Backtalk's historical ID change, not CAN Talk's new identity.
+    if (context.packageName != AppIdMove.NEW_PACKAGE || !isMainProcess(context)) {
       return
     }
     val state = SharedPreferencesUtils.getSharedPreferences(context, MigrationFiles.STATE_PREFS)

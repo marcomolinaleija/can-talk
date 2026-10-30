@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:id="@+id/braille_web_navigation" android:orderInCategory="9"
+      android:title="@string/braille_web_title" />
+  <item android:id="@+id/clipboard_history" android:orderInCategory="10"
+      android:title="@string/clipboard_history_title" />
   <item android:id="@+id/toggle_translation" android:orderInCategory="28"
       android:title="@string/translation_start" />
   <item android:id="@+id/translate_last" android:orderInCategory="29"
@@ -17,6 +21,10 @@
       android:id="@+id/copy_last_utterance_to_clipboard"
       android:orderInCategory="10"
       android:title="@string/title_copy_last_spoken_phrase" />
+  <item
+      android:id="@+id/append_last_utterance_to_clipboard"
+      android:orderInCategory="10"
+      android:title="@string/title_append_last_spoken_phrase" />
   <item
       android:id="@+id/spell_last_utterance"
       android:orderInCategory="11"

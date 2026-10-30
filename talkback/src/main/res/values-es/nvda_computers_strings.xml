@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="nvda_computers_title">Equipos guardados</string>
+  <string name="nvda_computer_save_checkbox">Guardar este equipo</string>
+  <string name="nvda_computer_update_checkbox">Actualizar equipo: %1$s</string>
+  <string name="nvda_computer_save_title">Guardar equipo</string>
+  <string name="nvda_computer_name">Nombre del equipo</string>
+  <string name="nvda_computer_remember_key">Recordar clave en este teléfono</string>
+  <string name="nvda_computers_empty">No hay equipos guardados. Para añadir uno, marca Guardar este equipo en el formulario de conexión.</string>
+  <string name="nvda_computer_connect">Conectar a %1$s</string>
+  <string name="nvda_computer_options">Opciones de %1$s</string>
+  <string name="nvda_computer_manual">Conexión manual</string>
+  <string name="nvda_computer_edit">Editar equipo</string>
+  <string name="nvda_computer_delete">Eliminar equipo</string>
+  <string name="nvda_computer_save">Guardar</string>
+  <string name="nvda_computer_saved">Equipo guardado: %1$s.</string>
+  <string name="nvda_computer_deleted">Equipo eliminado: %1$s.</string>
+  <string name="nvda_computer_delete_message">¿Eliminar %1$s de los equipos guardados?</string>
+  <string name="nvda_computer_switch">Cambiar de equipo</string>
+  <string name="nvda_computer_switch_message">¿Desconectar la sesión actual y conectar a %1$s?</string>
+  <string name="nvda_computer_name_required">Escribe un nombre para este equipo.</string>
+  <string name="nvda_computer_duplicate">Ya hay un equipo con ese nombre. Elige otro.</string>
+  <string name="nvda_computer_error">No se pudo leer o guardar la lista de equipos. Inténtalo de nuevo.</string>
+  <string name="nvda_computer_connection_changed">Los datos de conexión cambiaron. Pulsa Conectar de nuevo.</string>
+  <string name="nvda_computers_help">Marca Guardar este equipo antes de conectar. Se pedirá un nombre y podrás elegir si recordar la clave. El equipo se guarda cuando la PC conecta. Equipos guardados permite conectar, editar o eliminar. El último equipo usado aparece primero. Si no guardaste su clave, se pedirá al conectar. Conexión manual vuelve al formulario para añadir otro equipo.</string>
+</resources>

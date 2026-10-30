@@ -48,6 +48,7 @@ import com.google.android.accessibility.braille.common.settings.BrailleLanguages
 import com.google.android.accessibility.braille.interfaces.TalkBackForBrailleIme;
 import com.google.android.accessibility.braille.interfaces.TalkBackForBrailleIme.ServiceStatus;
 import com.google.android.accessibility.brailleime.FeatureFlagReader;
+import com.google.android.accessibility.brailleime.BrailleImeTypingSounds;
 import com.google.android.accessibility.brailleime.R;
 import com.google.android.accessibility.brailleime.Utils;
 import com.google.android.accessibility.utils.AccessibilityServiceCompatUtils.Constants;
@@ -71,6 +72,7 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
   /** TalkBack invokes this to provide us with the TalkBackForBrailleIme instance. */
   public static void initialize(TalkBackForBrailleIme talkBackForBrailleIme) {
     BrailleImePreferencesActivity.talkBackForBrailleIme = talkBackForBrailleIme;
+    BraillePointCalibrationActivity.initialize(talkBackForBrailleIme);
   }
 
   @Override
@@ -148,7 +150,46 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
           .unregisterOnSharedPreferenceChangeListener(onSharedPreferenceChangeListener);
     }
 
+    @Override
+    public void onPause() {
+      BrailleImeTypingSounds.cancelPendingPreview();
+      super.onPause();
+    }
+
     private void configurePrefs() {
+      {
+        // Braille keyboard instruction guide preference.
+        Preference instructionPref =
+            findPreference(getString(R.string.pref_brailleime_instruction));
+        if (instructionPref != null) {
+          instructionPref.setOnPreferenceClickListener(
+              preference -> {
+                startActivity(new Intent(getContext(), BrailleImeInstructionActivity.class));
+                return true;
+              });
+        }
+      }
+
+      {
+        // Braille keyboard interactive tutorial preference.
+        Preference tutorialPref =
+            findPreference(getString(R.string.pref_brailleime_interactive_tutorial));
+        if (tutorialPref != null) {
+          tutorialPref.setOnPreferenceClickListener(
+              preference -> {
+                BrailleUserPreferences.writeLaunchTutorialNextTime(getContext());
+                if (!BrailleCommonUtils.isBrailleKeyboardEnabled(getContext())) {
+                  ((BrailleImePreferencesActivity) getActivity()).showTurnOnKeyboardDialog();
+                } else {
+                  Intent intent = new Intent(getContext(), BrailleImeInstructionActivity.class);
+                  intent.putExtra(BrailleImeInstructionActivity.EXTRA_FOCUS_PRACTICE, true);
+                  startActivity(intent);
+                }
+                return true;
+              });
+        }
+      }
+
       {
         // Turn on keyboard preference.
         Preference turnOnKeyboardPref =
@@ -203,6 +244,35 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
         Preference seeAllActionPref =
             findPreference(getString(R.string.pref_brailleime_review_all_gestures));
         seeAllActionPref.setIntent(new Intent(getContext(), BrailleImeGestureActivity.class));
+      }
+
+      {
+        // Auto-capitalize preference.
+        SwitchPreferenceCompat autoCapitalizePref =
+            findPreference(getString(R.string.pref_brailleime_auto_capitalize));
+        if (autoCapitalizePref != null) {
+          autoCapitalizePref.setChecked(BrailleUserPreferences.readAutoCapitalize(getContext()));
+          autoCapitalizePref.setOnPreferenceClickListener(
+              preference -> {
+                BrailleUserPreferences.writeAutoCapitalize(
+                    getContext(), ((SwitchPreferenceCompat) preference).isChecked());
+                return true;
+              });
+        }
+      }
+
+      {
+        // Point recalibration preference.
+        Preference pointRecalibrationPref =
+            findPreference(getString(R.string.pref_brailleime_point_recalibration));
+        if (pointRecalibrationPref != null) {
+          pointRecalibrationPref.setOnPreferenceClickListener(
+              preference -> {
+                BraillePointCalibrationActivity.initialize(talkBackForBrailleIme);
+                startActivity(new Intent(getContext(), BraillePointCalibrationActivity.class));
+                return true;
+              });
+        }
       }
 
       {

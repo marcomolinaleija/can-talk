@@ -22,6 +22,8 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.graphics.Region;
 import android.hardware.display.DisplayManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import androidx.annotation.Nullable;
@@ -54,6 +56,8 @@ public class PassThroughModeActor {
   private boolean locked;
   // The region direct touch wants. Used whenever neither the gesture nor the braille lock holds it.
   private Region directTouchRegion = new Region();
+  private Region lockedTouchRegion = new Region();
+  private @Nullable Region overlayTouchRegion;
   private PassThroughModeDialog passThroughDialog;
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,6 +67,14 @@ public class PassThroughModeActor {
   public class State {
     public boolean isPassThroughModeActive() {
       return PassThroughModeActor.this.touchExplorePassThroughActive;
+    }
+
+    /**
+     * Returns whether Android passes a touch at the point straight to the app: anywhere while
+     * pass-through mode or the braille lock is on, and in the region direct touch wants.
+     */
+    public boolean passesThrough(int x, int y) {
+      return touchExplorePassThroughActive || directTouchRegion.contains(x, y);
     }
   }
 
@@ -92,14 +104,14 @@ public class PassThroughModeActor {
    */
   public void setTouchExplorePassThrough(boolean enable) {
     if (FeatureSupport.supportPassthrough() && !locked) {
+      cancelPassThroughGuardTimer();
       if (enable) {
-        service.setTouchExplorationPassthroughRegion(
-            Display.DEFAULT_DISPLAY, getRegionOfFullScreen(service));
+        applyTouchRegion(getRegionOfFullScreen(service));
         startPassThroughGuardTimer();
         LogUtils.v(TAG, "Enter touch explore pass-through mode.");
         pipeline.returnFeedback(EVENT_ID_UNTRACKED, Feedback.sound(R.raw.chime_up));
       } else {
-        service.setTouchExplorationPassthroughRegion(Display.DEFAULT_DISPLAY, directTouchRegion);
+        applyTouchRegion(directTouchRegion);
         if (touchExplorePassThroughActive) {
           LogUtils.v(TAG, "Leave touch explore pass-through mode.");
           pipeline.returnFeedback(EVENT_ID_UNTRACKED, Feedback.sound(R.raw.chime_down));
@@ -116,7 +128,7 @@ public class PassThroughModeActor {
   public void setDirectTouchRegion(@Nullable Region region) {
     directTouchRegion = region == null ? new Region() : new Region(region);
     if (FeatureSupport.supportPassthrough() && !locked && !touchExplorePassThroughActive) {
-      service.setTouchExplorationPassthroughRegion(Display.DEFAULT_DISPLAY, directTouchRegion);
+      applyTouchRegion(directTouchRegion);
     }
   }
 
@@ -138,11 +150,12 @@ public class PassThroughModeActor {
       if (region != null && !region.isEmpty()) {
         cancelPassThroughGuardTimer();
         locked = true;
+        lockedTouchRegion = new Region(region);
         touchExplorePassThroughActive = true;
-        service.setTouchExplorationPassthroughRegion(Display.DEFAULT_DISPLAY, region);
+        applyTouchRegion(region);
         LogUtils.v(TAG, "Enter touch explore pass-through lock mode.");
       } else {
-        service.setTouchExplorationPassthroughRegion(Display.DEFAULT_DISPLAY, directTouchRegion);
+        applyTouchRegion(directTouchRegion);
         locked = false;
         if (touchExplorePassThroughActive) {
           touchExplorePassThroughActive = false;
@@ -158,12 +171,28 @@ public class PassThroughModeActor {
    * activity detected, the timer should be killed.
    */
   public void cancelPassThroughGuardTimer() {
-    if (touchExplorePassThroughActive && !locked) {
+    if (passThroughGuardTimer != null) {
       passThroughGuardTimer.cancel();
+      passThroughGuardTimer = null;
     }
   }
 
+  /** A modal gesture surface temporarily takes priority; the underlying braille region is retained. */
+  public void setOverlayTouchRegion(@Nullable Region region) {
+    overlayTouchRegion = region == null ? null : new Region(region);
+    if (FeatureSupport.supportPassthrough()) {
+      applyTouchRegion(locked ? lockedTouchRegion
+          : touchExplorePassThroughActive ? getRegionOfFullScreen(service) : directTouchRegion);
+    }
+  }
+
+  private void applyTouchRegion(Region region) {
+    service.setTouchExplorationPassthroughRegion(
+        Display.DEFAULT_DISPLAY, overlayTouchRegion == null ? region : overlayTouchRegion);
+  }
+
   private void startPassThroughGuardTimer() {
+    cancelPassThroughGuardTimer();
     passThroughGuardTimer = new Timer();
     passThroughGuardTimer.schedule(new PassThroughExitTask(), PASS_THROUGH_IDLE_MS);
   }
@@ -171,10 +200,12 @@ public class PassThroughModeActor {
   private class PassThroughExitTask extends TimerTask {
     @Override
     public void run() {
-      // While in locked mode, we can ignore the time out event
-      if (!locked) {
-        setTouchExplorePassThrough(false);
-      }
+      new Handler(service.getMainLooper()).post(() -> {
+        // While in locked mode, we can ignore the time out event
+        if (!locked) {
+          setTouchExplorePassThrough(false);
+        }
+      });
     }
   }
 

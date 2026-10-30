@@ -108,7 +108,7 @@ También puedes ejecutar `.\compilar.cmd -Prueba` desde CMD o Windows PowerShell
 Desde la raíz del repositorio:
 
 ```powershell
-# APK habitual, con el mismo identificador que BackTalk.
+# APK habitual de CAN Talk.
 .\compilar.ps1
 
 # APK independiente para convivir con el BackTalk instalado.
@@ -117,9 +117,12 @@ Desde la raíz del repositorio:
 # Pruebas del teclado, compilación de teléfono y análisis estático.
 .\compilar.ps1 -Prueba -Tareas @('testPhoneDebugUnitTest', ':assemblePhoneDebug', ':lintPhoneDebug')
 
-# Compilación para Wear OS.
-.\compilar.ps1 -Tareas @(':assembleWearDebug')
 ```
+
+Solo se compila teléfono. Las variantes Wear OS están desactivadas por defecto
+en todos los módulos, incluso al invocar `assembleDebug` o `assembleRelease`.
+El código de reloj se conserva; reactivarlo en el futuro requiere indicar
+expresamente `-PcanTalkWearBuild=true`. Los flujos de CI y lanzamiento no lo usan.
 
 El script limita Gradle a 2 GB y un proceso de trabajo. Si la ruta del repositorio contiene espacios, crea una unidad virtual temporal con `subst` y la desmonta al finalizar, incluso si Gradle falla. No mueve el repositorio. También carga las rutas guardadas para el usuario cuando la terminal conserva una configuración inválida.
 
@@ -143,25 +146,31 @@ export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
 ./gradlew testPhoneDebugUnitTest :lintPhoneDebug -PcanTalkTestBuild=true --console=plain --max-workers=1 '-Dorg.gradle.jvmargs=-Xms256m -Xmx2g'
 ```
 
-Omite `-PcanTalkTestBuild=true` para compilar el paquete habitual. `build.sh` es otra opción para compilar teléfono y reloj juntos: requiere `ANDROID_SDK` y añade la ruta del SDK a `local.properties` si falta.
+Omite `-PcanTalkTestBuild=true` para compilar el paquete habitual. `build.sh` es otra opción para compilar teléfono: requiere `ANDROID_SDK` y añade la ruta del SDK a `local.properties` si falta.
 
 ## APKs y firma
 
 | Compilación | Identificador | Nombre visible |
 | --- | --- | --- |
-| Habitual | `fyi.quin.backtalk` | can-talk |
-| Con `-Prueba` | `fyi.quin.backtalk.cantalktest` | can-talk — prueba |
+| Habitual | `can.cantalk` | can-talk |
+| Con `-Prueba` | `can.cantalk.cantalktest` | can-talk — prueba |
 
-Ambas compilaciones escriben el APK de teléfono en `build/outputs/apk/phone/debug/backtalk-phone-debug.apk`: una sustituye el archivo generado por la otra. El de reloj queda en `build/outputs/apk/wear/debug/backtalk-wear-debug.apk`. Comprueba qué variante compilaste antes de instalar.
+Estos identificadores corresponden a las variantes habitual y de pruebas de teléfono. Wear OS queda fuera de este lanzamiento. Las compilaciones anteriores usaban `fyi.quin.backtalk` y `fyi.quin.backtalk.cantalktest`: el nuevo identificador crea una instalación independiente, con ajustes propios. Puedes exportar e importar una copia de los ajustes; no hay traspaso automático del lector anterior. Los APK ya generados conservan su identificador hasta que vuelvas a compilar.
 
-Los APKs se firman con la clave debug local de Android, normalmente en `$HOME/.android/debug.keystore`. El tipo de build se llama `debug`, aunque el proyecto desactiva `debuggable` para mejorar el rendimiento del lector. El número de versión depende del número de commits y el nombre incluye la fecha de compilación.
+Ambas compilaciones escriben el APK de teléfono en `build/outputs/apk/phone/debug/cantalk-phone-debug.apk`: una sustituye el archivo generado por la otra. Comprueba qué variante compilaste antes de instalar. Los APK antiguos de reloj que existan en `build/` no se borran ni se incluyen en los artefactos de lanzamiento.
 
-Android solo permite actualizar un paquete con la misma firma. Conserva la clave local para que tus siguientes APKs actualicen tu instalación. Si aparece `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, compila con `-Prueba` para instalar junto al BackTalk existente. Esa variante tiene ajustes y permisos propios. No es necesario desinstalar el lector actual.
+El nombre del archivo proviene de `rootProject.name = 'cantalk'` en `settings.gradle`; no cambia el identificador Android ni la firma. El workflow manual de candidatos prepara el APK oficial como `cantalk.apk`, sin publicarlo. Los APKs antiguos con prefijo `backtalk` no se renombran automáticamente: usa el archivo de la nueva compilación.
+
+Los APK de desarrollo habituales (`debug`) se firman con `keystore/debug.keystore`, la clave compartida del proyecto. La variante `-Prueba` se firma con la clave debug local de Android, normalmente en `$HOME/.android/debug.keystore`. El proyecto desactiva `debuggable` para mejorar el rendimiento del lector. El número de versión depende del número de commits y el nombre de desarrollo incluye la fecha de compilación.
+
+Los APK oficiales (`release`) usan exclusivamente una clave privada externa, configurada con `CANTALK_KEYSTORE_PATH`, `CANTALK_STORE_PASSWORD`, `CANTALK_KEY_ALIAS` y `CANTALK_KEY_PASSWORD`. La versión elegida es `1.0.0-rc.1`, definida en `version.gradle`; se puede sobrescribir con `-PcanTalkReleaseVersion=VERSION`. Los APK debug añaden un sufijo `-dev-` con fecha para distinguirlos del candidato oficial. Se rechaza la clave debug compartida y la combinación `release` con `-Prueba`. Si falta la firma, la compilación falla antes de ejecutar tareas; no genera un APK oficial con una firma alternativa. `release` mantiene la optimización y `debuggable=false`. Un responsable compilará y firmará localmente y otro colaborador custodiará una copia de recuperación. Consulta [LANZAMIENTO.md](LANZAMIENTO.md) para preparar una versión.
+
+Android solo permite actualizar un paquete con la misma firma. Conserva la clave correspondiente a la variante para que tus siguientes APKs actualicen tu instalación. Si aparece `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, compila con `-Prueba` para instalar junto al BackTalk existente. Esa variante tiene ajustes y permisos propios. No es necesario desinstalar el lector actual.
 
 Para comprobar la firma en Windows:
 
 ```powershell
-& "$env:ANDROID_HOME\build-tools\36.0.0\apksigner.bat" verify --verbose .\build\outputs\apk\phone\debug\backtalk-phone-debug.apk
+& "$env:ANDROID_HOME\build-tools\36.0.0\apksigner.bat" verify --verbose .\build\outputs\apk\phone\debug\cantalk-phone-debug.apk
 ```
 
 ## Instalar por ADB
@@ -177,11 +186,11 @@ Debe aparecer como `device`. Si aparece `unauthorized`, falta aceptar la autoriz
 Instala el APK, sustituyendo `SERIAL` por el identificador mostrado:
 
 ```powershell
-& "$env:ANDROID_HOME\platform-tools\adb.exe" -s SERIAL install -r .\build\outputs\apk\phone\debug\backtalk-phone-debug.apk
-& "$env:ANDROID_HOME\platform-tools\adb.exe" -s SERIAL shell dumpsys package fyi.quin.backtalk.cantalktest
+& "$env:ANDROID_HOME\platform-tools\adb.exe" -s SERIAL install -r .\build\outputs\apk\phone\debug\cantalk-phone-debug.apk
+& "$env:ANDROID_HOME\platform-tools\adb.exe" -s SERIAL shell dumpsys package can.cantalk.cantalktest
 ```
 
-`-r` conserva los datos al actualizar un paquete con firma compatible. Para verificar el paquete habitual, usa `fyi.quin.backtalk` en el último comando. En Linux/macOS, usa los mismos argumentos con `adb`.
+`-r` conserva los datos al actualizar un paquete con firma compatible. Para verificar el paquete habitual, usa `can.cantalk` en el último comando. En Linux/macOS, usa los mismos argumentos con `adb`.
 
 ## Comprobar el teclado braille
 
@@ -256,4 +265,16 @@ Android 12 o posterior también escucha los cambios de modo de audio.
 
 ## Automatización en GitHub
 
-El workflow `.github/workflows/build.yml` compila teléfono y reloj, ejecuta las pruebas de teléfono y lint. En un push a `master`, también publica el prerelease `dev` de este repositorio si las verificaciones terminan correctamente. Para que los APKs de ese workflow conserven una firma estable, configura su secreto `DEBUG_KEYSTORE_BASE64` con una clave de firma controlada por el proyecto. Sin ese secreto, el runner genera una clave nueva.
+El workflow `.github/workflows/build.yml` compila el APK de desarrollo de teléfono, ejecuta las pruebas de teléfono y lint. No publica versiones ni recibe la clave de producción. Su APK usa la clave debug compartida y no debe distribuirse como una versión oficial.
+
+El workflow manual `.github/workflows/release-candidate.yml` queda como alternativa futura a la firma local elegida. Requiere seleccionar `master`, indicar una versión y configurar cuatro secretos: `CANTALK_KEYSTORE_BASE64`, `CANTALK_STORE_PASSWORD`, `CANTALK_KEY_ALIAS` y `CANTALK_KEY_PASSWORD`. Valida la clave, ejecuta pruebas y lint, compila el APK `release` de teléfono y verifica su firma. Guarda el APK junto con SHA-256, certificado y datos del commit como un artefacto descargable. No publica una release, no instala el APK y elimina la copia temporal de la clave al terminar.
+
+El actualizador de teléfono consulta `https://api.github.com/repos/marcomolinaleija/can-talk/releases/tags/dev` y busca `cantalk.apk`. El código de selección de APK Wear OS se conserva para el futuro, pero este lanzamiento no genera ni distribuye ese APK. Las notas deben incluir `build: <número de commits>` y cambios con formato `- <hash de 7 caracteres> <descripción>`. Solo ofrece compilaciones con un número de commits mayor que el instalado. El canal estable y la publicación del primer lanzamiento siguen pendientes; generar el candidato no alimenta automáticamente este canal `dev`.
+
+El repositorio permanece privado por decisión del proyecto. La conexión está preparada sin credenciales dentro de la aplicación: mientras la publicación sea privada o no exista, la búsqueda manual informa que no se pudieron buscar actualizaciones; la automática registra el error y vuelve a intentarlo más tarde. Para distribuir por este mecanismo hará falta permitir el acceso público a las descargas o implementar autenticación por separado. No se consultan las publicaciones de Backtalk ni se cambia la visibilidad del repositorio.
+
+La app habitual (`can.cantalk`) muestra **Buscar actualizaciones** y **Buscar actualizaciones automáticamente** en los ajustes. La búsqueda automática está activada por defecto: consulta 30 segundos después de iniciar el servicio y revisa cada tres horas si ya pasó un día desde la última búsqueda correcta. La variante independiente `-Prueba` mantiene esas opciones ocultas y no consulta actualizaciones, ya que no se publica un APK con su identificador.
+
+La firma oficial se configura en `build.gradle` y se reserva para `release`. El workflow habitual ya no instala `DEBUG_KEYSTORE_BASE64`, que no controlaba la firma compartida. La clave debug incluida en el historial es pública para los colaboradores y no sirve como clave privada de lanzamiento.
+
+La integración de NVDA Remote con los gestos del teclado braille está separada por plataforma en `talkback/src/phone` y `talkback/src/wear`. Teléfono conserva las asignaciones del teclado. El código de reloj queda conservado para retomarlo en el futuro, con su compilación desactivada por defecto.

@@ -44,7 +44,7 @@
       android:max="100"
       android:title="@string/title_call_speech_volume_percent"
       android:summary="@string/summary_call_speech_volume_percent"
-      app:min="25"
+      app:min="5"
       app:showSeekBarValue="true" />
   <com.google.android.accessibility.talkback.preference.base.SpeechRatePreference
       android:defaultValue="@integer/pref_speech_rate_default_int"

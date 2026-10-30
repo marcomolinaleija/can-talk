@@ -139,7 +139,7 @@ public class BottomSheetResultOverlay {
       dialog =
           imageCaptionResultBottomSheet.getBottomSheetDialog(
               screenQAChatController,
-              new byte[0],
+              overview.getImageBytes(),
               Result.create(IMAGE_DESCRIPTION, overview.getOverview().getSummary()),
               null,
               null, /* isScreenDescription */

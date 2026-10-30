@@ -35,7 +35,6 @@ import com.google.android.accessibility.talkback.focusmanagement.record.FocusAct
 import com.google.android.accessibility.talkback.monitor.ProximitySensorMonitor;
 import com.google.android.accessibility.talkback.pause.PauseController;
 import com.google.android.accessibility.talkback.selector.SelectorController;
-import com.google.android.accessibility.talkback.selector.SelectorController.AnnounceType;
 import com.google.android.accessibility.talkback.selector.SelectorController.Setting;
 import com.google.android.accessibility.talkback.utils.VerbosityPreferences;
 import com.google.android.accessibility.utils.ArrayUtils;
@@ -46,6 +45,7 @@ import com.google.android.accessibility.utils.Role;
 import com.google.android.accessibility.utils.SharedPreferencesUtils;
 import com.google.android.accessibility.utils.input.TextEventFilter.KeyboardEchoType;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -142,6 +142,11 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
   }
 
   @Override
+  public boolean startWebNavigation() {
+    return service.showBrailleWebNavigation();
+  }
+
+  @Override
   public void focusInputField() {
     FocusFinder focusFinder = createFocusFinder();
     AccessibilityNodeInfoCompat inputFocus = focusFinder.findFocusCompat(FOCUS_INPUT);
@@ -178,6 +183,7 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
 
   @Override
   public void onBrailleImeInactivated(boolean usePassThrough) {
+    cancelSuggestionMode();
     if (getServiceStatus() != ServiceStatus.ON) {
       return;
     }
@@ -246,6 +252,11 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
   }
 
   @Override
+  public boolean shouldSpeakPasswords() {
+    return VerbosityPreferences.shouldSpeakPasswords(prefs, service.getResources());
+  }
+
+  @Override
   public boolean isVibrationFeedbackEnabled() {
     return FeatureSupport.isVibratorSupported(service)
         && SharedPreferencesUtils.getBooleanPref(
@@ -270,12 +281,14 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
 
   @Override
   public boolean shouldUseCharacterGranularity() {
+    if (isCurrentGranularitySuggestions()) return false;
     Setting granularity = SelectorController.getCurrentSetting(service);
     return granularity == GRANULARITY_CHARACTERS || !isSwitchGranularityValid();
   }
 
   @Override
   public boolean isCurrentGranularityTypoCorrection() {
+    if (isCurrentGranularitySuggestions()) return false;
     return SelectorController.getCurrentSetting(service) == GRANULARITY_TYPO
         && isSwitchGranularityValid();
   }
@@ -302,6 +315,7 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
 
   @Override
   public void resetGranularity() {
+    cancelSuggestionMode();
     if (SelectorController.getCurrentSetting(service) == GRANULARITY_CHARACTERS) {
       return;
     }
@@ -309,16 +323,59 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
   }
 
   private boolean switchGranularity(boolean isNext) {
+    BrailleSuggestionsController suggestions = service.getBrailleSuggestionsController();
+    if (suggestions != null && (suggestions.isActive() || suggestions.isAvailable())) {
+      // Insert the keyboard-only control after Characters in the existing selector order.
+      List<Setting> controls = selectorController.getAvailableBrailleKeyboardSettings(VALID_GRANULARITIES);
+      if (controls.isEmpty()) {
+        if (!suggestions.isActive()) return suggestions.enter();
+        suggestions.clear();
+        return selectorController.selectBrailleKeyboardSetting(GRANULARITY_CHARACTERS);
+      }
+      int insertion = controls.indexOf(GRANULARITY_CHARACTERS) + 1;
+      controls.add(insertion, null);
+      int currentIndex = suggestions.isActive() ? insertion
+          : controls.indexOf(SelectorController.getCurrentSetting(service));
+      int next = Math.floorMod(currentIndex + (isNext ? 1 : -1), controls.size());
+      Setting setting = controls.get(next);
+      if (setting == null) return suggestions.enter();
+      suggestions.clear();
+      return selectorController.selectBrailleKeyboardSetting(setting);
+    }
     if (!isSwitchGranularityValid()) {
       return false;
     }
     Setting current = SelectorController.getCurrentSetting(service);
     do {
       selectorController.selectPreviousOrNextSettingWithoutOverlay(
-          EVENT_ID_UNTRACKED, AnnounceType.DESCRIPTION, isNext);
+          EVENT_ID_UNTRACKED, SelectorController.AnnounceType.DESCRIPTION, isNext);
     } while (!VALID_GRANULARITIES.contains(SelectorController.getCurrentSetting(service))
         && current != SelectorController.getCurrentSetting(service));
     return true;
+  }
+
+  @Override
+  public boolean isCurrentGranularitySuggestions() {
+    BrailleSuggestionsController controller = service.getBrailleSuggestionsController();
+    return controller != null && controller.isActive();
+  }
+
+  @Override
+  public boolean navigateSuggestion(boolean forward) {
+    return service.getBrailleSuggestionsController().move(forward);
+  }
+
+  @Override
+  public boolean confirmSuggestion() {
+    boolean consumed = service.getBrailleSuggestionsController().confirm();
+    if (!isCurrentGranularitySuggestions()) resetGranularity();
+    return consumed;
+  }
+
+  @Override
+  public void cancelSuggestionMode() {
+    BrailleSuggestionsController controller = service.getBrailleSuggestionsController();
+    if (controller != null) controller.clear();
   }
 
   private boolean isSwitchGranularityValid() {

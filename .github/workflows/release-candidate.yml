@@ -1,0 +1,114 @@
+name: Release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version name (for example 1.0.0 or 1.0.0-rc.1)'
+        required: true
+        type: string
+        default: '1.0.0-rc.1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Official candidates are prepared from the integration branch after review.
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    env:
+      CANTALK_RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Prepare private signing key
+        env:
+          CANTALK_KEYSTORE_BASE64: ${{ secrets.CANTALK_KEYSTORE_BASE64 }}
+          CANTALK_STORE_PASSWORD: ${{ secrets.CANTALK_STORE_PASSWORD }}
+          CANTALK_KEY_ALIAS: ${{ secrets.CANTALK_KEY_ALIAS }}
+          CANTALK_KEY_PASSWORD: ${{ secrets.CANTALK_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$CANTALK_RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]] || {
+            echo "Invalid version name." >&2
+            exit 1
+          }
+          for name in CANTALK_KEYSTORE_BASE64 CANTALK_STORE_PASSWORD CANTALK_KEY_ALIAS CANTALK_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "Missing signing secret: $name" >&2
+              exit 1
+            fi
+          done
+          umask 077
+          key_path="$RUNNER_TEMP/cantalk-release.jks"
+          printf '%s' "$CANTALK_KEYSTORE_BASE64" | base64 --decode > "$key_path"
+          keytool -list -keystore "$key_path" -storepass:env CANTALK_STORE_PASSWORD -alias "$CANTALK_KEY_ALIAS" > /dev/null
+          echo "CANTALK_KEYSTORE_PATH=$key_path" >> "$GITHUB_ENV"
+
+      - name: Run phone unit tests and lint
+        run: ./gradlew testPhoneDebugUnitTest :lintPhoneDebug --console=plain
+
+      - name: Build signed phone APK
+        env:
+          CANTALK_STORE_PASSWORD: ${{ secrets.CANTALK_STORE_PASSWORD }}
+          CANTALK_KEY_ALIAS: ${{ secrets.CANTALK_KEY_ALIAS }}
+          CANTALK_KEY_PASSWORD: ${{ secrets.CANTALK_KEY_PASSWORD }}
+        run: ./gradlew :assemblePhoneRelease "-PcanTalkReleaseVersion=$CANTALK_RELEASE_VERSION" --console=plain
+
+      - name: Verify signatures and prepare artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          test -n "$apksigner"
+          aapt2="$(dirname "$apksigner")/aapt2"
+          apk="build/outputs/apk/phone/release/cantalk-phone-release.apk"
+          "$apksigner" verify --verbose --print-certs "$apk" > release-artifacts/phone-signature.txt
+          "$aapt2" dump badging "$apk" > release-artifacts/phone-metadata.txt
+          grep -F "package: name='can.cantalk'" release-artifacts/phone-metadata.txt
+          grep -F "versionName='$CANTALK_RELEASE_VERSION'" release-artifacts/phone-metadata.txt
+          grep -F "versionCode='$((70000000 + $(git rev-list --count HEAD)))'" release-artifacts/phone-metadata.txt
+          cp "$apk" release-artifacts/cantalk.apk
+          {
+            echo "version: $CANTALK_RELEASE_VERSION"
+            echo "package: can.cantalk"
+            echo "commit: $(git rev-parse HEAD)"
+            echo "build: $(git rev-list --count HEAD)"
+          } > release-artifacts/build-info.txt
+          (cd release-artifacts && sha256sum cantalk.apk > SHA256SUMS.txt)
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cantalk-${{ inputs.version }}
+          path: release-artifacts/
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: release-check-reports
+          path: |
+            **/build/reports/tests/
+            build/reports/lint-results-*
+
+      - name: Remove private signing key
+        if: always()
+        shell: bash
+        run: rm -f -- "$RUNNER_TEMP/cantalk-release.jks"

@@ -89,7 +89,7 @@ public class OrientationMonitor {
   }
 
   /** Converts a reading from {@link OrientationEventListener} to the nearest orientation. */
-  static Orientation toOrientation(Context context, int degree) {
+  public static Orientation toOrientation(Context context, int degree) {
     degree = Utils.isDeviceDefaultPortrait(context) ? degree : degree - 90;
     for (Orientation orientation : Orientation.values()) {
       if (orientation != Orientation.UNKNOWN

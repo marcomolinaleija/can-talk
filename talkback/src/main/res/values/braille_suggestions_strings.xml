@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English fallback while other locales are translated, as with the reader's other new controls. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+  <string name="braille_suggestions_control">Suggestions</string>
+  <string name="braille_suggestions_result">%1$s. Visible suggestion %2$d of %3$d</string>
+  <string name="braille_suggestions_unavailable">The suggestion is no longer available</string>
+  <string name="braille_suggestions_choose">Choose a suggestion first</string>
+  <string name="braille_suggestions_failed">Could not insert the mention</string>
+  <string name="braille_suggestions_edge">No more suggestions in this direction</string>
+  <string name="braille_suggestions_inserted">Mention inserted</string>
+</resources>

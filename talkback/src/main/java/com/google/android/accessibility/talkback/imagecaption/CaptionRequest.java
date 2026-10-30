@@ -70,7 +70,7 @@ public abstract class CaptionRequest extends Request {
   /** An unique ID for the request. */
   private final int requestId;
 
-  @NonNull protected final AccessibilityNodeInfoCompat node;
+  @Nullable protected final AccessibilityNodeInfoCompat node;
 
   @NonNull private final OnFinishListener onFinishListener;
   @NonNull private final OnErrorListener onErrorListener;
@@ -79,13 +79,13 @@ public abstract class CaptionRequest extends Request {
 
   protected CaptionRequest(
       int requestId,
-      @NonNull AccessibilityNodeInfoCompat node,
+      @Nullable AccessibilityNodeInfoCompat node,
       @NonNull OnFinishListener onFinishListener,
       @NonNull OnErrorListener onErrorListener,
       boolean isUserRequested) {
     super(/* onPendingListener= */ null, CAPTION_TIMEOUT_MS);
     this.requestId = requestId;
-    this.node = AccessibilityNodeInfoCompat.obtain(node);
+    this.node = node == null ? null : AccessibilityNodeInfoCompat.obtain(node);
     this.onFinishListener = onFinishListener;
     this.onErrorListener = onErrorListener;
     this.isUserRequested = isUserRequested;
@@ -116,6 +116,9 @@ public abstract class CaptionRequest extends Request {
   }
 
   protected void onCaptionFinish(Result result) {
+    if (!finish()) {
+      return;
+    }
     setEndTimestamp();
     LogUtils.v(
         TAG,
@@ -131,8 +134,10 @@ public abstract class CaptionRequest extends Request {
 
   @Override
   protected void onError(@ErrorCode int errorCode) {
+    if (!finish()) {
+      return;
+    }
     setEndTimestamp();
-    stopTimeoutRunnable();
     LogUtils.e(
         TAG,
         "onError() "

@@ -337,15 +337,24 @@ public class ImageQnaChatAdapter extends RecyclerView.Adapter<ImageQnaChatAdapte
    * @param isLoading true to show a loading indicator, false otherwise
    */
   public void setMessages(@NonNull List<ImageQnaMessage> messages, boolean isLoading) {
-    var newMessages = new ArrayList<>(messages);
-    if (isLoading) {
-      newMessages.add(loadingMessage);
+    Runnable update =
+        () -> {
+          var newMessages = new ArrayList<>(messages);
+          if (isLoading) {
+            newMessages.add(loadingMessage);
+          }
+
+          this.messages = newMessages;
+
+          // This could be more efficient, but it's not a very heavy list so we won't lose that much
+          notifyDataSetChanged();
+        };
+
+    if (mainHandler.getLooper().isCurrentThread()) {
+      update.run();
+    } else {
+      mainHandler.post(update);
     }
-
-    this.messages = newMessages;
-
-    // This could be more efficient, but it's not a very heavy list so we won't lose that much
-    notifyDataSetChanged();
   }
 
   /** The data model for Image Q&A chatting messages. */

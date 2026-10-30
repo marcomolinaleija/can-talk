@@ -42,6 +42,9 @@ public interface TalkBackForBrailleIme {
   @CanIgnoreReturnValue
   boolean performAction(ScreenReaderAction action, Object... arg);
 
+  /** Opens web navigation after the IME has committed its composing text. */
+  default boolean startWebNavigation() { return false; }
+
   /**
    * Moves accessibility focus to the input focused edit field if it is on another node, so that
    * text navigation acts on the field being typed in.
@@ -99,10 +102,27 @@ public interface TalkBackForBrailleIme {
   /** Checks should braille keyboard announce character when physical mode. */
   boolean shouldAnnounceCharacterForPhysicalKeyboard();
 
+  /** Checks whether passwords should be spoken aloud in password fields. */
+  default boolean shouldSpeakPasswords() {
+    return true;
+  }
+
   /** Whether use character granularity to be the moving granularity. */
   boolean shouldUseCharacterGranularity();
 
   boolean isCurrentGranularityTypoCorrection();
+
+  /** Whether the keyboard's app-suggestion control is selected. */
+  default boolean isCurrentGranularitySuggestions() { return false; }
+
+  /** Reads the previous/next app suggestion without moving input focus. */
+  default boolean navigateSuggestion(boolean forward) { return false; }
+
+  /** Activates the explicitly selected suggestion; never submits the editor. */
+  default boolean confirmSuggestion() { return false; }
+
+  /** Cancels selection and any pending suggestion navigation. */
+  default void cancelSuggestionMode() {}
 
   /** Checks the status of the screen. */
   boolean isHideScreenMode();

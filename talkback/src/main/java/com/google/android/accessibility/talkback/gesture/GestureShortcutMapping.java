@@ -507,9 +507,15 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
     COPY(R.string.shortcut_value_copy, android.R.string.copy),
     CUT(R.string.shortcut_value_cut, android.R.string.cut),
     PASTE(R.string.shortcut_value_paste, android.R.string.paste),
+    CLIPBOARD_HISTORY(R.string.shortcut_value_clipboard_history, R.string.clipboard_history_title),
     COPY_LAST_SPOKEN_UTTERANCE(
         R.string.shortcut_value_copy_last_spoken_phrase, R.string.title_copy_last_spoken_phrase),
+    APPEND_LAST_SPOKEN_UTTERANCE(
+        R.string.shortcut_value_append_last_spoken_phrase,
+        R.string.title_append_last_spoken_phrase),
     BRAILLE_KEYBOARD(R.string.shortcut_value_braille_keyboard, R.string.shortcut_braille_keyboard),
+    BRAILLE_APP_SEARCH(R.string.shortcut_value_braille_app_search, R.string.braille_app_search_title),
+    BRAILLE_WEB_NAVIGATION(R.string.shortcut_value_braille_web_navigation, R.string.braille_web_title),
 
     // Special features.
     MEDIA_CONTROL(R.string.shortcut_value_media_control, R.string.shortcut_media_control),
@@ -525,6 +531,8 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
     PAUSE_BACKTALK(R.string.shortcut_value_pause_backtalk, R.string.title_pause_backtalk),
     PASS_THROUGH_NEXT_GESTURE(
         R.string.shortcut_value_pass_through_next_gesture, R.string.shortcut_pass_through_next),
+    EXPERIMENTAL_TOUCH(
+        R.string.shortcut_value_experimental_touch, R.string.shortcut_experimental_touch),
     PRINT_NODE_TREE(R.string.shortcut_value_print_node_tree, R.string.shortcut_print_node_tree),
     PRINT_PERFORMANCE_STATS(
         R.string.shortcut_value_print_performance_stats, R.string.shortcut_print_performance_stats),
@@ -763,6 +771,11 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
         : shortcut;
   }
 
+  @Override
+  public CharSequence screenSearchNoKeywordHint() {
+    return GestureHints.screenSearchNoKeywordHint(context, this);
+  }
+
   /**
    * Gets corresponding action from gesture-action mappings.
    *
@@ -853,6 +866,11 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
       }
     }
     return matchedGestures;
+  }
+
+  /** Returns the action of each gesture in the current gesture set, by gesture ID. */
+  public Map<Integer, String> getGestureActions() {
+    return new HashMap<>(gestureIdToActionKey.get(currentGestureSet));
   }
 
   /**

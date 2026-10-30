@@ -15,11 +15,17 @@ import androidx.core.content.ContextCompat;
 import com.google.android.accessibility.utils.SharedPreferencesUtils;
 import com.google.android.libraries.accessibility.utils.log.LogUtils;
 
-/** Adjusts only speech gain. Does not change any system stream, mode or audio route. */
+/** Adjusts reader audio gain. Does not change any system stream, mode or audio route. */
 public final class CallSpeechVolumeController {
   public static final String ENABLED_KEY = "pref_call_speech_volume_enabled";
   public static final String PERCENT_KEY = "pref_call_speech_volume_percent";
   public static final int DEFAULT_PERCENT = 50;
+  public static final int MIN_PERCENT = 5;
+  public static final int MAX_PERCENT = 100;
+
+  public static int clampPercent(int value) {
+    return Math.max(MIN_PERCENT, Math.min(MAX_PERCENT, value));
+  }
 
   private static final String TAG = "CallSpeechVolume";
   private final Context context;
@@ -28,6 +34,7 @@ public final class CallSpeechVolumeController {
   private final CallSpeechVolume compensation = new CallSpeechVolume();
   private volatile boolean enabled;
   private volatile int percent;
+  private boolean closed;
   private Object modeListener;
   private int previousMode = AudioManager.MODE_NORMAL;
   private float previousGain = Float.NaN;
@@ -68,7 +75,7 @@ public final class CallSpeechVolumeController {
       compensation.reset();
     }
     enabled = newEnabled;
-    percent = Math.max(25, Math.min(100, prefs.getInt(PERCENT_KEY, DEFAULT_PERCENT)));
+    percent = clampPercent(prefs.getInt(PERCENT_KEY, DEFAULT_PERCENT));
   }
 
   @RequiresApi(Build.VERSION_CODES.S)
@@ -78,7 +85,7 @@ public final class CallSpeechVolumeController {
     return listener;
   }
 
-  /** Recomputed before each utterance, for engines, cached speech and low-latency playback alike. */
+  /** Recomputed for each utterance or sound, independently of the playback backend. */
   public float adjust(float normalGain, int speechStream) {
     if (!enabled || audioManager == null) {
       compensation.reset();
@@ -151,10 +158,24 @@ public final class CallSpeechVolumeController {
   }
 
   public void shutdown() {
+    if (closed) {
+      return;
+    }
+    closed = true;
     prefs.unregisterOnSharedPreferenceChangeListener(preferenceListener);
-    context.unregisterReceiver(phoneStateReceiver);
+    try {
+      context.unregisterReceiver(phoneStateReceiver);
+    } catch (IllegalArgumentException e) {
+      // Already unregistered.
+    }
     if (modeListener != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-      audioManager.removeOnModeChangedListener((AudioManager.OnModeChangedListener) modeListener);
+      try {
+        audioManager.removeOnModeChangedListener(
+            (AudioManager.OnModeChangedListener) modeListener);
+      } catch (IllegalArgumentException e) {
+        // Already removed.
+      }
+      modeListener = null;
     }
     compensation.reset();
   }

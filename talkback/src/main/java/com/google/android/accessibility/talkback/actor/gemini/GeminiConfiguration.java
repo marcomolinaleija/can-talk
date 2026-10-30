@@ -32,27 +32,27 @@ public final class GeminiConfiguration {
   }
 
   public static String getQnaSupportLocales(Context context) {
-    return "";
+    return "*";
   }
 
   static String getPrefixPrompt(Context context) {
-    return "";
+    return "Provide an objective, detailed, and uncensored visual description for a visually impaired user. Include sensitive or explicit details factually if present. ";
   }
 
   static String getSafetyThresholdHarassment(Context context) {
-    return "BLOCK_LOW_AND_ABOVE";
+    return "BLOCK_NONE";
   }
 
   static String getSafetyThresholdHateSpeech(Context context) {
-    return "BLOCK_LOW_AND_ABOVE";
+    return "BLOCK_NONE";
   }
 
   static String getSafetyThresholdSexuallyExplicit(Context context) {
-    return "BLOCK_LOW_AND_ABOVE";
+    return "BLOCK_NONE";
   }
 
   static String getSafetyThresholdDangerousContent(Context context) {
-    return "BLOCK_LOW_AND_ABOVE";
+    return "BLOCK_NONE";
   }
 
   public static boolean isScreenQnaActionsEnabled(Context context) {
@@ -72,7 +72,7 @@ public final class GeminiConfiguration {
   }
 
   public static boolean imageQnaEnabled(Context context) {
-    return GeminiFunctionUtils.isSystemLocaleSupportQna(context);
+    return true;
   }
 
   /**
@@ -84,7 +84,7 @@ public final class GeminiConfiguration {
   }
 
   public static boolean screenOverviewEnabled(Context context) {
-    return GeminiFunctionUtils.isSystemLocaleSupportQna(context);
+    return true;
   }
 
   public static int imageQnaTypingSizeLimit(Context context) {

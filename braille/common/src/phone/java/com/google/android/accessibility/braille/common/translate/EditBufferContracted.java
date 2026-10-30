@@ -36,6 +36,7 @@ import com.google.android.accessibility.braille.interfaces.BrailleCharacter;
 import com.google.android.accessibility.braille.interfaces.BrailleDisplayForBrailleIme.ResultForDisplay.HoldingsInfo;
 import com.google.android.accessibility.braille.interfaces.BrailleWord;
 import com.google.android.accessibility.braille.translate.BrailleTranslator;
+import com.google.android.accessibility.utils.input.PasswordCharacterTracker;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import java.nio.ByteBuffer;
@@ -64,6 +65,7 @@ public abstract class EditBufferContracted implements EditBuffer {
   private final Map<String, String> nonInitialCharacterTranslationMap = new HashMap<>();
 
   private int holdingPosition = NO_CURSOR;
+  private boolean autoCapitalizedHolding = false;
 
   public EditBufferContracted(
       Context context, BrailleTranslator translator, TalkBackSpeaker talkBack) {
@@ -71,6 +73,27 @@ public abstract class EditBufferContracted implements EditBuffer {
     this.translator = translator;
     this.talkBack = talkBack;
     fillTranslatorMaps(initialCharacterTranslationMap, nonInitialCharacterTranslationMap);
+  }
+
+  @Override
+  public boolean wasLastAutoCapitalized() {
+    return autoCapitalizedHolding;
+  }
+
+  @Override
+  public String appendBraille(
+      ImeConnection imeConnection, BrailleCharacter brailleCharacter, boolean autoCapitalize) {
+    if (autoCapitalize && holdings.isEmpty()) {
+      BrailleCharacter cap = getCapitalize();
+      if (cap != null && !cap.isEmpty()) {
+        String testPrint = translator.translateToPrint(new BrailleWord(brailleCharacter));
+        if (!TextUtils.isEmpty(testPrint) && Character.isLetter(testPrint.charAt(0))) {
+          updateHoldingsPosition(cap);
+          autoCapitalizedHolding = true;
+        }
+      }
+    }
+    return appendBraille(imeConnection, brailleCharacter);
   }
 
   @Override
@@ -88,6 +111,10 @@ public abstract class EditBufferContracted implements EditBuffer {
       result =
           hideTextForPasswordIfNecessary(imeConnection, result, /* brailleCharacterLength= */ 1);
       EditBufferUtils.speak(context, talkBack, result);
+      if (BrailleCommonUtils.isPasswordField(imeConnection.editorInfo)
+          && imeConnection.speakPasswords) {
+        PasswordCharacterTracker.getInstance().recordBrailleHandled();
+      }
     }
     return result;
   }
@@ -109,6 +136,12 @@ public abstract class EditBufferContracted implements EditBuffer {
 
   @Override
   public void deleteCharacterBackward(ImeConnection imeConnection) {
+    if (autoCapitalizedHolding && holdings.size() <= 2) {
+      holdings.clear();
+      holdingPosition = NO_CURSOR;
+      autoCapitalizedHolding = false;
+      return;
+    }
     if (holdings.isEmpty()) {
       BrailleCommonUtils.performKeyAction(imeConnection.inputConnection, KeyEvent.KEYCODE_DEL);
       return;
@@ -298,6 +331,7 @@ public abstract class EditBufferContracted implements EditBuffer {
 
     holdings.clear();
     holdingPosition = NO_CURSOR;
+    autoCapitalizedHolding = false;
   }
 
   protected void checkSpaceBetweenNumberAndChar(ImeConnection imeConnection, String appendedText) {
@@ -381,6 +415,7 @@ public abstract class EditBufferContracted implements EditBuffer {
   private String hideTextForPasswordIfNecessary(
       ImeConnection imeConnection, String text, int brailleCharacterLength) {
     if (imeConnection.announceType == NORMAL
+        || imeConnection.speakPasswords
         || !BrailleCommonUtils.isPasswordField(imeConnection.editorInfo)) {
       return text;
     }

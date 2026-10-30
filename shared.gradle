@@ -5,7 +5,10 @@ apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 ext {
     canTalkTestBuild = providers.gradleProperty('canTalkTestBuild').map { it.toBoolean() }.getOrElse(false)
-    talkbackApplicationId = canTalkTestBuild ? "fyi.quin.backtalk.cantalktest" : "fyi.quin.backtalk"
+    // Wear sources are retained, but phone is the only enabled target for this release.
+    canTalkWearBuild = providers.gradleProperty('canTalkWearBuild').map { it.toBoolean() }.getOrElse(false)
+    canTalkApplicationId = "can.cantalk"
+    talkbackApplicationId = canTalkTestBuild ? canTalkApplicationId + ".cantalktest" : canTalkApplicationId
 }
 
 android {
@@ -15,9 +18,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     defaultConfig {
-        // A separate package and signature permission let local tests coexist with Backtalk.
+        // Each app variant has its own package and signature permission.
         manifestPlaceholders = [
-            migrationPermission: canTalkTestBuild ? talkbackApplicationId + ".permission.MIGRATE" : "fyi.quin.backtalk.permission.MIGRATE",
+            migrationPermission: talkbackApplicationId + ".permission.MIGRATE",
             brailleImeLabel: canTalkTestBuild ? "Teclado braille de can-talk — prueba" : "@string/braille_ime_service_name"
         ]
         vectorDrawables.useSupportLibrary = true
@@ -31,6 +34,7 @@ android {
         // We generate a build config field holding the application ID so that
         // Java code can reference it.
         buildConfigField "String", "APPLICATION_ID", "\"" + talkbackApplicationId + "\""
+        buildConfigField "String", "PUBLISHED_APPLICATION_ID", "\"" + canTalkApplicationId + "\""
         // We generate a string resource holding the application ID so that XML
         // resources can reference it.
         resValue "string", "app_id", talkbackApplicationId
@@ -49,6 +53,14 @@ android {
         compose = true
         resValues = true
     }
+}
+
+androidComponents {
+    beforeVariants(selector().all(), { variant ->
+        if (variant.productFlavors.any { it.first == 'target' && it.second == 'wear' }) {
+            variant.enable = canTalkWearBuild
+        }
+    } as org.gradle.api.Action)
 }
 
 dependencies {

@@ -36,4 +36,6 @@
   <string name="translation_too_long">Esta frase es demasiado larga para traducirla de forma segura.</string>
   <string name="translation_cache_cleared">Caché de traducción borrada</string>
   <string name="translation_failed">Traducción no disponible. Se lee el texto original.</string>
+  <string name="summary_toggle_translation">Traduce la voz de forma continua hasta desactivarla</string>
+  <string name="summary_translate_last">Traduce la última frase pronunciada por el lector</string>
 </resources>

@@ -1,4 +1,18 @@
-# Backtalk
+# CAN Talk
+
+This repository is the CAN Talk fork, with Android application ID `can.cantalk`.
+The independent test app uses `can.cantalk.cantalktest`. This release targets
+phones. Wear OS sources are retained with their build variants disabled by default.
+Official release builds
+require a private signing key supplied outside Git. The selected candidate is
+`1.0.0-rc.1`; a maintainer builds and signs locally, with a second collaborator
+keeping a recovery copy. Development builds still use debug keys and a dated
+`-dev-` version suffix. See [COMPILACION.md](COMPILACION.md) for
+build instructions and [LANZAMIENTO.md](LANZAMIENTO.md) for release preparation.
+The upstream documentation below describes Backtalk; CAN Talk's updater only
+checks this fork's repository.
+
+## Upstream Backtalk documentation
 
 Backtalk is a fork of [Google's TalkBack](https://github.com/google/talkback), the screen reader for blind and visually-impaired users of Android. It adds fixes and features on top of Google's source releases. It is not affiliated with Google.
 
@@ -73,41 +87,35 @@ Install the APK on your device with adb.
 
 On Windows, `.\deploy.ps1` builds the APK and installs it with adb. This script needs PowerShell 7. To install the last build without building again, use `-SkipBuild`.
 
-Backtalk installs as `fyi.quin.backtalk`, so it does not replace Google's TalkBack. The two apps have separate settings. Because its app ID is its own, Backtalk also installs on GrapheneOS and other ROMs that ship the AOSP TalkBack as a system app named `com.android.talkback`.
+CAN Talk installs as `can.cantalk`, with separate settings from Google's TalkBack and Backtalk. The independent test variant uses `can.cantalk.cantalktest`. This release builds only the phone APK; Wear OS is deferred.
 
-### Moving from the old app ID
+### Earlier CAN Talk builds
 
-Earlier builds of Backtalk installed as `com.android.talkback`. To move to the new app ID:
-
-1.  Update as usual. The update installs the new Backtalk next to the old one, and the accessibility settings open.
-2.  Turn on the new Backtalk when asked. Your settings and custom labels come along.
-3.  The old Backtalk turns itself off, and a notification asks to remove it. Tap it to uninstall the old app.
-
-On-device AI models are not carried over, so download them again in the new app. If you used the braille keyboard or an accessibility shortcut, turn them on again for the new Backtalk.
-
-To make the switch fully automatic, grant the new app permission to change secure settings before you turn it on: `adb shell pm grant fyi.quin.backtalk android.permission.WRITE_SECURE_SETTINGS`. Then the new Backtalk turns the old one off, and moves the accessibility shortcut and the braille keyboard over, by itself.
+Earlier CAN Talk builds used `fyi.quin.backtalk` or `fyi.quin.backtalk.cantalktest`. A build with the new ID installs alongside them rather than updating them. Enable CAN Talk, its braille keyboard and accessibility shortcuts separately. Settings are not copied automatically; export a settings backup from the previous app and import it in the new one if needed. Backtalk's historical automatic hand-over does not run under CAN Talk's new ID.
 
 ## Updates
 
-Each change to Backtalk is built on GitHub as a development build, on the [dev release](https://github.com/trypsynth/backtalk/releases/tag/dev) page. `backtalk.apk` is for phones and `backtalk-wear.apk` is for Wear OS watches, and each checks for updates of its own kind. The [latest release](https://github.com/trypsynth/backtalk/releases/tag/latest) holds the last build with the old app ID, which moves old installs to the new one. Backtalk checks for a new build when it starts and about once a day. When there is one, it shows a notification with the list of changes. Tap the notification to download and install the new build. The first time, Android asks you to allow Backtalk to install apps.
+CAN Talk checks the [dev release in marcomolinaleija/can-talk](https://github.com/marcomolinaleija/can-talk/releases/tag/dev) for the phone APK `cantalk.apk` and only offers a build whose commit count is higher than the installed build. Automatic publication of development APKs is disabled while the first official release and its signing key are prepared. The manual **Release candidate** workflow builds the signed phone artifact from `master`; it does not publish a GitHub release. No watch APK is built or distributed for this release.
 
-To check now, go to **Check for updates** in Backtalk settings. To stop the daily checks, turn off **Automatically check for updates**.
+To check now, go to **Check for updates** in CAN Talk settings. Automatic checks run shortly after the screen reader starts and about once a day while it runs. Turn off **Automatically check for updates** to disable them. An available update shows a notification with its changes; tap it to download and open Android's installation prompt. The first time, Android asks you to allow CAN Talk to install apps.
 
-Android only installs an update that is signed with the same key as the installed app. If you build Backtalk yourself, your build is signed with your own debug key, so it cannot be updated by the builds from GitHub. To use them, uninstall your build first.
+The connection is prepared for this repository. The app includes no GitHub credentials: checks query GitHub's public API directly. An accessible public release is required for automatic update downloads. CAN Talk never falls back to Backtalk's releases.
+
+Android only installs an update with the same package ID and signing key. Official release APKs require CAN Talk's private production key; the shared debug key is only for development. The independent `-Prueba` app has a different ID and no corresponding release asset, so update settings and automatic checks are disabled for that variant. See [COMPILACION.md](COMPILACION.md) for building and signing.
 
 ## Run
 
-After you install Backtalk, go to **Settings > Accessibility**. Backtalk is listed as **Backtalk** and is off by default. Turn off Google's TalkBack first, then turn on Backtalk.
+After you install CAN Talk, go to **Settings > Accessibility**. CAN Talk is listed as **can-talk** and is off by default. Turn off Google's TalkBack or other screen readers first, then turn on CAN Talk.
 
 ## Android TV
 
-Backtalk includes the Android TV support from Google's TalkBack, and the same `backtalk.apk` installs on Android TV and Google TV. It has been tried on an Android 10 TV emulator, but not yet on a real TV.
+CAN Talk retains the Android TV support from TalkBack, and the same phone APK installs on Android TV and Google TV. It has been tested on Android TV emulators.
 
 1.  Turn on developer options and network debugging on the TV, then connect to it with `adb connect` and the TV's IP address.
-2.  Install the APK with `adb install backtalk.apk`.
-3.  Turn on Backtalk in the TV's accessibility settings. On most Android TVs, this is **Settings** > **Device Preferences** > **Accessibility**.
+2.  Install the APK with `adb install cantalk.apk`.
+3.  Turn on CAN Talk in the TV's accessibility settings. On most Android TVs, this is **Settings** > **Device Preferences** > **Accessibility**.
 
-To open Backtalk settings, choose **Backtalk settings** in the apps on the TV home screen. TVs often don't show notifications, so to update, go to **Check for updates** in Backtalk settings. Pause Backtalk isn't available on TVs, because a TV remote often has no way to resume it.
+To open CAN Talk settings, choose **CAN Talk settings** in the apps on the TV home screen. TVs often don't show notifications, so to update, go to **Check for updates** in CAN Talk settings. Pause is not available on TVs, because a TV remote often has no way to resume it.
 
 ## Debug tools
 

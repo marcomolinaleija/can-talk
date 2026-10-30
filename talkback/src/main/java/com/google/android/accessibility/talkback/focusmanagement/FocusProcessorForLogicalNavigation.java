@@ -68,7 +68,6 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.CollectionIn
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.CollectionItemInfoCompat;
 import androidx.core.view.accessibility.AccessibilityWindowInfoCompat;
 import com.google.android.accessibility.talkback.ActorState;
-import com.google.android.accessibility.talkback.BuildConfig;
 import com.google.android.accessibility.talkback.Feedback;
 import com.google.android.accessibility.talkback.Pipeline;
 import com.google.android.accessibility.talkback.R;
@@ -372,9 +371,14 @@ public class FocusProcessorForLogicalNavigation {
    */
   private AccessibilityNodeInfoCompat getPivotNodeForNavigationAction(
       NavigationAction navigationAction) {
+    // While the saved reading order holds the focused node, Android's cached copy of the node is
+    // current: nothing that could change the window has happened since the order was read from the
+    // app. So the focus monitor need not ask the app for the node again then.
     AccessibilityNodeInfoCompat pivot =
         accessibilityFocusMonitor.getAccessibilityFocus(
-            navigationAction.useInputFocusAsPivotIfEmpty, /* requireEditable= */ false);
+            navigationAction.useInputFocusAsPivotIfEmpty,
+            /* requireEditable= */ false,
+            /* isCurrent= */ Filter.node(TraversalTreeCache::holds));
 
     // The focus monitor can return Android's cached copy of a node that was just removed, so check
     // with the app that the pivot is still there. Skip that round trip when the saved reading order
@@ -1042,11 +1046,7 @@ public class FocusProcessorForLogicalNavigation {
     CharSequence keyword = searchState.getLastKeyword();
     if (TextUtils.isEmpty(keyword)) {
       LogUtils.d(TAG, "navigateToScreenSearchTarget  keyword empty");
-      announce(
-          FeatureSupport.isMultiFingerGestureSupported()
-              ? service.getString(R.string.screen_search_no_keyword_hint)
-              : service.getString(R.string.screen_search_no_keyword_hint_pre_r),
-          eventId);
+      announce(globalVariables.getScreenSearchNoKeywordHint(), eventId);
       return false;
     }
 
@@ -1160,13 +1160,17 @@ public class FocusProcessorForLogicalNavigation {
         || WebInterfaceUtils.supportsWebActions(pivot)) {
       return null;
     }
-    AccessibilityNodeInfoCompat rootNode = AccessibilityNodeInfoUtils.getRoot(pivot);
-    if (rootNode == null) {
-      return null;
-    }
     // Only with the saved reading order: building one takes from about 10 ms to, in a big app, a
     // few hundred, on the main thread, where a swipe that starts meanwhile would wait for it. A
-    // swipe saves the order it builds, so the next prediction has one.
+    // swipe saves the order it builds, so the next prediction has one. The root comes from the
+    // saved order too, as asking the window for it would wait for the app.
+    AccessibilityNodeInfoCompat rootNode = TraversalTreeCache.rootFor(pivot);
+    if (rootNode == null) {
+      // Remember where the next swipe starts all the same, as a search of the saved order does, so
+      // that a swipe after the focused node is removed carries on from here.
+      TraversalTreeCache.rememberPivot(pivot);
+      return null;
+    }
     TraversalStrategy traversalStrategy = TraversalTreeCache.get(rootNode, pivot);
     if (traversalStrategy == null) {
       return null;
@@ -1195,7 +1199,12 @@ public class FocusProcessorForLogicalNavigation {
         TraversalStrategyUtils.getLogicalDirection(
             searchDirection, WindowUtils.isScreenLayoutRTL(service));
 
-    AccessibilityNodeInfoCompat rootNode = AccessibilityNodeInfoUtils.getRoot(pivot);
+    // Asking the window for its root waits for the app on every swipe, so take the root of the
+    // saved reading order when that holds the pivot.
+    AccessibilityNodeInfoCompat rootNode = TraversalTreeCache.rootFor(pivot);
+    if (rootNode == null) {
+      rootNode = AccessibilityNodeInfoUtils.getRoot(pivot);
+    }
     if (rootNode == null) {
       LogUtils.w(TAG, "Cannot perform navigation action: unable to find root node.");
       return false;
@@ -1210,13 +1219,15 @@ public class FocusProcessorForLogicalNavigation {
     }
     boolean usedSavedTree = traversalStrategy != null;
     if (traversalStrategy == null) {
-      long buildStart = BuildConfig.DEBUG ? SystemClock.uptimeMillis() : 0;
-      if (BuildConfig.DEBUG) {
+      boolean trace = LogUtils.shouldLog(Log.DEBUG);
+      long buildStart = trace ? SystemClock.uptimeMillis() : 0;
+      if (trace) {
         Trace.beginSection("BuildTraversalStrategy");
       }
+      WindowNodePrefetcher.prefetch(rootNode, service.getPackageName());
       traversalStrategy =
           TraversalStrategyUtils.getTraversalStrategy(rootNode, focusFinder, searchDirection);
-      if (BuildConfig.DEBUG) {
+      if (trace) {
         Trace.endSection();
         Log.d(
             "BacktalkTreeCache",
@@ -2683,7 +2694,9 @@ public class FocusProcessorForLogicalNavigation {
             ScrollTimeout.SCROLL_TIMEOUT_LONG,
             autoScrollChecker,
             eventId);
-    if (scrolled && scrollCallback != null) {
+    if (scrolled
+        && scrollCallback != null
+        && navigationAction.targetType == NavigationTarget.TARGET_DEFAULT) {
       AutoScrollCallback callback = scrollCallback;
       AccessibilityNodeInfoCompat scrollable = scrollableNodeInfo.getNode();
       earlyScrollCheckHandler.post(

@@ -48,7 +48,7 @@ Low-latency audio also changes how pausing speech works. When you tap with two f
 
 With low-latency audio on, Backtalk also watches for a speech engine that stops responding. If the engine says nothing about new speech for 3 seconds, Backtalk switches to the next installed engine.
 
-Low-latency audio is off by default. Low-latency speech requires Android 11 or later; on older versions, only Backtalk's sounds use the fast path. Speech falls back to the usual path for engines that play their own audio or that report errors. Each sound plays the usual way the first time that Backtalk uses it, and 3D sounds still play through the 3D player.
+Low-latency audio is on by default, except on Wear OS watches. CAN Talk keeps saved choices when updating. If speech or sounds break up, turn the setting off. Low-latency speech requires Android 11 or later; on older versions, only Backtalk's sounds use the fast path. Speech falls back to the usual path for engines that play their own audio or that report errors. Each sound plays the usual way the first time that Backtalk uses it, and 3D sounds still play through the 3D player.
 
 ### Less lag while scrolling
 
@@ -58,6 +58,12 @@ After each scroll event, TalkBack searched the list for a new item to focus. The
 
 In busy apps, a backlog of accessibility events could block gestures for almost 3 seconds. Backtalk handles events in slices of about 16 ms, so gestures get through between them. It also skips lookups of view classes that can never succeed, which stalled screens that have many custom views.
 
+### Shorter focus delay
+
+When you touch the screen, Backtalk waits to see whether you're starting a gesture before it focuses the item under your finger. **Advanced settings** > **Reduce delay** > **Focus delay** sets this wait. TalkBack waits 300 ms by default, which is most of the time between touching an item and hearing it. Backtalk waits 200 ms.
+
+CAN Talk keeps any saved focus delay when updating. If Backtalk focuses items when you meant to swipe, choose a longer delay.
+
 ### Faster response on empty space
 
 When you touched an empty part of the screen, TalkBack waited 100 ms after the focus delay before it played the sound. Backtalk waits 40 ms.
@@ -66,7 +72,7 @@ When you touched an empty part of the screen, TalkBack waited 100 ms after the f
 
 After a window changes, TalkBack waits for the window to settle before it says the title. TalkBack counted that wait in a way that made 550 ms last about 900 ms. Backtalk counts the real time.
 
-The **Turn off animations** setting in **Advanced settings** turns off animations for the whole phone, so screens change immediately and the wait is only 200 ms. TalkBack called this setting **Reduce window announcement delay**, and had disabled the code that turns animations off, so the setting did nothing. Backtalk makes the setting work, and turns animations back on when you turn Backtalk off. On Android 12 and earlier, which don't let Backtalk turn animations off, the setting only shortens the wait. The setting is on by default.
+The **Turn off animations** setting in **Advanced settings** > **Reduce delay** turns off animations for the whole phone, so screens change immediately and the wait is only 200 ms. TalkBack called this setting **Reduce window announcement delay**, and had disabled the code that turns animations off, so the setting did nothing. Backtalk makes the setting work, and turns animations back on when you turn Backtalk off. On Android 12 and earlier, which don't let Backtalk turn animations off, the setting only shortens the wait. The setting is on by default.
 
 ### Swiping into the next part of a list
 
@@ -140,11 +146,33 @@ TalkBack didn't recognize a two-finger tap made right after a swipe, or it pause
 
 TalkBack echoed a word such as "don't" as two words. Backtalk echoes it as one word. When a keyboard adds a word, its punctuation, and a space all at once, as the braille keyboard does in contracted braille, Backtalk echoes the word rather than just the space.
 
+### Order of item details
+
+**Verbosity** > **Order of item details** sets the order in which Backtalk says an item's name, type, and state. TalkBack has this setting in **Advanced settings** and offers three orders to choose from. Backtalk lists the name, type, and state, and you put them in any of the six orders: touch and hold a detail and drag it up or down, or use its **Move up** and **Move down** actions. With Backtalk on, double-tap and hold a detail, then drag it. Backtalk says the detail's position as you pick it up, move it, and drop it.
+
+TalkBack ignored the order for a row whose checkbox or switch has no text of its own, such as the rows in **Reading controls**, and always read the checkbox's type and state before the row's text. Backtalk reads such a row as one control, with the row's text as its name, in the order that you chose.
+
 ### "Backtalk off" at the right volume
 
 When you turn Backtalk off, it says "Backtalk off" at the accessibility volume, using your device's real volume levels. TalkBack only approximated that volume.
 
+### Table column headers
+
+In **Verbosity**, you can choose whether Backtalk reads table column headers before or after the cell's data, or leaves them out:
+
+*   **After cell data**, the default, keeps TalkBack's order: the cell's contents, then the row and column headers or numbers.
+*   **Before cell data** speaks the row and column headers or numbers before the cell's contents, along with "Column heading" or "Row heading" for a header cell. This applies to grids as well as tables, so an item in a photo grid says its row and column first. On a TV, Backtalk already speaks them first, so this option changes nothing there.
+*   **Do not read** leaves column headers out, and reads column numbers only when row and column numbers are on.
+
+Under preset settings in **Verbosity**, you can also turn off **Speak row and column numbers** to hear only named headers without row and column coordinates. The setting is on by default.
+
+Both settings only apply while **Speak container info** is on, because rows and columns aren't spoken at all when it's off.
+
 ## Notifications
+
+### Samsung watch notification content
+
+On Samsung watches, Backtalk reads the app and title, then the message content, then the time when you focus a notification card. Samsung's card label can omit the message even though it is available in the accessibility tree. Backtalk includes that text automatically, without an extra gesture or setting, and does not announce the card's display font formatting.
 
 ### Speak notifications setting
 
@@ -255,11 +283,15 @@ The rotor requires Android 13 or later and **Handle gestures in Backtalk** turne
 
 ### Lift to activate
 
-Backtalk can activate the item under your finger when you lift your finger after exploring by touch, as TalkBack already does for keys on the keyboard. In **Advanced settings** > **Lift to activate**, choose **Only on navigation bar** to use it for the Back, Home, and Overview buttons only, or **Entire screen** to use it everywhere. It's **Disabled** by default.
+Backtalk can activate the item under your finger when you lift your finger after exploring by touch, as TalkBack already does for keys on the keyboard. In **Advanced settings** > **Lift to activate**, choose **Only on navigation bar** to use it for the Back, Home, and Overview buttons only, or **Entire screen** to use it everywhere. It's **Disabled** by default. With **Only on navigation bar**, a single tap presses the button, and Backtalk says which one, such as "Back" or "Home". To stop this, turn off **Advanced settings** > **Speak navigation bar buttons**.
 
 With **Only on navigation bar** on Android 11 and later, touches on the navigation bar go straight to Android, so a single tap presses a button and holding Home holds it, as without a screen reader. Backtalk doesn't say the buttons as you touch them.
 
 **Lift to activate** is also a reading control, so you can change it with a swipe up or down.
+
+### Direct click
+
+Some controls ignore the screen reader's click and only react to a finger, such as **Add to favorites** in TikTok, which works out the button from where the finger lands. With **Controls** > **Touch and activation** > **Direct click** on, activating the focused item, with a double tap, the activation key or a braille display, touches the middle of it on the screen like a finger instead. Text fields, sliders, items off screen, magnified screens and other displays are still activated the usual way, and so is any item whose touch doesn't reach the app. A direct click takes about 100 ms longer than the usual one. It needs Android 13 or later and is off by default.
 
 ### Wrap around
 
@@ -275,6 +307,14 @@ To let Android recognize gestures again, turn off **Advanced settings** > **Deve
 
 ## Navigation
 
+### Returning to a screen
+
+On phones, **Controls** > **Navigation** > **Restore focus when going back** lets Backtalk remember the last item you read on up to 20 recent app screens and browser pages while the service is running. This switch is off by default. Restoration starts only when you use Back, including the Back gesture/key or a recognized app Back button. It tries to focus the same item, including when an app recreates its list or automatically focuses the toolbar. This also works when an app opens a post or link in another app: using Back from the browser or other app restores the originating item. Forward navigation, switching apps, and opening or reading the status bar do not trigger restoration. User input on the returned screen cancels pending restoration. This memory clears when Backtalk stops or you change the restoration switch. With the switch off, Backtalk keeps its usual focus behavior and does not capture or restore these bookmarks.
+
+When restoration is enabled, visible items are restored without scrolling. **Controls** > **Navigation** > **Scroll to restore previous focus** is a separate switch, also off by default, available only while restoration is enabled. Turn it on to let Backtalk bring an offscreen item back into view. Backtalk uses the app's supported scroll actions and checks that it found the remembered item; it stops after at most ten scroll actions or three seconds. It waits for rebuilding content instead of searching by scrolling when the saved row position is already visible. Touching, navigating, typing, or scrolling cancels pending restoration. A browser restoring its own page scroll position or updating its address during Back does not cancel the attempt.
+
+Apps and pages must expose enough accessibility information to distinguish the screen and item. In native app rows and cards, a single exposed title or heading can identify the item even when its read-state description, counts, or subtitle change. This applies across apps; uncertain or duplicate titles still need an unambiguous match. If the item was removed, labels are ambiguous, or the app does not expose the necessary information, Backtalk keeps its usual focus behavior. It remembers elements such as headings, links, and posts, rather than character positions within text. Wear OS watches and TV keep their usual focus behavior and do not run this feature.
+
 ### Reading place kept when an item disappears
 
 When an app removed the item that had focus, such as an ad that collapses, TalkBack jumped back to the top of the page. Backtalk carries on from where you were.
@@ -287,6 +327,14 @@ On Android 11, when you picked an action with the **Actions** reading control, a
 
 realme UI reports some volume sliders as not focusable and unlabeled, so TalkBack skipped them. Backtalk can focus them.
 
+### Vertical navigation
+
+The **Vertical navigation** reading control, which you can turn on in **Reading controls**, moves to the item below when you swipe down and to the item above when you swipe up. It skips the other items of the same row, such as the call and contact buttons beside each call in the call log, or the buttons beside a video in YouTube. Going up lands on the first item of the row above. In a list, it stays in the list: when there is no row below or above on screen, it scrolls the list a page and moves to the next row. At the end of the list, or outside one, it moves to the item below or above on screen, and plays the end sound when there is none.
+
+### Volume keys that adjust sliders
+
+When you turn on **Advanced settings** > **Volume keys adjust sliders**, the volume keys change the value of the slider that has focus, and Backtalk speaks the new value, as it does when you adjust the slider with the **Adjustable** reading control. Hold a key to keep changing the value. When focus is on anything else, or the screen is off, the volume keys change the volume as usual. They also still change speech volume while a finger is on the screen, during continuous reading, and with the keyboard shortcut modifier. The setting is off by default.
+
 ## Backtalk menu
 
 ### Shorter menu by default
@@ -294,6 +342,14 @@ realme UI reports some volume sliders as not focusable and unlabeled, so TalkBac
 These items are off by default in the Backtalk menu: **Actions**, **Screen search**, **Add or edit labels**, **Describe text formatting**, **Copy last spoken phrase**, **Spoken language**, **Voice commands**, **Keyboard shortcuts**, and **Braille display settings**. You can still use actions with the **Actions** reading control. **Text-to-speech** stays on, so that you can reach speech settings if your speech engine crashes, and Backtalk adds a **Pause Backtalk** item.
 
 To change the items, go to **Backtalk menu**, under **Controls** in Backtalk settings. In TalkBack, this screen is under **Customize menus**.
+
+### Add last spoken phrase to clipboard
+
+**Add last spoken phrase to clipboard** adds what Backtalk last said to the text it copied, on a new line, so that you can copy several phrases into one block. Copy the first phrase with **Copy last spoken phrase**, then add each of the others. It's an item you can turn on in the Backtalk menu, a gesture action, and a keyboard shortcut. From Android 10, Android doesn't let Backtalk read the clipboard, so the phrase is added to what Backtalk last copied, not to anything you copied in another app.
+
+### Clear text
+
+When a text field with text in it has focus, the edit options in the Backtalk menu have **Clear text**, which deletes all of its text at once.
 
 ### Circle menu
 
@@ -317,7 +373,7 @@ If you turn off **Always show this** in the hide screen dialog, Backtalk says on
 
 ### Proximity sensor
 
-Backtalk doesn't stop speech when something covers the proximity sensor. To turn this back on, go to **Advanced settings** > **Cover proximity sensor to stop speech**.
+Backtalk doesn't stop speech when something covers the proximity sensor. To turn this back on, go to **Sound and vibration** > **Cover proximity sensor to stop speech**.
 
 ### Screen on and off announcements
 
@@ -346,10 +402,10 @@ Like VoiceOver on iPhone, Backtalk can move a call to the speaker when you take 
 Android lets only certain apps, such as smartwatch companions, change where call audio goes, so you need to grant Backtalk permission once, with adb or [Shizuku](https://shizuku.rikka.app):
 
 ```
-adb shell appops set fyi.quin.backtalk MANAGE_ONGOING_CALLS allow
+adb shell appops set can.cantalk MANAGE_ONGOING_CALLS allow
 ```
 
-Then turn on **Advanced settings** > **Speaker when away from your ear**. Until you grant the permission, the setting is unavailable and shows the command. This feature requires Android 12 or later.
+Then turn on **Sound and vibration** > **Speaker when away from your ear**. Until you grant the permission, the setting is unavailable and shows the command. This feature requires Android 12 or later.
 
 ## Direct touch
 
@@ -390,6 +446,12 @@ If you develop a game, add this `<meta-data>` element inside your `<application>
     android:name="dev.nvgt.capability.DIRECT_TOUCH"
     android:value="true" />
 ```
+
+## On-screen keyboard
+
+### Lift to type, except to send
+
+In **On-screen keyboard** > **Typing method**, **Hold finger to select any key, then lift. Double-tap for Enter, Done, or Send.** types every key when you lift your finger, like **Hold finger to select any key, then lift**, but the key that sends or submits, such as Enter, Done, Send, Search, or Go, still needs a double-tap. This keeps you from sending a message by lifting your finger on the wrong key. Backtalk recognizes this key in Gboard. In other keyboards, every key types when you lift your finger.
 
 ## Braille keyboard
 
@@ -455,7 +517,7 @@ When Gemini can't describe something, TalkBack says "Something went wrong". Back
 
 ### Layout and wording
 
-Backtalk groups its main settings under **Feedback**, **Controls**, **Typing and braille**, and **More**, and puts **Backtalk menu** and **Reading controls** in the main settings. Many settings have clearer names, such as **Speak item type** and **Order of item details**. Backtalk removes the Play Store link, the privacy policy, terms of service, and Disability Support links, and the pages about new features in TalkBack. **Display speech output** is only in **Developer settings**.
+Backtalk groups its main settings under **Feedback**, **Controls**, **Typing and braille**, and **More**, and puts **Backtalk menu** and **Reading controls** in the main settings. Many settings have clearer names, such as **Speak item type** and **Order of item details**. Backtalk removes the links to the Play Store, the privacy policy, the terms of service, Disability Support, and Google's TalkBack help, and the pages about new features in TalkBack. **Display speech output** is only in **Developer settings**. **Time format** is in **Verbosity**, **Turn off animations** is in **Reduce delay**, and **Cover proximity sensor to stop speech** is in **Sound and vibration**, instead of in **Advanced settings**.
 
 ### Dark mode
 
@@ -469,7 +531,7 @@ Backtalk doesn't stop on a slider's title as a separate item when you swipe thro
 
 ### Separate app
 
-Backtalk installs as `fyi.quin.backtalk`, so it installs next to Google's TalkBack, with settings of its own. For more information, see [Install](README.md#install).
+CAN Talk installs as `can.cantalk`, so it installs next to Google's TalkBack and Backtalk, with settings of its own. For more information, see [Install](README.md#install).
 
 ### Built-in updates
 
@@ -500,6 +562,8 @@ Watch screens track only two fingers, so gestures with three or four fingers don
 | Double-tap and hold with two fingers | Open the Backtalk menu |
 | Triple-tap and hold with two fingers | Turn speech on or off |
 | Swipe left then up | Repeat last spoken phrase |
+
+On Samsung watches, turn on **Advanced settings** > **Reserve gestures for Vibration Watch** to let Samsung's Vibration Watch use two-finger single and double taps. The switch is off by default, and Vibration Watch must also be enabled in the watch's accessibility settings. While the switch is on, these gestures no longer perform their Backtalk actions: by default, a two-finger tap pauses or resumes speech, and a two-finger double tap controls media or starts voice input. Saved gesture assignments are kept and become available again when you turn the switch off.
 
 ### Backtalk menu on watches
 

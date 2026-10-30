@@ -63,6 +63,7 @@ import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -71,6 +72,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import androidx.annotation.IdRes;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import com.google.android.accessibility.talkback.ActorState;
@@ -84,6 +86,7 @@ import com.google.android.accessibility.talkback.Pipeline;
 import com.google.android.accessibility.talkback.R;
 import com.google.android.accessibility.talkback.UserInterface.UserInputEventListener;
 import com.google.android.accessibility.talkback.analytics.TalkBackAnalytics;
+import com.google.android.accessibility.talkback.audio.AudioDeviceRouter;
 import com.google.android.accessibility.talkback.compositor.Compositor;
 import com.google.android.accessibility.talkback.compositor.CompositorUtils;
 import com.google.android.accessibility.talkback.contextmenu.ContextMenu;
@@ -95,6 +98,7 @@ import com.google.android.accessibility.talkback.focusmanagement.AccessibilityFo
 import com.google.android.accessibility.talkback.focusmanagement.LiftToActivateMode;
 import com.google.android.accessibility.talkback.focusmanagement.action.NavigationAction;
 import com.google.android.accessibility.talkback.focusmanagement.record.FocusActionInfo;
+import com.google.android.accessibility.talkback.gesture.GestureHints;
 import com.google.android.accessibility.talkback.gesture.GestureShortcutMapping;
 import com.google.android.accessibility.talkback.menurules.NodeMenuRuleCreator;
 import com.google.android.accessibility.talkback.monitor.VolumeMonitor;
@@ -375,7 +379,15 @@ public class SelectorController implements UserInputEventListener {
     SWITCH_TTS_ENGINE(
         R.string.pref_selector_switch_tts_engine_key,
         R.string.selector_switch_tts_engine,
-        R.bool.pref_selector_switch_tts_engine_default);
+        R.bool.pref_selector_switch_tts_engine_default),
+    VERTICAL_NAVIGATION(
+        R.string.pref_selector_vertical_navigation_key,
+        R.string.selector_vertical_navigation,
+        R.bool.pref_selector_vertical_navigation_default),
+    AUDIO_OUTPUT_DEVICE(
+        R.string.pref_selector_audio_output_device_key,
+        R.string.selector_audio_output_device,
+        R.bool.pref_selector_audio_output_device_default);
 
     /** The preference key of the filter in the selector settings page. */
     final int prefKeyResId;
@@ -562,6 +574,7 @@ public class SelectorController implements UserInputEventListener {
 
   private final Context context;
   private final AccessibilityFocusMonitor accessibilityFocusMonitor;
+  private final VerticalNavigator verticalNavigator;
   private final Pipeline.FeedbackReturner pipeline;
   private final ActorState actorState;
   private final NodeMenuRuleCreator nodeMenuCreator;
@@ -569,11 +582,6 @@ public class SelectorController implements UserInputEventListener {
   private final SharedPreferences prefs;
   private final GestureShortcutMapping gestureMapping;
   @NonNull private final Compositor.TextComposer compositor;
-
-  /**
-   * Keeps gestures to announce the usage hint for how to select setting (change quick menu item).
-   */
-  private @Nullable String cachedSelectSettingGestureNames;
 
   /**
    * Keeps gestures to announce the usage hint for how to adjust selected setting (change quick menu
@@ -621,6 +629,7 @@ public class SelectorController implements UserInputEventListener {
           Setting.GRANULARITY_CONTAINERS,
           Setting.GRANULARITY_SEARCH,
           Setting.GRANULARITY_DEFAULT,
+          Setting.VERTICAL_NAVIGATION,
           // TODO Supports special content.
           Setting.SPEECH_RATE,
           Setting.VERBOSITY,
@@ -633,6 +642,7 @@ public class SelectorController implements UserInputEventListener {
           Setting.AUDIO_FOCUS,
           Setting.SCROLLING_SEQUENTIAL,
           Setting.CHANGE_ACCESSIBILITY_VOLUME,
+          Setting.AUDIO_OUTPUT_DEVICE,
           Setting.CHANGE_BRIGHTNESS,
           Setting.CHANGE_TOUCH_FOCUS_LATENCY,
           Setting.CHANGE_TYPING_FOCUS_LATENCY,
@@ -656,7 +666,6 @@ public class SelectorController implements UserInputEventListener {
       (prefs, key) -> {
         // Clears selector gestures but doesn't update them now because GestureShortcutMapping
         // hasn't finished reloading yet.
-        cachedSelectSettingGestureNames = null;
         cachedAdjustSelectedSettingGestureNames = null;
       };
 
@@ -709,6 +718,7 @@ public class SelectorController implements UserInputEventListener {
     this.pipeline = pipeline;
     this.actorState = actorState;
     this.accessibilityFocusMonitor = accessibilityFocusMonitor;
+    verticalNavigator = new VerticalNavigator(pipeline, accessibilityFocusMonitor);
     this.nodeMenuCreator = nodeMenuCreator;
     this.analytics = analytics;
     this.gestureMapping = gestureMapping;
@@ -972,6 +982,14 @@ public class SelectorController implements UserInputEventListener {
       }
       case SWITCH_TTS_ENGINE -> {
         actionDescription = context.getString(R.string.title_selector_switch_tts_engine);
+        hint = getAdjustSelectedSettingGestures();
+      }
+      case VERTICAL_NAVIGATION -> {
+        actionDescription = context.getString(R.string.title_selector_vertical_navigation);
+        hint = getAdjustSelectedSettingGestures();
+      }
+      case AUDIO_OUTPUT_DEVICE -> {
+        actionDescription = context.getString(R.string.title_pref_audio_output_device);
         hint = getAdjustSelectedSettingGestures();
       }
       case ACTIONS -> {
@@ -1246,6 +1264,10 @@ public class SelectorController implements UserInputEventListener {
   @Override
   public void touchInteractionState(boolean active) {
     touchActive = active;
+    if (active) {
+      // A touch replaces a move that is waiting for a list to scroll.
+      verticalNavigator.cancel();
+    }
     if (!touchActive) {
       if (lastFocusedNode != null) {
         switchCurrentSetting(lastFocusedNode);
@@ -1502,6 +1524,20 @@ public class SelectorController implements UserInputEventListener {
     return getFilteredSettings().contains(setting);
   }
 
+  /** Available keyboard controls in the same order as the reader's selector. */
+  public List<Setting> getAvailableBrailleKeyboardSettings(java.util.Set<Setting> validSettings) {
+    List<Setting> settings = new java.util.ArrayList<>();
+    for (Setting setting : getFilteredSettings()) {
+      if (validSettings.contains(setting)) settings.add(setting);
+    }
+    return settings;
+  }
+
+  /** Selects a keyboard control with its name, without a visual overlay or gesture hint. */
+  public boolean selectBrailleKeyboardSetting(Setting setting) {
+    return selectSetting(setting, AnnounceType.DESCRIPTION, false);
+  }
+
   /**
    * Filter settings based on device and the focused node. Filter out the settings turned off by
    * users in selector preferences.
@@ -1546,58 +1582,35 @@ public class SelectorController implements UserInputEventListener {
   }
 
   /**
-   * Returns the usage hint when adjusting the selected setting, like "three-finger swipe left or
-   * three-finger swipe right to select a different setting."
+   * Returns the usage hint for choosing another reading control, for when the selected one can't
+   * be used: a line for each action with its gesture, such as "Next reading control: Swipe down
+   * then up".
    */
   @NonNull
   private String getSelectSettingGestures() {
-    String selectSettingGestureNames = getSelectSettingGestureNames();
-    if (selectSettingGestureNames.isEmpty()) {
-      // There is no gesture to select setting.
-      return context.getString(
-          R.string.no_adjust_setting_gesture,
-          Ascii.toLowerCase(context.getString(R.string.shortcut_select_next_setting)));
-    }
-    return context.getString(R.string.select_setting_hint, selectSettingGestureNames);
-  }
-
-  @NonNull
-  private String getSelectSettingGestureNames() {
-    String selectSettingGestureNames = cachedSelectSettingGestureNames;
-    if (selectSettingGestureNames == null) {
-      List<String> rawNames =
-          gestureMapping.getGestureTextsFromActionKeys(
-              context.getString(R.string.shortcut_value_select_previous_setting),
-              context.getString(R.string.shortcut_value_select_next_setting));
-      if (rawNames.isEmpty()) {
-        selectSettingGestureNames = "";
-      } else if (rawNames.size() == 1) {
-        selectSettingGestureNames = Ascii.toLowerCase(rawNames.get(0));
-      } else {
-        selectSettingGestureNames =
-            context.getString(
-                R.string.gesture_1_or_2,
-                Ascii.toLowerCase(rawNames.get(0)),
-                Ascii.toLowerCase(rawNames.get(1)));
-      }
-      cachedSelectSettingGestureNames = selectSettingGestureNames;
-    }
-    return selectSettingGestureNames;
+    return actionLines(
+        R.string.shortcut_value_select_previous_setting,
+        R.string.shortcut_value_select_next_setting);
   }
 
   /**
-   * Returns the usage hint when selecting a setting, like "swipe up or swipe down to to adjust the
-   * setting."
+   * Returns the usage hint when selecting or changing a setting: a line for each action with its
+   * gesture, such as "Move reading control down or forward: Swipe down".
    */
   private String getAdjustSelectedSettingGestures() {
-    String adjustSelectedSettingsGestureNames = getAdjustSelectedSettingGestureNames();
-    if (adjustSelectedSettingsGestureNames.isEmpty()) {
-      // There is no gesture to adjust setting.
-      return context.getString(
-          R.string.no_adjust_setting_gesture,
-          Ascii.toLowerCase(context.getString(R.string.shortcut_selected_setting_next_action)));
-    }
-    return context.getString(R.string.adjust_setting_hint, adjustSelectedSettingsGestureNames);
+    return actionLines(
+        R.string.shortcut_value_selected_setting_previous_action,
+        R.string.shortcut_value_selected_setting_next_action);
+  }
+
+  /**
+   * Returns a line for each of two gesture actions, named from translated action titles and
+   * gesture names, or the gesture settings for an action with no gesture.
+   */
+  private String actionLines(@StringRes int firstAction, @StringRes int secondAction) {
+    return GestureHints.actionLine(context, gestureMapping, firstAction)
+        + "\n"
+        + GestureHints.actionLine(context, gestureMapping, secondAction);
   }
 
   /**
@@ -1626,9 +1639,7 @@ public class SelectorController implements UserInputEventListener {
     if (granularity.setting == GRANULARITY_SEARCH) {
       CharSequence keyword = actorState.getSearchState().getLastKeyword();
       if (TextUtils.isEmpty(keyword)) {
-        return FeatureSupport.isMultiFingerGestureSupported()
-            ? context.getString(R.string.screen_search_no_keyword_hint)
-            : context.getString(R.string.screen_search_no_keyword_hint_pre_r);
+        return gestureMapping.screenSearchNoKeywordHint().toString();
       }
       CharSequence keywordHint =
           keyword.length() < 15
@@ -1674,7 +1685,7 @@ public class SelectorController implements UserInputEventListener {
                 Ascii.toLowerCase(rawNames.get(0)),
                 Ascii.toLowerCase(rawNames.get(1)));
       }
-      cachedSelectSettingGestureNames = adjustSelectedSettingGestureNames;
+      cachedAdjustSelectedSettingGestureNames = adjustSelectedSettingGestureNames;
     }
     return adjustSelectedSettingGestureNames;
   }
@@ -1765,6 +1776,14 @@ public class SelectorController implements UserInputEventListener {
       }
       case SWITCH_TTS_ENGINE -> {
         changeTtsEngine(eventId, isNext);
+        return;
+      }
+      case VERTICAL_NAVIGATION -> {
+        verticalNavigator.move(eventId, isNext);
+        return;
+      }
+      case AUDIO_OUTPUT_DEVICE -> {
+        changeAudioOutputDevice(eventId, isNext);
         return;
       }
       case GRANULARITY -> {
@@ -1982,7 +2001,7 @@ public class SelectorController implements UserInputEventListener {
         context.getString(
             R.string.template_speech_rate_change,
             actorState.getSpeechRateState().getSpeechRatePercentage());
-    announceSetting(eventId, displayText, getSelectSettingGestures());
+    announceSetting(eventId, displayText, getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(eventId, displayText);
   }
 
@@ -2016,7 +2035,7 @@ public class SelectorController implements UserInputEventListener {
     announceSetting(
         eventId,
         actorState.getLanguageState().getCurrentLanguageString(),
-        getSelectSettingGestures());
+        getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(eventId, actorState.getLanguageState().getCurrentLanguageString());
   }
 
@@ -2060,7 +2079,7 @@ public class SelectorController implements UserInputEventListener {
     announceSetting(
         eventId,
         VerbosityPreferences.getVerbosityChangeAnnouncement(newVerbosity, context),
-        getSelectSettingGestures());
+        getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(
         eventId, VerbosityPreferences.verbosityValueToName(newVerbosity, context));
   }
@@ -2082,7 +2101,7 @@ public class SelectorController implements UserInputEventListener {
     announceSetting(
         eventId,
         context.getString(R.string.emoji_speech_state, entries[index]),
-        getSelectSettingGestures());
+        getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(eventId, entries[index]);
   }
 
@@ -2109,8 +2128,33 @@ public class SelectorController implements UserInputEventListener {
     announceSetting(
         eventId,
         context.getString(R.string.punctuation_state, punctuationEntries[punctuationLevel]),
-        getSelectSettingGestures());
+        getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(eventId, punctuationEntries[punctuationLevel]);
+  }
+
+  /** Changes the audio output device to the previous or next option. */
+  private void changeAudioOutputDevice(EventId eventId, boolean isNext) {
+    List<AudioDeviceRouter.OutputOption> options = AudioDeviceRouter.getOutputOptions(context);
+    String currentValue =
+        SharedPreferencesUtils.getStringPref(
+            prefs,
+            context.getResources(),
+            R.string.pref_audio_output_device_key,
+            R.string.pref_audio_output_device_default);
+    int currentIndex = AudioDeviceRouter.indexOfOption(options, currentValue);
+    int nextIndex =
+        (currentIndex < 0)
+            ? (isNext ? 0 : options.size() - 1)
+            : Math.floorMod(currentIndex + (isNext ? 1 : -1), options.size());
+    String nextValue = options.get(nextIndex).getPrefValue();
+    prefs
+        .edit()
+        .putString(context.getString(R.string.pref_audio_output_device_key), nextValue)
+        .apply();
+
+    String displayText = options.get(nextIndex).getDisplayName();
+    announceSetting(eventId, displayText, getAdjustSelectedSettingGestures());
+    showQuickMenuActionOverlay(eventId, displayText);
   }
 
   /** Validate the verbosity index and set verbosity string if necessary */
@@ -2134,7 +2178,7 @@ public class SelectorController implements UserInputEventListener {
     announceSetting(
         eventId,
         VerbosityPreferences.getVerbosityChangeAnnouncement(newVerbosity, context),
-        getSelectSettingGestures());
+        getAdjustSelectedSettingGestures());
   }
 
   private void toggleTextFormatting(EventId eventId) {
@@ -2154,7 +2198,7 @@ public class SelectorController implements UserInputEventListener {
             toggleTextFormatting
                 ? context.getString(R.string.value_on)
                 : context.getString(R.string.value_off)),
-        getSelectSettingGestures());
+        getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(
         eventId, context.getString(toggleTextFormatting ? R.string.value_on : R.string.value_off));
   }
@@ -2167,7 +2211,7 @@ public class SelectorController implements UserInputEventListener {
       announceSetting(
           eventId,
           context.getString(R.string.screen_brightness_restored),
-          getSelectSettingGestures());
+          getAdjustSelectedSettingGestures());
       showQuickMenuActionOverlay(eventId, context.getString(R.string.shortcut_disable_dimming));
     } else {
       // Dims the screen.
@@ -2194,7 +2238,7 @@ public class SelectorController implements UserInputEventListener {
             !audioFocusOn
                 ? context.getString(R.string.value_on)
                 : context.getString(R.string.value_off)),
-        getSelectSettingGestures());
+        getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(
         eventId, context.getString(!audioFocusOn ? R.string.value_on : R.string.value_off));
   }
@@ -2221,7 +2265,7 @@ public class SelectorController implements UserInputEventListener {
                       ? R.string.template_accessibility_volume_change_decrease
                       : R.string.template_accessibility_volume_change_increase,
                   percent);
-          announceSetting(lastChangeAccessibilityEventId, displayText, getSelectSettingGestures());
+          announceSetting(lastChangeAccessibilityEventId, displayText, getAdjustSelectedSettingGestures());
           TalkBackUI.Item item =
               value < prevValue
                   ? Item.ITEM_ACCESSIBILITY_VOLUME_DECREASE
@@ -2243,11 +2287,13 @@ public class SelectorController implements UserInputEventListener {
       refreshVolumeChangedListener(eventId);
     } else {
       String displayText =
-          context.getString(
+          atLimit(
               decreaseVolume
                   ? R.string.template_volume_change_minimum
-                  : R.string.template_volume_change_maximum);
-      announceSetting(eventId, displayText, getSelectSettingGestures());
+                  : R.string.template_volume_change_maximum,
+              context.getString(
+                  R.string.tb_template_percent, String.valueOf(accessibilityVolumePercent())));
+      announceSetting(eventId, displayText, getAdjustSelectedSettingGestures());
       TalkBackUI.Item item =
           decreaseVolume
               ? Item.ITEM_ACCESSIBILITY_VOLUME_MINIMUM
@@ -2269,12 +2315,14 @@ public class SelectorController implements UserInputEventListener {
               R.string.template_brightness_changed, ScreenBrightness.getPercent(context));
     } else {
       displayText =
-          context.getString(
+          atLimit(
               increase
                   ? R.string.template_volume_change_maximum
-                  : R.string.template_volume_change_minimum);
+                  : R.string.template_volume_change_minimum,
+              context.getString(
+                  R.string.template_brightness_changed, ScreenBrightness.getPercent(context)));
     }
-    announceSetting(eventId, displayText, getSelectSettingGestures());
+    announceSetting(eventId, displayText, getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(eventId, displayText);
   }
 
@@ -2289,11 +2337,12 @@ public class SelectorController implements UserInputEventListener {
       updateFocusDelayPreference(eventId);
     } else {
       String displayText =
-          context.getString(
+          atLimit(
               decreaseLatency
                   ? R.string.template_touch_latency_reach_minimum
-                  : R.string.template_touch_latency_reach_maximum);
-      announceSetting(eventId, displayText, getSelectSettingGestures());
+                  : R.string.template_touch_latency_reach_maximum,
+              focusDelayText());
+      announceSetting(eventId, displayText, getAdjustSelectedSettingGestures());
       showQuickMenuActionOverlay(eventId, displayText);
     }
   }
@@ -2309,11 +2358,12 @@ public class SelectorController implements UserInputEventListener {
       updateTypingFocusDelayPreference(eventId);
     } else {
       String displayText =
-          context.getString(
+          atLimit(
               decreaseLatency
                   ? R.string.template_touch_latency_reach_minimum
-                  : R.string.template_touch_latency_reach_maximum);
-      announceSetting(eventId, displayText, getSelectSettingGestures());
+                  : R.string.template_touch_latency_reach_maximum,
+              typingFocusDelayText());
+      announceSetting(eventId, displayText, getAdjustSelectedSettingGestures());
       showQuickMenuActionOverlay(eventId, displayText);
     }
   }
@@ -2332,8 +2382,59 @@ public class SelectorController implements UserInputEventListener {
         context.getResources().getStringArray(R.array.pref_lift_to_activate_entries)[
             updated.ordinal()];
     String displayText = context.getString(R.string.template_lift_to_activate_changed, modeName);
-    announceSetting(eventId, displayText, getSelectSettingGestures());
+    announceSetting(eventId, displayText, getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(eventId, displayText);
+  }
+
+  /**
+   * Says that a setting is at its lowest or highest, as {@code limitResId} does, followed by its
+   * value, so that each swipe past the end still says what the setting is.
+   */
+  private String atLimit(@StringRes int limitResId, CharSequence value) {
+    return context.getString(R.string.template_setting_limit, context.getString(limitResId), value);
+  }
+
+  private int accessibilityVolumePercent() {
+    AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+    int min =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+            ? audioManager.getStreamMinVolume(AudioManager.STREAM_ACCESSIBILITY)
+            : 0;
+    int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_ACCESSIBILITY);
+    int volume = audioManager.getStreamVolume(AudioManager.STREAM_ACCESSIBILITY);
+    return max > min ? Math.round(100f * (volume - min) / (max - min)) : 100;
+  }
+
+  private String focusDelayText() {
+    int timeout =
+        SharedPreferencesUtils.getIntFromStringPref(
+            prefs,
+            context.getResources(),
+            R.string.pref_touch_focus_time_out_key,
+            R.string.pref_touch_focus_time_out_default);
+    for (FocusDelayPrefFragment.FocusDelayPref source :
+        FocusDelayPrefFragment.FocusDelayPref.values()) {
+      if (timeout == source.getDelay()) {
+        return context.getString(source.getTitleId());
+      }
+    }
+    return "";
+  }
+
+  private String typingFocusDelayText() {
+    int timeout =
+        SharedPreferencesUtils.getIntFromStringPref(
+            prefs,
+            context.getResources(),
+            R.string.pref_typing_focus_time_out_key,
+            R.string.pref_touch_explore_time_out_default);
+    for (TypingFocusDelayPrefFragment.TypingFocusDelayPref source :
+        TypingFocusDelayPrefFragment.TypingFocusDelayPref.values()) {
+      if (timeout == source.getDelay()) {
+        return context.getString(source.getTitleId());
+      }
+    }
+    return "";
   }
 
   private void updateFocusDelayPreference(EventId eventId) {
@@ -2405,7 +2506,7 @@ public class SelectorController implements UserInputEventListener {
     announceSetting(
         eventId,
         context.getString(switchedValue ? R.string.wrap_around_on : R.string.wrap_around_off),
-        getSelectSettingGestures());
+        getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(
         eventId, context.getString(switchedValue ? R.string.value_on : R.string.value_off));
   }
@@ -2419,7 +2520,7 @@ public class SelectorController implements UserInputEventListener {
             switchedValue
                 ? R.string.tablet_held_up_faces_away_on
                 : R.string.tablet_held_up_faces_away_off),
-        getSelectSettingGestures());
+        getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(
         eventId, context.getString(switchedValue ? R.string.value_on : R.string.value_off));
   }
@@ -2442,7 +2543,7 @@ public class SelectorController implements UserInputEventListener {
     } else {
       announcementText = context.getString(R.string.speak_time_off);
     }
-    announceSetting(eventId, announcementText, getSelectSettingGestures());
+    announceSetting(eventId, announcementText, getAdjustSelectedSettingGestures());
     showQuickMenuActionOverlay(
         eventId, context.getString(switchedValue ? R.string.value_on : R.string.value_off));
   }

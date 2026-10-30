@@ -23,6 +23,7 @@ import com.google.android.accessibility.talkback.R
 import com.google.android.accessibility.talkback.actor.gemini.DataFieldUtils
 import com.google.android.accessibility.talkback.actor.gemini.GeminiActor.Action
 import com.google.android.accessibility.talkback.actor.gemini.ui.ImageQnaChatAdapter.ImageQnaMessage
+import com.google.android.accessibility.utils.Consumer
 import com.google.android.accessibility.utils.Performance
 import com.google.android.libraries.accessibility.utils.log.LogUtils
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,13 @@ open class BaseQnAChatController(
   protected val _uiState: MutableStateFlow<UiState> =
     MutableStateFlow(UiState.Chatting(listOf(), isLoading = true))
   override val uiState = _uiState.asStateFlow()
+
+  override var uiStateListener: Consumer<UiState>? = null
+
+  protected fun updateUiState(newState: UiState) {
+    _uiState.value = newState
+    uiStateListener?.accept(newState)
+  }
 
   override fun onNewCommand(command: String, imageBytesForQna: ByteArray, isVoiceInput: Boolean) {
     val state = uiState.value
@@ -93,7 +101,7 @@ open class BaseQnAChatController(
   protected fun addNewMessage(isLoading: Boolean = false, vararg messages: ImageQnaMessage) {
     val state = uiState.value
     val oldMessages = if (state is UiState.Chatting) state.messages else listOf()
-    _uiState.value = UiState.Chatting(oldMessages + messages, isLoading)
+    updateUiState(UiState.Chatting(oldMessages + messages, isLoading))
   }
 
   companion object {

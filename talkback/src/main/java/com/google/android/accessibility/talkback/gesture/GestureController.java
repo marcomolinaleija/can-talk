@@ -46,7 +46,9 @@ import static com.google.android.accessibility.talkback.Feedback.FocusDirection.
 import static com.google.android.accessibility.talkback.Feedback.FocusDirection.Action.SCROLL_LEFT;
 import static com.google.android.accessibility.talkback.Feedback.FocusDirection.Action.SCROLL_RIGHT;
 import static com.google.android.accessibility.talkback.Feedback.FocusDirection.Action.SCROLL_UP;
+import static com.google.android.accessibility.talkback.Feedback.PassThroughMode.Action.ENABLE_PASSTHROUGH;
 import static com.google.android.accessibility.talkback.Feedback.PassThroughMode.Action.PASSTHROUGH_CONFIRM_DIALOG;
+import static com.google.android.accessibility.talkback.Feedback.Speech.Action.APPEND_LAST;
 import static com.google.android.accessibility.talkback.Feedback.Speech.Action.COPY_LAST;
 import static com.google.android.accessibility.talkback.Feedback.Speech.Action.REPEAT_LAST;
 import static com.google.android.accessibility.talkback.Feedback.Speech.Action.SPELL_LAST;
@@ -109,6 +111,7 @@ import com.google.android.accessibility.talkback.selector.SelectorController.Ann
 import com.google.android.accessibility.talkback.selector.SelectorController.Setting;
 import com.google.android.accessibility.talkback.status.StatusReader;
 import com.google.android.accessibility.talkback.trainingcommon.TrainingActivity;
+import com.google.android.accessibility.talkback.trainingcommon.content.TutorialGestureUses;
 import com.google.android.accessibility.talkback.utils.DateTimeUtils;
 import com.google.android.accessibility.talkback.utils.DebugProperties;
 import com.google.android.accessibility.talkback.utils.FocusIndicatorUtils;
@@ -479,6 +482,10 @@ public class GestureController {
         service.getString(R.string.shortcut_value_pass_through_next_gesture))) {
       result =
           pipeline.returnFeedback(eventId, Feedback.passThroughMode(PASSTHROUGH_CONFIRM_DIALOG));
+    } else if (action.equals(
+        service.getString(R.string.shortcut_value_experimental_touch))) {
+      result =
+          pipeline.returnFeedback(eventId, Feedback.passThroughMode(ENABLE_PASSTHROUGH));
     } else if (action.equals(service.getString(R.string.shortcut_value_a11y_button))) {
       result =
           pipeline.returnFeedback(
@@ -547,6 +554,16 @@ public class GestureController {
     } else if (action.equals(service.getString(R.string.shortcut_value_copy_last_spoken_phrase))) {
       pipeline.returnFeedback(
           eventId, Feedback.part().setSpeech(Feedback.Speech.create(COPY_LAST)));
+    } else if (action.equals(service.getString(R.string.shortcut_value_clipboard_history))) {
+      result = service.showClipboardHistory();
+    } else if (action.equals(service.getString(R.string.shortcut_value_braille_app_search))) {
+      result = service.showBrailleAppSearch();
+    } else if (action.equals(service.getString(R.string.shortcut_value_braille_web_navigation))) {
+      result = service.showBrailleWebNavigation();
+    } else if (action.equals(
+        service.getString(R.string.shortcut_value_append_last_spoken_phrase))) {
+      pipeline.returnFeedback(
+          eventId, Feedback.part().setSpeech(Feedback.Speech.create(APPEND_LAST)));
     } else if (action.equals(service.getString(R.string.shortcut_value_braille_keyboard))) {
       String inputMethodInfoId = KeyboardUtils.getEnabledImeId(service, service.getPackageName());
       if (!TextUtils.isEmpty(inputMethodInfoId)) {
@@ -656,16 +673,14 @@ public class GestureController {
         && action.equals(
             service.getString(R.string.shortcut_value_announce_current_time_and_date))) {
       result =
-          pipeline.returnFeedback(
-              eventId, Feedback.speech(DateTimeUtils.getCurrentTimeAndDate(service)));
+          announceRequestedInformation(eventId, DateTimeUtils.getCurrentTimeAndDate(service));
     } else if (FeatureFlagReader.enableAnnounceBatteryState(service)
         && action.equals(service.getString(R.string.shortcut_value_announce_battery_state))) {
       result =
-          pipeline.returnFeedback(
-              eventId, Feedback.speech(batteryMonitor.getBatteryStateDescription()));
+          announceRequestedInformation(eventId, batteryMonitor.getBatteryStateDescription());
     } else if (action.equals(service.getString(R.string.shortcut_value_announce_status))) {
       result =
-          pipeline.returnFeedback(eventId, Feedback.speech(statusReader.describe()));
+          announceRequestedInformation(eventId, statusReader.describe());
     } else if (FeatureFlagReader.enableAnnounceCurrentTitle(service)
         && action.equals(service.getString(R.string.shortcut_value_announce_current_title))) {
       result =
@@ -785,6 +800,15 @@ public class GestureController {
     // Checked last: it asks the app for the window's nodes, which holds up every gesture.
     if (!isOnTrainingPage()) {
       return false;
+    }
+
+    // An announcement says what the gesture does by default. If the user gave the gesture another
+    // action, say the gesture and that action instead.
+    if (!isFingerprintGesture
+        && feedbackResId != ANNOUNCE_REAL_ACTION
+        && !TutorialGestureUses.announcementStillTrue(
+            service, feedbackResId, gestureShortcutMapping.getActionKeyFromGestureId(gestureId))) {
+      feedbackResId = ANNOUNCE_REAL_ACTION;
     }
 
     String feedbackString;
@@ -911,6 +935,14 @@ public class GestureController {
     } else {
       return null;
     }
+  }
+
+  /** Explicit information requests remain audible during media playback and calls. */
+  private boolean announceRequestedInformation(EventId eventId, CharSequence text) {
+    return pipeline.returnFeedback(
+        eventId,
+        Feedback.speech(
+            text, SpeakOptions.create().setFlags(FeedbackItem.FLAG_FORCE_FEEDBACK_ALL)));
   }
 
   /** voice feedback function */

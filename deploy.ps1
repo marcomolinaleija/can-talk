@@ -14,7 +14,7 @@ if (-not $SkipBuild) {
 	& "$root\gradlew.bat" assemblePhoneDebug --console=plain
 	if ($LASTEXITCODE) { exit $LASTEXITCODE }
 }
-$apk = Get-ChildItem "$root\build\outputs\apk\phone\debug\*.apk" | Sort-Object LastWriteTime | Select-Object -Last 1
+$apk = Get-ChildItem "$root\build\outputs\apk\phone\*\*.apk" | Sort-Object LastWriteTime | Select-Object -Last 1
 if (-not $apk) { throw 'No APK found.' }
 $adbArgs = if ($Device) { @('-s', $Device) } else { @() }
 Write-Host "Installing $($apk.Name)"

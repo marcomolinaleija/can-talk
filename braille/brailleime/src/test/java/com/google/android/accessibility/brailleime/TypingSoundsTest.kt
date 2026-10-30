@@ -172,7 +172,32 @@ class TypingSoundsTest {
     TypingSoundSettings.prefs(context).edit().putString(TypingSoundSettings.PROFILE_KEY, "unknown").commit()
     assertEquals(TypingSoundSettings.Profile.THEME, TypingSoundSettings.profile(context))
     assertEquals(0f, TypingSoundSettings.volume(false, -5, 1f), 0f)
-    assertEquals(1f, TypingSoundSettings.volume(false, 150, 1f), 0f)
+    assertEquals(1.5f, TypingSoundSettings.volume(false, 150, 1f), 0f)
+    assertEquals(2f, TypingSoundSettings.volume(false, 200, 0.25f), 0f)
+    assertEquals(2f, TypingSoundSettings.volume(false, 900, 1f), 0f)
+    assertEquals(0.3f, TypingSoundSettings.volume(true, 200, 0.6f), 0.0001f)
+  }
+
+  @Test fun boostedVolume_withNoReadableFile_keepsSystemFallbackWithinItsSupportedRange() {
+    TypingSoundSettings.prefs(context).edit().putBoolean(TypingSoundSettings.FOLLOW_KEY, false)
+      .putInt(TypingSoundSettings.VOLUME_KEY, 200).commit()
+    BrailleImeTypingSounds.prepare(context) { _, _ -> null }
+    val audio = context.getSystemService(AudioManager::class.java)
+    val original = audio.getStreamVolume(AudioManager.STREAM_ACCESSIBILITY)
+    BrailleImeTypingSounds.play(context, key)
+    assertEquals(listOf(AudioManager.FX_KEYPRESS_STANDARD to 1f), RecordingAudio.calls)
+    assertEquals(original, audio.getStreamVolume(AudioManager.STREAM_ACCESSIBILITY))
+    assertEquals(1f, ThemeSounds.readerSpeechVolume, 0f)
+  }
+
+  @Test fun closingTheUi_cancelsNormalPreviewWithoutDiscardingTheLoadedSound() {
+    val pool = prepare()
+    BrailleImeTypingSounds.play(context, key, true)
+    BrailleImeTypingSounds.cancelPendingPreview()
+    shadowOf(pool).notifyPathLoaded(path, true)
+    assertFalse(shadowOf(pool).wasPathPlayed(path))
+    BrailleImeTypingSounds.play(context, key)
+    assertEquals(1, shadowOf(pool).getPathPlaybacks(path).size)
   }
 
   @Implements(AudioManager::class)

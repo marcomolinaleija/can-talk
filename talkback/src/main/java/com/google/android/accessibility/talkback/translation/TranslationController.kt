@@ -82,16 +82,22 @@ class TranslationController @JvmOverloads constructor(
 
   override fun shouldTransform(item: FeedbackItem) = allowed(item) && !item.isTranslationApplied &&
     (continuous || item.hasFlag(FeedbackItem.FLAG_TRANSLATE_ONCE)) &&
-    !item.translationSource.isNullOrBlank() && item.translationSource.length <= engine.provider.maxInputCharacters
+    !item.translationSource.isNullOrBlank() &&
+    item.translationSource.any { it.isLetter() } &&
+    item.translationSource.length <= engine.provider.maxInputCharacters
 
   override fun transform(item: FeedbackItem, callback: SpeechTextTransformer.Callback): Runnable {
     val mode = prefs.getString(TranslationSettings.CACHE, "app")
     val scope = if (mode == "global") "*" else item.translationPackage
     val target = TranslationSettings.target(prefs)
     val source = TranslationSettings.source(prefs)
-    if (source == target) { callback.ready(null); return Runnable {} }
+    val swapTarget = TranslationSettings.swapTarget(prefs, source, target)
     val cancelled = java.util.concurrent.atomic.AtomicBoolean()
-    val cancelRequest = engine.request(scope, TranslationRequest(item.translationSource, source, target), mode != "off") { result ->
+    val cancelRequest = engine.request(
+      scope,
+      TranslationRequest(item.translationSource, source, target, swapTarget),
+      mode != "off",
+    ) { result ->
       handler.post {
         if (cancelled.get() || closed) return@post
         // Recheck consent, lock, exclusions, pause and lifecycle after network completion.
@@ -100,7 +106,10 @@ class TranslationController @JvmOverloads constructor(
           speech.interruptPendingTextTransformation()
           return@post
         }
-        callback.ready(result?.let { SpeechTextTransformer.Result(it.text, Locale.forLanguageTag(target)) })
+        callback.ready(result?.let {
+          val effectiveTarget = it.targetLanguage.ifBlank { target }
+          SpeechTextTransformer.Result(it.text, Locale.forLanguageTag(effectiveTarget))
+        })
         if (result == null && SystemClock.uptimeMillis() - lastFailureAt >= 60_000) {
           lastFailureAt = SystemClock.uptimeMillis()
           announce(R.string.translation_failed, SpeechController.QUEUE_MODE_QUEUE)

@@ -42,6 +42,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Ints;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.text.ParseException;
@@ -72,6 +73,7 @@ public class BrailleUserPreferences {
   private static final boolean SHOW_SWITCH_INPUT_CODE_GESTURE_TIP = true;
   private static final boolean ACCUMULATE_MODE_DEFAULT = true;
   private static final boolean KEEP_OPEN_AFTER_SEND_DEFAULT = true;
+  private static final boolean AUTO_CAPITALIZE_DEFAULT = true;
   private static final boolean REVERSE_DOTS_MODE_DEFAULT = false;
   private static final boolean FLIP_DOTS_VERTICALLY_DEFAULT = false;
   private static final boolean TABLET_HELD_UP_FACES_AWAY_DEFAULT = true;
@@ -304,6 +306,22 @@ public class BrailleUserPreferences {
             KEEP_OPEN_AFTER_SEND_DEFAULT);
   }
 
+  /** Reads whether auto-capitalization of sentences is enabled. */
+  public static boolean readAutoCapitalize(Context context) {
+    return getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
+        .getBoolean(
+            context.getString(R.string.pref_brailleime_auto_capitalize),
+            AUTO_CAPITALIZE_DEFAULT);
+  }
+
+  /** Writes whether auto-capitalization of sentences is enabled. */
+  public static void writeAutoCapitalize(Context context, boolean autoCapitalize) {
+    getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
+        .edit()
+        .putBoolean(context.getString(R.string.pref_brailleime_auto_capitalize), autoCapitalize)
+        .apply();
+  }
+
   /** Reads reverse dots mode status. */
   public static boolean readReverseDotsMode(Context context) {
     return getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
@@ -516,6 +534,14 @@ public class BrailleUserPreferences {
     getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
         .edit()
         .putBoolean(context.getString(R.string.pref_brailleime_auto_launch_tutorial), false)
+        .apply();
+  }
+
+  /** Sets that tutorial will launch when Braille keyboard opens next time. */
+  public static void writeLaunchTutorialNextTime(Context context) {
+    getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
+        .edit()
+        .putBoolean(context.getString(R.string.pref_brailleime_auto_launch_tutorial), true)
         .apply();
   }
 
@@ -1183,8 +1209,19 @@ public class BrailleUserPreferences {
         getSharedPreferences(context, BRAILLE_SHARED_PREFS_FILENAME)
             .getString(context.getString(R.string.pref_bd_gesture_action_key), "");
     Type type = new TypeToken<HashMap<BrailleImeAction, List<String>>>() {}.getType();
-    Map<BrailleImeAction, List<String>> map = new Gson().fromJson(raw, type);
-    return map == null ? new HashMap<>() : map;
+    try {
+      Map<BrailleImeAction, List<String>> map = new Gson().fromJson(raw, type);
+      if (map == null) {
+        return new HashMap<>();
+      }
+      // Gson represents unknown enum names as null. Never pass them to gesture routing/UI.
+      map.entrySet().removeIf(entry -> entry.getKey() == null || entry.getValue() == null);
+      map.values().forEach(ids -> ids.removeIf(id -> id == null));
+      return map;
+    } catch (JsonParseException exception) {
+      // Keep the stored value untouched; damaged imports must not take down the keyboard.
+      return new HashMap<>();
+    }
   }
 
   /** Writes whether to show change gesture intro again. */

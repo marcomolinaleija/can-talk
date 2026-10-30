@@ -512,6 +512,10 @@ public class GeminiActor {
         requestIdMap.clear();
       }
       requestIdMap.put(requestId, /* isServerSide= */ false);
+      byte[] imageBytes = DataFieldUtils.encodeImageToByteArray(image);
+      if (imageBytes != null) {
+        cachedImageMap.put(requestId, imageBytes);
+      }
       progressTonePlayer.stop();
       geminiEndpoint.cancelCommand();
       progressTonePlayer.play(/* playTone= */ true, /* delayPlayTone= */ !manualTrigger);
@@ -527,17 +531,21 @@ public class GeminiActor {
     byte[] image = cachedImageMap.get(requestId);
     // Clear all caches once there is an image used by the image caption result dialog.
     cachedImageMap.clear();
+    if (image == null) {
+      image = new byte[0];
+    }
 
     if (isScreenDescription && !GeminiConfiguration.screenOverviewEnabled(context)) {
       LogUtils.d(TAG, "Screen description is disabled");
       return;
     }
 
+    final byte[] finalImage = image;
     if (isSupportImageQna(requestId)) {
       mainHandler.post(
           () ->
               bottomSheetResultOverlay.showImageCaptionResultBottomSheet(
-                  image,
+                  finalImage,
                   imageDescriptionResult,
                   iconLabelResult,
                   ocrTextResult,
@@ -546,7 +554,12 @@ public class GeminiActor {
       mainHandler.post(
           () ->
               new CaptionResultDialog(
-                      context, imageDescriptionResult, iconLabelResult, ocrTextResult)
+                      context,
+                      finalImage,
+                      imageDescriptionResult,
+                      iconLabelResult,
+                      ocrTextResult,
+                      isScreenDescription)
                   .showDialog());
     }
     if (requestIdMap.containsKey(requestId)) {
@@ -576,6 +589,7 @@ public class GeminiActor {
               () ->
                   new CaptionResultDialog(
                           context,
+                          overview.getImageBytes(),
                           Result.create(
                               CaptionType.SCREEN_OVERVIEW, overview.getOverview().getSummary()))
                       .showDialog());
@@ -607,10 +621,6 @@ public class GeminiActor {
   }
 
   private boolean isSupportImageQna(int requestId) {
-    if (!isServerSideRequest(requestId)) {
-      return false;
-    }
-
     return GeminiConfiguration.imageQnaEnabled(context);
   }
 

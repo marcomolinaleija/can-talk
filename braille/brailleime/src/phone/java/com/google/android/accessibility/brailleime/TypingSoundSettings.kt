@@ -11,6 +11,7 @@ object TypingSoundSettings {
   const val PROFILE_KEY = "pref_brailleime_sound_profile"
   const val FOLLOW_KEY = "pref_brailleime_sound_follow_reader"
   const val VOLUME_KEY = "pref_brailleime_sound_volume"
+  const val MAX_VOLUME_PERCENT = 200
 
   enum class Profile(val value: String, val title: Int, val suffix: String? = null) {
     THEME("theme", R.string.braille_sound_theme),
@@ -36,7 +37,8 @@ object TypingSoundSettings {
     prefs(context).getInt(VOLUME_KEY, 50), ThemeSounds.readerSpeechVolume)
 
   internal fun volume(follow: Boolean, percent: Int, readerGain: Float): Float =
-    if (follow) 0.5f * readerGain.coerceIn(0f, 1f) else percent.coerceIn(0, 100) / 100f
+    if (follow) 0.5f * readerGain.coerceIn(0f, 1f)
+    else percent.coerceIn(0, MAX_VOLUME_PERCENT) / 100f
 
   /** Only offer Samsung choices whose typing and deletion samples can actually be read. */
   fun availableProfiles(): List<Profile> = Profile.entries.filter { profile ->

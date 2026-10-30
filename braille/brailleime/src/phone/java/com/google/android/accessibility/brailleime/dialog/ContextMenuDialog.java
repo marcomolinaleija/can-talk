@@ -19,7 +19,9 @@ package com.google.android.accessibility.brailleime.dialog;
 import android.app.Dialog;
 import android.app.KeyguardManager;
 import android.content.Context;
+import android.content.Intent;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.accessibility.brailleime.settings.BrailleImeInstructionActivity;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.View;
@@ -57,6 +59,8 @@ public class ContextMenuDialog extends ViewAttachedDialog {
     void onTutorialClosed();
 
     void onCalibration();
+
+    default void onWebNavigation() {}
   }
 
   private AlertDialog contextMenuDialog;
@@ -73,6 +77,8 @@ public class ContextMenuDialog extends ViewAttachedDialog {
           R.string.context_menu_input_language_selection,
           R.string.context_menu_switch_contracted_status_selection,
           R.string.context_menu_layout_calibration,
+          com.google.android.accessibility.braille.common.R.string.bk_gesture_web_navigation,
+          R.string.context_menu_instruction_selection,
           R.string.context_menu_review_gestures_selection,
           R.string.context_menu_tutorial_selection,
           R.string.context_menu_tutorial_finish,
@@ -129,6 +135,13 @@ public class ContextMenuDialog extends ViewAttachedDialog {
   private void updateItemsAndActionsList() {
     itemsAndActions.clear();
     for (@StringRes int strRes : ITEM_STRING_IDS) {
+      if (strRes == com.google.android.accessibility.braille.common.R.string.bk_gesture_web_navigation) {
+        if (!tutorialMode) {
+          itemsAndActions.add(new MenuItem(context.getString(strRes),
+              /* closeWhenClick= */ true, callback::onWebNavigation));
+        }
+        continue;
+      }
       if (strRes == R.string.context_menu_switch_contracted_status_selection) {
         if (!BrailleUserPreferences.readCurrentActiveInputCodeAndCorrect(context)
             .isSupportsContracted(context)) {
@@ -186,6 +199,12 @@ public class ContextMenuDialog extends ViewAttachedDialog {
                   /* closeWhenClick= */ true,
                   generateItemAction(strRes)));
         }
+      } else if (strRes == R.string.context_menu_instruction_selection) {
+        itemsAndActions.add(
+            new MenuItem(
+                context.getString(strRes),
+                /* closeWhenClick= */ true,
+                generateItemAction(strRes)));
       } else if (strRes == R.string.context_menu_layout_calibration) {
         if (!tutorialMode) {
           itemsAndActions.add(
@@ -221,6 +240,12 @@ public class ContextMenuDialog extends ViewAttachedDialog {
               context, !BrailleUserPreferences.readContractedMode(context));
     } else if (strRes == R.string.context_menu_review_gestures_selection) {
       return this::showBasicActionsDialog;
+    } else if (strRes == R.string.context_menu_instruction_selection) {
+      return () -> {
+        Intent intent = new Intent(context, BrailleImeInstructionActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+      };
     } else if (strRes == R.string.context_menu_tutorial_selection) {
       return callback::onTutorialOpen;
     } else if (strRes == R.string.context_menu_tutorial_finish) {

@@ -174,7 +174,10 @@ public class GeminiRestEndpoint implements GeminiEndpoint {
           new GeminiRestResponseCallback() {
             @Override
             public void onResponse(GeminiResponse response) {
-              if (response.finishReason() != null
+              if (!TextUtils.isEmpty(response.text())) {
+                geminiResponseListener.onResponse(FinishReason.STOP, response.text());
+                LogUtils.v(TAG, "Gemini succeeds with text");
+              } else if (response.finishReason() != null
                   && response.finishReason().equals(FINISH_REASON_STOP)) { // Positive acknowledge
                 geminiResponseListener.onResponse(FinishReason.STOP, response.text());
                 LogUtils.v(TAG, "Gemini succeeds");

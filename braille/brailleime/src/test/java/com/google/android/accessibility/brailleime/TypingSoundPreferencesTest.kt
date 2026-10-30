@@ -66,7 +66,7 @@ class TypingSoundPreferencesTest {
     assertTrue(fragment.findPreference<SwitchPreferenceCompat>(TypingSoundSettings.FOLLOW_KEY)!!.isChecked)
     val volume = fragment.findPreference<SeekBarPreference>(TypingSoundSettings.VOLUME_KEY)!!
     assertEquals(0, volume.min)
-    assertEquals(100, volume.max)
+    assertEquals(200, volume.max)
     assertEquals(50, volume.value)
     assertFalse(volume.isEnabled)
   }
@@ -92,4 +92,21 @@ class TypingSoundPreferencesTest {
   }
 
   private fun getString(id: Int) = activity.getString(id)
+
+  @Test fun amplifiedVolume_isSavedAndRetainedWhenPreferencesAreReopened() {
+    fragment.findPreference<SwitchPreferenceCompat>(
+      getString(com.google.android.accessibility.braille.common.R.string.pref_brailleime_typing_sounds))!!
+      .isChecked = true
+    fragment.findPreference<SwitchPreferenceCompat>(TypingSoundSettings.FOLLOW_KEY)!!.isChecked = false
+    fragment.findPreference<SeekBarPreference>(TypingSoundSettings.VOLUME_KEY)!!.value = 200
+    assertEquals(2f, TypingSoundSettings.volume(activity), 0f)
+    activity.supportFragmentManager.beginTransaction().remove(fragment).commitNow()
+    fragment = SoundFragment()
+    activity.supportFragmentManager.beginTransaction().add(android.R.id.content, fragment).commitNow()
+    val volume = fragment.findPreference<SeekBarPreference>(TypingSoundSettings.VOLUME_KEY)!!
+    assertEquals(200, volume.value)
+    assertTrue(volume.isEnabled)
+    assertEquals(200, TypingSoundSettings.prefs(activity).getInt(TypingSoundSettings.VOLUME_KEY, 0))
+    assertEquals(2f, TypingSoundSettings.volume(activity), 0f)
+  }
 }

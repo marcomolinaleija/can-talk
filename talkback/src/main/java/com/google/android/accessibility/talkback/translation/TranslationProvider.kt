@@ -18,8 +18,17 @@ package com.google.android.accessibility.talkback.translation
 
 import java.util.concurrent.CancellationException
 
-data class TranslationRequest(val text: String, val source: String, val target: String)
-data class TranslationResult(val text: String, val detectedSource: String? = null)
+data class TranslationRequest(
+  val text: String,
+  val source: String,
+  val target: String,
+  val swapTarget: String? = null,
+)
+data class TranslationResult(
+  val text: String,
+  val detectedSource: String? = null,
+  val targetLanguage: String = "",
+)
 
 /** Implement only this contract to add Cloud, ML Kit, Gemini or a self-hosted service. */
 interface TranslationProvider {

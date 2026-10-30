@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="shortcut_value_braille_app_search" translatable="false">BRAILLE_APP_SEARCH</string>
+  <string name="braille_app_search_title">Braille search</string>
+  <string name="braille_app_search_opened">Search opened. %1$s</string>
+  <string name="braille_app_search_closed">Search closed</string>
+  <string name="braille_app_search_type_name">Type an app name in braille</string>
+  <string name="braille_app_search_result">%1$s. %2$d of %3$d</string>
+  <string name="braille_app_search_no_results">%1$s. No matching apps</string>
+  <string name="braille_app_search_hint">Type in braille. Three fingers left or right switches between apps and screen elements. One finger up or down chooses a result. One finger left deletes; right adds a space. Two fingers right opens the app or activates the element. Two fingers left or down closes search.</string>
+  <string name="braille_app_search_unavailable">Unlock the phone to use braille search. This interface requires Android 11 or later.</string>
+  <string name="braille_app_search_failed">Could not open braille search</string>
+  <string name="braille_app_search_launch_failed">Could not open %1$s</string>
+  <string name="braille_search_apps">Apps</string>
+  <string name="braille_search_elements">Elements</string>
+  <string name="braille_search_type_element">Type the name or text of a screen element in braille</string>
+  <string name="braille_search_no_elements">%1$s. No matching elements</string>
+  <string name="braille_search_element_unavailable">The element is no longer available on the original screen</string>
+  <string name="braille_search_activation_failed">Could not activate the element</string>
+</resources>

@@ -27,14 +27,31 @@
       android:id="@+id/image_caption_view_pager"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
-      android:layout_above="@+id/close_button"/>
+      android:layout_above="@+id/caption_dialog_actions"/>
 
-  <com.google.android.material.button.MaterialButton
-      android:id="@+id/close_button"
-      style="@style/ImageQnaCloseButtonStyle"
+  <LinearLayout
+      android:id="@+id/caption_dialog_actions"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_alignParentBottom="true"
-      android:text="@string/positive_button_gemini_result_dialog"
-      android:textSize="16sp"/>
+      android:orientation="horizontal">
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/caption_share_button"
+        style="@style/ImageQnaCloseButtonStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minHeight="48dp"
+        android:text="@string/caption_share_title"
+        android:textSize="16sp" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/close_button"
+        style="@style/ImageQnaCloseButtonStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:minHeight="48dp"
+        android:text="@string/positive_button_gemini_result_dialog"
+        android:textSize="16sp" />
+  </LinearLayout>
 </RelativeLayout>

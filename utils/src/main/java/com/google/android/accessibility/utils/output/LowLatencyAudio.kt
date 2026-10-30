@@ -45,7 +45,8 @@ import java.util.concurrent.TimeUnit
  * next sound starts at once, then pauses. Its thread ends then, and nothing runs until the next
  * sound or speech. While an app records from the microphone, the track pauses as soon as what it
  * played has been heard: some apps, such as Gemini, don't take the user's voice while accessibility
- * audio plays, even silence.
+ * audio plays, even silence. Speech and sounds that start while an app records play the usual
+ * way instead, for the same reason.
  */
 class LowLatencyAudio private constructor(context: Context, private val attributes: AudioAttributes) {
   /** Output frames per second. */
@@ -128,12 +129,24 @@ class LowLatencyAudio private constructor(context: Context, private val attribut
 
   /** Plays [clip] at [left] and [right] volumes from 0 to 1, and [rate], 1 for its own speed. */
   fun play(clip: Clip, left: Float, right: Float, rate: Float) {
+    enqueueClip(clip, left, right, rate)
+  }
+
+  /** Amplifies a short sound up to twice its amplitude, before the mixer's sample limiter. */
+  fun playAmplified(clip: Clip, gain: Float): Boolean {
+    if (!gain.isFinite() || gain <= 0f) return false
+    val boundedGain = gain.coerceAtMost(2f)
+    return enqueueClip(clip, boundedGain, boundedGain, 1f)
+  }
+
+  private fun enqueueClip(clip: Clip, left: Float, right: Float, rate: Float): Boolean {
     // A clip made for a player at another rate, before this one replaced it, still plays in tune.
     val step = rate.toDouble().coerceIn(0.25, 4.0) * clip.rate / sampleRate
     synchronized(lock) {
-      if (released || broken) return
+      if (released || broken) return false
       clips += PlayingClip(clip, left, right, step)
       wake()
+      return true
     }
   }
 
@@ -873,6 +886,13 @@ class LowLatencyAudio private constructor(context: Context, private val attribut
     /** The players made so far, without making new ones. */
     /** Whether an app is recording from the microphone, set by [setMicrophoneInUse]. */
     @Volatile private var microphoneInUse = false
+
+    /**
+     * Whether an app is recording from the microphone. Speech and sounds then play the usual way:
+     * some apps, such as Gemini, don't hear the user while the accessibility service itself plays
+     * audio, but do while the speech engine plays it.
+     */
+    @JvmStatic fun isMicrophoneInUse(): Boolean = microphoneInUse
 
     /**
      * Tells the players whether an app is recording from the microphone, so that while one is,

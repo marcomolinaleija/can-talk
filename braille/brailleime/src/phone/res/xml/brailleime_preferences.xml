@@ -5,6 +5,16 @@
   <PreferenceCategory android:key="@string/pref_brailleime_preferences_category">
 
     <Preference
+        android:key="@string/pref_brailleime_instruction"
+        android:summary="@string/summary_pref_brailleime_instruction"
+        android:title="@string/title_pref_brailleime_instruction" />
+
+    <Preference
+        android:key="@string/pref_brailleime_interactive_tutorial"
+        android:summary="@string/summary_pref_brailleime_interactive_tutorial"
+        android:title="@string/title_pref_brailleime_interactive_tutorial" />
+
+    <Preference
         android:key="@string/pref_brailleime_turn_on_braille_keyboard"
         android:title="@string/set_up_braille_keyboard" />
 
@@ -38,6 +48,17 @@
         android:key="@string/pref_brailleime_keep_open_after_send"
         android:summary="@string/summary_pref_keep_open_after_send"
         android:title="@string/title_pref_keep_open_after_send" />
+
+    <SwitchPreferenceCompat
+        android:defaultValue="true"
+        android:key="@string/pref_brailleime_auto_capitalize"
+        android:summary="@string/summary_pref_auto_capitalize"
+        android:title="@string/title_pref_auto_capitalize" />
+
+    <Preference
+        android:key="@string/pref_brailleime_point_recalibration"
+        android:summary="@string/summary_pref_point_recalibration"
+        android:title="@string/title_pref_point_recalibration" />
 
     <SwitchPreferenceCompat
         android:key="@string/pref_brailleime_accumulate_mode"
@@ -80,7 +101,7 @@
     <SeekBarPreference
         android:key="pref_brailleime_sound_volume"
         android:defaultValue="50"
-        android:max="100"
+        android:max="200"
         app:min="0"
         app:showSeekBarValue="true"
         android:title="@string/braille_sound_volume_title"
