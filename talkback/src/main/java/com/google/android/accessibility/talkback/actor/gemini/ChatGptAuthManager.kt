@@ -306,11 +306,11 @@ object ChatGptAuthManager {
           val parts = firstLine.split(" ")
           val requestPath = if (parts.size > 1) parts[1] else ""
           val uri = Uri.parse("http://localhost:$LOOPBACK_PORT$requestPath")
-          val code = uri.getQueryParameter("code")
-          val state = uri.getQueryParameter("state")
-          val callbackClientId = uri.getQueryParameter("client_id")
-          val error = uri.getQueryParameter("error")
-          val errorDesc = uri.getQueryParameter("error_description")
+          val code = uri.getQueryParameter("code")?.trim()
+          val state = uri.getQueryParameter("state")?.trim()
+          val callbackClientId = uri.getQueryParameter("client_id")?.trim()
+          val error = uri.getQueryParameter("error")?.trim()
+          val errorDesc = uri.getQueryParameter("error_description")?.trim()
 
           LogUtils.e(TAG, "Callback received: code=%s, state=%s, callbackClientId=%s, error=%s",
             code?.take(8), state, callbackClientId, error)
@@ -444,9 +444,10 @@ object ChatGptAuthManager {
       val postParams = mapOf(
         "grant_type" to "authorization_code",
         "client_id" to clientId,
-        "code" to code,
+        "code" to code.trim(),
         "redirect_uri" to REDIRECT_URI,
-        "code_verifier" to codeVerifier
+        "code_verifier" to codeVerifier.trim(),
+        "resource" to RESOURCE
       )
 
       val jsonResponse = executePostForm(TOKEN_ENDPOINT, postParams)
@@ -557,8 +558,9 @@ object ChatGptAuthManager {
     return try {
       val postParams = mapOf(
         "grant_type" to "refresh_token",
-        "refresh_token" to refreshToken,
-        "client_id" to clientId
+        "refresh_token" to refreshToken.trim(),
+        "client_id" to clientId.trim(),
+        "resource" to RESOURCE
       )
 
       val jsonResponse = executePostForm(TOKEN_ENDPOINT, postParams) ?: return false

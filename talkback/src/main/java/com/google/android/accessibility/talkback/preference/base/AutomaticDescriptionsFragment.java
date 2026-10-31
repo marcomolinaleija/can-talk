@@ -163,10 +163,7 @@ public class AutomaticDescriptionsFragment extends TalkbackBaseFragment {
   public void onResume() {
     super.onResume();
 
-    Preference chatGptPref = findPreference(ChatGptPreference.PREF_KEY_ACCOUNT);
-    if (chatGptPref != null) {
-      ChatGptPreference.updateAccountSummary(chatGptPref);
-    }
+    ChatGptPreference.refreshUi(this);
 
     // Cancels the download completion notification because users may be led to the settings page by
     // the notification.

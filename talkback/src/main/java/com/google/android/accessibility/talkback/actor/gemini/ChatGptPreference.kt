@@ -107,6 +107,25 @@ object ChatGptPreference {
   }
 
   /**
+   * Refreshes both the ChatGPT account summary and the AI provider selector summary and value.
+   */
+  @JvmStatic
+  fun refreshUi(fragment: PreferenceFragmentCompat) {
+    fragment.findPreference<Preference>(PREF_KEY_ACCOUNT)?.let { updateAccountSummary(it) }
+    fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER)?.let { pref ->
+      val prefs = SharedPreferencesUtils.getSharedPreferences(fragment.requireContext())
+      val currentProvider =
+        when {
+          OnDeviceAiSettings.isOnDevice(prefs) -> ChatGptAuthManager.PROVIDER_DEVICE
+          ChatGptAuthManager.isChatGptActive(prefs) -> ChatGptAuthManager.PROVIDER_CHATGPT
+          else -> ChatGptAuthManager.PROVIDER_GEMINI
+        }
+      pref.value = currentProvider
+      updateProviderSummary(pref, currentProvider)
+    }
+  }
+
+  /**
    * Refreshes the summary of the ChatGPT account preference.
    */
   @JvmStatic
