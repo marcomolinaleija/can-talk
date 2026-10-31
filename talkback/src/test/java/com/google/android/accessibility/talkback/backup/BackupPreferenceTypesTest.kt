@@ -67,4 +67,34 @@ class BackupPreferenceTypesTest {
     assertEquals(BackupCategory.NVDA_REMOTE_SETTINGS, BackupCategory.forKey(BackupStore.NVDA_REMOTE_TUTORIAL, "last_lesson"))
     assertEquals(BackupCategory.NVDA_REMOTE_SETTINGS, BackupCategory.forKey(BackupStore.NVDA_REMOTE_TUTORIAL, "done/basics"))
   }
+
+  @Test
+  fun aiSettingsAndApiKeysTypes() {
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_on_device_ai_provider"))
+    assertEquals(BackupCategory.SETTINGS, BackupCategory.forKey(BackupStore.READER, "pref_on_device_ai_provider"))
+
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_ai_provider"))
+    assertEquals(BackupCategory.SETTINGS, BackupCategory.forKey(BackupStore.READER, "pref_ai_provider"))
+
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_gemini_api_key"))
+    assertEquals(BackupCategory.API_KEYS, BackupCategory.forKey(BackupStore.READER, "pref_gemini_api_key"))
+
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_groq_api_key"))
+    assertEquals(BackupCategory.API_KEYS, BackupCategory.forKey(BackupStore.READER, "pref_groq_api_key"))
+
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_chatgpt_access_token"))
+    assertEquals(BackupCategory.API_KEYS, BackupCategory.forKey(BackupStore.READER, "pref_chatgpt_access_token"))
+
+    assertEquals(TalkBackBackup.PrefType.LONG, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_chatgpt_token_expires_at"))
+    assertEquals(BackupCategory.API_KEYS, BackupCategory.forKey(BackupStore.READER, "pref_chatgpt_token_expires_at"))
+
+    assertEquals(TalkBackBackup.PrefType.STRING, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_chatgpt_model"))
+    assertEquals(BackupCategory.API_KEYS, BackupCategory.forKey(BackupStore.READER, "pref_chatgpt_model"))
+
+    assertEquals(TalkBackBackup.PrefType.BOOLEAN, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_on_device_ai_gpu"))
+    assertEquals(BackupCategory.SETTINGS, BackupCategory.forKey(BackupStore.READER, "pref_on_device_ai_gpu"))
+
+    assertEquals(TalkBackBackup.PrefType.INT, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_on_device_ai_timeout_seconds"))
+    assertEquals(BackupCategory.SETTINGS, BackupCategory.forKey(BackupStore.READER, "pref_on_device_ai_timeout_seconds"))
+  }
 }

@@ -95,6 +95,18 @@ class BackupCompatibilityTest {
     assertEquals(document, BackupCodec.decode(json))
   }
 
+  @Test fun v2SelectiveRestoreMigratesLegacyAiProviderAndPreservesKeys() {
+    val legacySetting = PrefEntry("pref_ai_provider", PrefType.STRING, "chatgpt")
+    val groqKey = PrefEntry("pref_groq_api_key", PrefType.STRING, "gsk_test123")
+    val list = mutableListOf(legacySetting, groqKey)
+    SelectiveBackup.migrateReaderAiPreferences(list)
+    val onDevice = list.find { it.key == "pref_on_device_ai_provider" }
+    assertNotNull(onDevice)
+    assertEquals("chatgpt", onDevice?.value)
+    assertEquals("chatgpt", list.find { it.key == "pref_ai_provider" }?.value)
+    assertEquals("gsk_test123", list.find { it.key == "pref_groq_api_key" }?.value)
+  }
+
   private fun assertFailure(expected: BackupFailure, json: String) {
     try {
       BackupCodec.decode(json)

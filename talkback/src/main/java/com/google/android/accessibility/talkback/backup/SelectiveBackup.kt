@@ -114,6 +114,7 @@ internal object SelectiveBackup {
     for (section in data.sections.values) for ((store, entries) in section.preferences) {
       byStore.getOrPut(store) { mutableListOf() }.addAll(entries)
     }
+    byStore[BackupStore.READER]?.let { migrateReaderAiPreferences(it) }
     val stores = byStore.keys.associateWith { it.open(context) }
     val snapshots = linkedMapOf<BackupStore, Map<String, Any?>>()
     for ((store, entries) in byStore) {
@@ -300,12 +301,28 @@ internal object SelectiveBackup {
     if (store == BackupStore.EMOJI || store == BackupStore.CLIPBOARD
       || store == BackupStore.NVDA_REMOTE_GESTURES || store == BackupStore.NVDA_REMOTE_SETTINGS
       || value.key == "pref_bd_gesture_action_key"
-      || value.key in setOf("pref_gemini_api_key", "pref_groq_api_key", "pref_on_device_ai_provider")
+      || value.key in setOf(
+        "pref_gemini_api_key",
+        "pref_groq_api_key",
+        "pref_on_device_ai_provider",
+        "pref_ai_provider",
+        "pref_on_device_ai_model"
+      )
       || (value.key.startsWith("pref_chatgpt_") && value.key != "pref_chatgpt_token_expires_at")
       || value.key.startsWith("pref_brailleime_calibration_points_") || value.key.startsWith("pref_shortcut_")) {
       if (value.type != PrefType.STRING) throw BackupException(BackupFailure.TYPE_MISMATCH)
     }
     if (value.key == "pref_chatgpt_token_expires_at" && value.type != PrefType.LONG) {
+      throw BackupException(BackupFailure.TYPE_MISMATCH)
+    }
+    if (value.key in setOf(
+        "pref_on_device_ai_gpu",
+        "pref_on_device_ai_short_prompts",
+        "pref_on_device_ai_ignore_memory_limits"
+      ) && value.type != PrefType.BOOLEAN) {
+      throw BackupException(BackupFailure.TYPE_MISMATCH)
+    }
+    if (value.key == "pref_on_device_ai_timeout_seconds" && value.type != PrefType.INT) {
       throw BackupException(BackupFailure.TYPE_MISMATCH)
     }
     if (store == BackupStore.NVDA_REMOTE_GESTURES) {
@@ -342,6 +359,52 @@ internal object SelectiveBackup {
         if (obj.opt("favorite") == true) favorites++
       }
       if (favorites > 50) throw BackupException(BackupFailure.INVALID_FORMAT)
+    }
+  }
+
+  internal fun migrateReaderAiPreferences(entries: MutableList<PrefEntry>) {
+    val onDeviceIdx = entries.indexOfFirst { it.key == "pref_on_device_ai_provider" }
+    val legacyIdx = entries.indexOfFirst { it.key == "pref_ai_provider" }
+    val onDeviceVal = if (onDeviceIdx >= 0) entries[onDeviceIdx].value as? String else null
+    val legacyVal = if (legacyIdx >= 0) entries[legacyIdx].value as? String else null
+
+    if (onDeviceVal != null && legacyVal == null) {
+      val mappedLegacy = when (onDeviceVal) {
+        "cloud" -> "gemini"
+        "chatgpt" -> "chatgpt"
+        "groq" -> "groq"
+        "device" -> "device"
+        else -> onDeviceVal
+      }
+      entries.add(PrefEntry("pref_ai_provider", PrefType.STRING, mappedLegacy))
+    } else if (legacyVal != null && onDeviceVal == null) {
+      val mappedOnDevice = when (legacyVal) {
+        "gemini" -> "cloud"
+        "chatgpt" -> "chatgpt"
+        "groq" -> "groq"
+        "device" -> "device"
+        else -> legacyVal
+      }
+      entries.add(PrefEntry("pref_on_device_ai_provider", PrefType.STRING, mappedOnDevice))
+    } else if (onDeviceVal != null && legacyVal != null) {
+      val expectedLegacy = when (onDeviceVal) {
+        "cloud" -> "gemini"
+        "chatgpt" -> "chatgpt"
+        "groq" -> "groq"
+        "device" -> "device"
+        else -> onDeviceVal
+      }
+      if (legacyVal != expectedLegacy) {
+        entries[legacyIdx] = PrefEntry("pref_ai_provider", PrefType.STRING, expectedLegacy)
+      }
+    }
+
+    val modelIdx = entries.indexOfFirst { it.key == "pref_chatgpt_model" }
+    if (modelIdx >= 0) {
+      val modelVal = entries[modelIdx].value as? String
+      if (modelVal.isNullOrBlank()) {
+        entries[modelIdx] = PrefEntry("pref_chatgpt_model", PrefType.STRING, "luna")
+      }
     }
   }
 

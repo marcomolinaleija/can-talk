@@ -26,7 +26,12 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class TalkBackBackupTest {
 
   @Test
@@ -218,5 +223,53 @@ class TalkBackBackupTest {
     // Rollback restored original state
     assertEquals("original_val", failingPrefs.map["original_key"])
     assertNull(failingPrefs.map["new_key"])
+  }
+
+  @Test
+  fun aiProviderRetrocompatibilityLegacyToOnDevice() {
+    val sourcePrefs = FakeSharedPreferences()
+    sourcePrefs.edit()
+      .putString("pref_ai_provider", "chatgpt")
+      .apply()
+
+    val json = TalkBackBackup.exportBackup(sourcePrefs, "fyi.quin.backtalk")
+    val targetPrefs = FakeSharedPreferences()
+    val result = TalkBackBackup.importBackup(targetPrefs, "fyi.quin.backtalk", json)
+
+    assertTrue(result is TalkBackBackup.ImportResult.Success)
+    assertEquals("chatgpt", targetPrefs.getString("pref_ai_provider", null))
+    assertEquals("chatgpt", targetPrefs.getString("pref_on_device_ai_provider", null))
+  }
+
+  @Test
+  fun aiProviderRetrocompatibilityGeminiToCloud() {
+    val sourcePrefs = FakeSharedPreferences()
+    sourcePrefs.edit()
+      .putString("pref_ai_provider", "gemini")
+      .apply()
+
+    val json = TalkBackBackup.exportBackup(sourcePrefs, "fyi.quin.backtalk")
+    val targetPrefs = FakeSharedPreferences()
+    val result = TalkBackBackup.importBackup(targetPrefs, "fyi.quin.backtalk", json)
+
+    assertTrue(result is TalkBackBackup.ImportResult.Success)
+    assertEquals("gemini", targetPrefs.getString("pref_ai_provider", null))
+    assertEquals("cloud", targetPrefs.getString("pref_on_device_ai_provider", null))
+  }
+
+  @Test
+  fun aiProviderRetrocompatibilityOnDeviceToLegacy() {
+    val sourcePrefs = FakeSharedPreferences()
+    sourcePrefs.edit()
+      .putString("pref_on_device_ai_provider", "groq")
+      .apply()
+
+    val json = TalkBackBackup.exportBackup(sourcePrefs, "fyi.quin.backtalk")
+    val targetPrefs = FakeSharedPreferences()
+    val result = TalkBackBackup.importBackup(targetPrefs, "fyi.quin.backtalk", json)
+
+    assertTrue(result is TalkBackBackup.ImportResult.Success)
+    assertEquals("groq", targetPrefs.getString("pref_on_device_ai_provider", null))
+    assertEquals("groq", targetPrefs.getString("pref_ai_provider", null))
   }
 }

@@ -6,9 +6,22 @@ import android.content.Context
 /** Persisted types derived from the preference owners' typed getters, not preference widget guesses. */
 internal object BackupPreferenceTypes {
   fun expected(context: Context, store: BackupStore, key: String): TalkBackBackup.PrefType? {
-    // The direct-touch owner uses a literal key instead of a string resource.
-    if (store == BackupStore.READER && key == "pref_speak_nav_bar_buttons") {
-      return TalkBackBackup.PrefType.BOOLEAN
+    // Literal keys that do not use string resources.
+    if (store == BackupStore.READER) {
+      when (key) {
+        "pref_speak_nav_bar_buttons",
+        "pref_on_device_ai_gpu",
+        "pref_on_device_ai_short_prompts",
+        "pref_on_device_ai_ignore_memory_limits" -> return TalkBackBackup.PrefType.BOOLEAN
+        "pref_on_device_ai_timeout_seconds" -> return TalkBackBackup.PrefType.INT
+        "pref_chatgpt_token_expires_at" -> return TalkBackBackup.PrefType.LONG
+        "pref_on_device_ai_provider",
+        "pref_ai_provider",
+        "pref_on_device_ai_model",
+        "pref_gemini_api_key",
+        "pref_groq_api_key" -> return TalkBackBackup.PrefType.STRING
+      }
+      if (key.startsWith("pref_chatgpt_")) return TalkBackBackup.PrefType.STRING
     }
     if (store == BackupStore.NVDA_REMOTE_GESTURES) return TalkBackBackup.PrefType.STRING
     if (store == BackupStore.NVDA_REMOTE_SETTINGS) {

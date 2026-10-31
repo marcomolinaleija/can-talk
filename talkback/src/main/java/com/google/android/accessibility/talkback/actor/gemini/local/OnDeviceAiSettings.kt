@@ -37,14 +37,7 @@ object OnDeviceAiSettings {
     prefs.getString(PREF_PROVIDER, PROVIDER_CLOUD) == PROVIDER_DEVICE
 
   fun setOnDevice(prefs: SharedPreferences, onDevice: Boolean) {
-    if (onDevice) {
-      prefs.edit().putString(PREF_PROVIDER, PROVIDER_DEVICE).apply()
-    } else {
-      val current = prefs.getString(PREF_PROVIDER, PROVIDER_CLOUD)
-      if (current == PROVIDER_DEVICE) {
-        prefs.edit().putString(PREF_PROVIDER, PROVIDER_CLOUD).apply()
-      }
-    }
+    prefs.edit().putString(PREF_PROVIDER, if (onDevice) PROVIDER_DEVICE else PROVIDER_CLOUD).apply()
   }
 
   /**

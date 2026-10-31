@@ -31,6 +31,12 @@ object TalkBackBackup {
     TalkBackUpdateHelper.PREF_APP_VERSION, TalkBackUpdateHelper.PREF_APP_PREV_VERSION_NAME,
   )
 
+  private val KNOWN_TALKBACK_APP_IDS = listOf(
+    "fyi.quin.backtalk.cantalktest",
+    "fyi.quin.backtalk",
+    "com.android.talkback",
+  )
+
   @Deprecated("Single-store v1 compatibility only; use the selective backup screen")
   @JvmStatic
   fun exportBackup(prefs: SharedPreferences, sourcePackage: String): String {
@@ -40,17 +46,31 @@ object TalkBackBackup {
     }
     return JSONObject().put("format", MAGIC_FORMAT).put("version", BACKUP_VERSION)
       .put("createdAt", System.currentTimeMillis()).put("sourcePackage", sourcePackage)
-      .put("checksum", computeChecksum(entries)).put("preferences", BackupCodec.encodePreferences(entries)).toString()
+      .put("checksum", computeChecksum(entries)).put("preferences", BackupCodec.encodePreferences(entries)).toString(2)
   }
 
   @Deprecated("Single-store v1 compatibility only; use the selective backup screen")
-  @Suppress("UNUSED_PARAMETER")
   @JvmStatic
   fun importBackup(prefs: SharedPreferences, targetPackage: String, json: String): ImportResult {
+    val root: JSONObject
+    try {
+      root = JSONObject(json)
+    } catch (e: org.json.JSONException) {
+      return ImportResult.Failure(ImportError.INVALID_JSON, e)
+    }
+    if (root.optString("format") != MAGIC_FORMAT) {
+      return ImportResult.Failure(ImportError.INVALID_FORMAT)
+    }
+    val version = root.optInt("version", -1)
+    if (version != BACKUP_VERSION) {
+      return ImportResult.Failure(ImportError.UNSUPPORTED_VERSION)
+    }
     val entries: List<PrefEntry>
+    val sourcePackage: String
     try {
       val document = BackupCodec.decode(json)
       if (!document.legacy) return ImportResult.Failure(ImportError.UNSUPPORTED_VERSION)
+      sourcePackage = document.sourcePackage
       entries = document.sections.values.flatMap { it.preferences[BackupStore.READER].orEmpty() }
     } catch (e: BackupException) {
       return ImportResult.Failure(when (e.failure) {
@@ -65,7 +85,45 @@ object TalkBackBackup {
       return ImportResult.Failure(ImportError.INVALID_FORMAT)
     try {
       val editor = prefs.edit()
-      entries.forEach { SelectiveBackup.put(editor, it) }
+      for (entry in entries) {
+        val migrated = when (entry.type) {
+          PrefType.STRING -> PrefEntry(
+            entry.key,
+            PrefType.STRING,
+            migratePackageString(entry.value as String, sourcePackage, targetPackage)
+          )
+          PrefType.STRING_SET -> {
+            @Suppress("UNCHECKED_CAST")
+            val setVal = (entry.value as Set<String>).map {
+              migratePackageString(it, sourcePackage, targetPackage)
+            }.toSet()
+            PrefEntry(entry.key, PrefType.STRING_SET, setVal)
+          }
+          else -> entry
+        }
+        SelectiveBackup.put(editor, migrated)
+      }
+      val provider = entries.find { it.key == "pref_ai_provider" }?.value as? String
+      val onDevice = entries.find { it.key == "pref_on_device_ai_provider" }?.value as? String
+      if (provider != null && onDevice == null) {
+        val mapped = when (provider) {
+          "gemini" -> "cloud"
+          "chatgpt" -> "chatgpt"
+          "groq" -> "groq"
+          "device" -> "device"
+          else -> provider
+        }
+        editor.putString("pref_on_device_ai_provider", mapped)
+      } else if (onDevice != null && provider == null) {
+        val mapped = when (onDevice) {
+          "cloud" -> "gemini"
+          "chatgpt" -> "chatgpt"
+          "groq" -> "groq"
+          "device" -> "device"
+          else -> onDevice
+        }
+        editor.putString("pref_ai_provider", mapped)
+      }
       if (editor.commit()) return ImportResult.Success(entries.size)
     } catch (_: Exception) { }
     try {
@@ -78,9 +136,21 @@ object TalkBackBackup {
     return ImportResult.Failure(ImportError.COMMIT_FAILED)
   }
 
-  /** Text is user data, not a package identifier. Logical store IDs remove the need for migration. */
-  @Suppress("UNUSED_PARAMETER")
-  internal fun migratePackageString(value: String, sourcePackage: String?, targetPackage: String): String = value
+  internal fun migratePackageString(value: String, sourcePackage: String?, targetPackage: String): String {
+    if (targetPackage.isEmpty()) return value
+    var result = value
+    val candidates = (listOfNotNull(sourcePackage) + KNOWN_TALKBACK_APP_IDS)
+      .filter { it.isNotEmpty() && it != targetPackage }
+      .distinct()
+      .sortedByDescending { it.length }
+
+    for (cand in candidates) {
+      if (result.contains(cand)) {
+        result = result.replace(cand, targetPackage)
+      }
+    }
+    return result
+  }
 
   internal fun computeChecksum(entries: List<PrefEntry>): String {
     val sorted = entries.sortedBy { it.key }
