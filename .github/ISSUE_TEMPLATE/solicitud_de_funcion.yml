@@ -1,0 +1,22 @@
+name: Proponer una función
+description: Cuenta qué te gustaría añadir o mejorar en CAN Talk.
+body:
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: ¿Qué función propones?
+    validations:
+      required: true
+
+  - type: textarea
+    id: utilidad
+    attributes:
+      label: ¿Para qué te serviría?
+      description: Describe una situación en la que la usarías.
+    validations:
+      required: true
+
+  - type: textarea
+    id: funcionamiento
+    attributes:
+      label: ¿Cómo te gustaría que funcionara?

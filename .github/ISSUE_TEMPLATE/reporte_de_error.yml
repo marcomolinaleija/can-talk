@@ -1,0 +1,43 @@
+name: Reportar un error
+description: Cuenta qué falla y cómo repetirlo.
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué ocurrió?
+    validations:
+      required: true
+
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Explica los pasos para llegar al error
+      description: Indica qué app o apartado abriste y qué acciones hiciste, en orden, hasta que ocurrió el fallo.
+    validations:
+      required: true
+
+  - type: textarea
+    id: resultado_esperado
+    attributes:
+      label: ¿Qué esperabas que ocurriera?
+
+  - type: input
+    id: version_can_talk
+    attributes:
+      label: Versión de CAN Talk
+
+  - type: input
+    id: version_android
+    attributes:
+      label: Versión de Android
+
+  - type: input
+    id: telefono
+    attributes:
+      label: Marca y modelo del teléfono
+
+  - type: textarea
+    id: detalles
+    attributes:
+      label: Otros datos
+      description: Por ejemplo, la app donde ocurre o el teclado y sintetizador que usas.
