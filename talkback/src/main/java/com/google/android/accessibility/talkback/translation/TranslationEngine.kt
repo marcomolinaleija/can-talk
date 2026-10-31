@@ -29,6 +29,7 @@ class TranslationEngine(
     4, 4, 0L, java.util.concurrent.TimeUnit.MILLISECONDS, java.util.concurrent.ArrayBlockingQueue(16)),
   private val timers: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(),
   private val clock: () -> Long = { System.nanoTime() / 1_000_000 },
+  private val timeoutMillis: Long = 10_000L,
 ) {
   private class Job(val generation: Long) {
     val cancellation = TranslationCancellation()
@@ -57,7 +58,7 @@ class TranslationEngine(
     val created = Job(cache.generation)
     created.callbacks.add(callback)
     jobs[key] = created
-    created.timeout = timers.schedule({ finish(key, created, null, useCache) }, 10_000,
+    created.timeout = timers.schedule({ finish(key, created, null, useCache) }, timeoutMillis,
       java.util.concurrent.TimeUnit.MILLISECONDS)
     try {
       created.future = workers.submit {
@@ -113,6 +114,7 @@ class TranslationEngine(
       jobs.remove(key)
       job.timeout?.cancel(false)
       if (result == null) {
+        unavailableUntil = clock() + 15_000 // Back off on outages/429; no retry storm during swipes.
         job.cancellation.cancel()
         job.future?.cancel(true)
       }

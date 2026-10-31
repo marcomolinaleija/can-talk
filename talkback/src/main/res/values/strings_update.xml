@@ -3,7 +3,7 @@
     <!-- Title of the setting that checks GitHub for a newer development build of CAN Talk. [CHAR LIMIT=40] -->
     <string name="title_pref_check_for_updates">Check for updates</string>
     <!-- Summary of the check for updates setting, with the version of the running app. [CHAR LIMIT=NONE] -->
-    <string name="summary_pref_check_for_updates">Version <xliff:g id="version" example="1.0.1">%1$s</xliff:g></string>
+    <string name="summary_pref_check_for_updates">Version <xliff:g id="version" example="1.0.2">%1$s</xliff:g></string>
     <!-- Title of the switch that turns daily update checks on or off. [CHAR LIMIT=40] -->
     <string name="title_pref_auto_update_check">Automatically check for updates</string>
     <!-- Summary of the automatic update check switch. [CHAR LIMIT=NONE] -->

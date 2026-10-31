@@ -42,14 +42,14 @@ class TranslationEngineTest {
     val engine = TranslationEngine(Provider { token ->
       token.onCancel { cancelled.countDown() }
       started.countDown()
-      cancelled.await(8, TimeUnit.SECONDS)
+      cancelled.await(4, TimeUnit.SECONDS)
       token.check()
       TranslationResult("late")
-    })
+    }, timeoutMillis = 1_000L)
     try {
       engine.request("a", request, true) { assertNull(it); done.countDown() }
       await(started)
-      assertTrue(done.await(8, TimeUnit.SECONDS))
+      assertTrue(done.await(4, TimeUnit.SECONDS))
       assertEquals(0L, cancelled.count)
       assertEquals(0, engine.cache.size())
     } finally { engine.close() }
