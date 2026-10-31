@@ -26,8 +26,8 @@ build: <número_total_de_commits>
 ```
 
 - **`build: <número>`**: Se obtiene ejecutando `git rev-list --count HEAD`.
-- **Lista de commits**: Commits desde la versión anterior (`git log <anterior>..HEAD --oneline`).
-- **Notas en español**: Separador y secciones con novedades, correcciones y mejoras.
+- **Lista de cambios**: Líneas `- <hash_corto> <mensaje_en_español>`. **IMPORTANTE**: La app muestra el texto posterior al hash directamente en el diálogo de actualización del teléfono del usuario. Aunque los commits de Git estén en inglés, los mensajes de estas líneas deben redactarse siempre en español claro y comprensible.
+- **Notas en español**: Separador y secciones con novedades, correcciones y mejoras detalladas.
 
 ### 3. Sincronización Doble en GitHub
 CAN Talk utiliza dos referencias en GitHub Releases:
