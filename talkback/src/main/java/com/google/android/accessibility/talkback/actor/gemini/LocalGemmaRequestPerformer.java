@@ -29,14 +29,15 @@ import java.util.function.Consumer;
 import org.json.JSONObject;
 
 /**
- * Sends Gemini requests to the cloud, or to the model on the phone when the user chose on-device
- * AI. The choice is read for each request, so changing it needs no restart.
+ * Sends AI requests to the on-device model, to ChatGPT, or to Google Gemini depending
+ * on the user's active configuration in settings.
  */
 public class LocalGemmaRequestPerformer extends GeminiRestRequestPerformer {
 
   private final Context context;
   private final SharedPreferences prefs;
   private final LocalGemmaRunner runner;
+  private final ChatGptRequestPerformer chatGptPerformer;
 
   /**
    * @param announce speaks why the model on the phone could not answer, such as low memory
@@ -68,15 +69,26 @@ public class LocalGemmaRequestPerformer extends GeminiRestRequestPerformer {
             canceller,
             mainHandler::post,
             announce);
+    this.chatGptPerformer = new ChatGptRequestPerformer(this.context, mainHandler::post);
   }
 
   private boolean useOnDevice() {
     return OnDeviceAiSettings.INSTANCE.isOnDevice(prefs);
   }
 
+  private boolean useChatGpt() {
+    return !useOnDevice() && ChatGptAuthManager.isChatGptActive(prefs);
+  }
+
   @Override
   public boolean isKeylessInitialized() {
-    return useOnDevice() && LocalModelManager.Companion.get(context).isReady();
+    if (useOnDevice()) {
+      return LocalModelManager.Companion.get(context).isReady();
+    }
+    if (useChatGpt()) {
+      return ChatGptAuthManager.isReady(context);
+    }
+    return false;
   }
 
   @Override
@@ -84,6 +96,8 @@ public class LocalGemmaRequestPerformer extends GeminiRestRequestPerformer {
       String url, String apiKey, JSONObject postData, GeminiRestResponseCallback callback) {
     if (useOnDevice()) {
       runner.run(postData, loggingFailures(callback));
+    } else if (useChatGpt()) {
+      chatGptPerformer.performRequest(postData, loggingFailures(callback));
     } else {
       super.performRequest(url, apiKey, postData, callback);
     }
@@ -92,11 +106,12 @@ public class LocalGemmaRequestPerformer extends GeminiRestRequestPerformer {
   @Override
   public void cancelExistingRequestIfNeeded() {
     runner.cancel();
+    chatGptPerformer.cancel();
     super.cancelExistingRequestIfNeeded();
   }
 
   @Override
   public boolean hasPendingTransaction() {
-    return runner.getHasPending() || super.hasPendingTransaction();
+    return runner.getHasPending() || chatGptPerformer.getHasPending() || super.hasPendingTransaction();
   }
 }

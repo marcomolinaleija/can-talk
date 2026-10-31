@@ -300,8 +300,12 @@ internal object SelectiveBackup {
     if (store == BackupStore.EMOJI || store == BackupStore.CLIPBOARD
       || store == BackupStore.NVDA_REMOTE_GESTURES || store == BackupStore.NVDA_REMOTE_SETTINGS
       || value.key == "pref_bd_gesture_action_key" || value.key == "pref_gemini_api_key"
+      || (value.key.startsWith("pref_chatgpt_") && value.key != "pref_chatgpt_token_expires_at")
       || value.key.startsWith("pref_brailleime_calibration_points_") || value.key.startsWith("pref_shortcut_")) {
       if (value.type != PrefType.STRING) throw BackupException(BackupFailure.TYPE_MISMATCH)
+    }
+    if (value.key == "pref_chatgpt_token_expires_at" && value.type != PrefType.LONG) {
+      throw BackupException(BackupFailure.TYPE_MISMATCH)
     }
     if (store == BackupStore.NVDA_REMOTE_GESTURES) {
       val action = value.value as String

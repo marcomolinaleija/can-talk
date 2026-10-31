@@ -58,7 +58,7 @@ internal enum class BackupCategory(val id: String, val sensitive: Boolean = fals
     fun forKey(store: BackupStore, key: String): BackupCategory? = when (store) {
       BackupStore.READER -> when {
         key in TalkBackBackup.IGNORED_KEYS || key.startsWith("pref_previous_global_") -> null
-        key == "pref_gemini_api_key" -> API_KEYS
+        key == "pref_gemini_api_key" || key.startsWith("pref_chatgpt_") -> API_KEYS
         key.startsWith("pref_shortcut_") || key == "pref_gesture_set_key"
           || key == "pref_multiple_gesture_set_key" -> READER_GESTURES
         key.startsWith("default_key_combo_model|") || key.startsWith("new_key_combo_model|")

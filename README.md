@@ -54,6 +54,14 @@ Set `ANDROID_HOME` to your SDK path, then run:
 
 Library and plugin versions are in `gradle/libs.versions.toml`. Renovate opens pull requests to update them each week, and GitHub Actions builds each pull request.
 
+### Image and screen descriptions with ChatGPT
+
+CAN Talk supports "Sign in with ChatGPT" to describe images and screens using your personal ChatGPT subscription (such as ChatGPT Plus or Pro).
+
+1. Open CAN Talk settings, then **Automatic descriptions**, then **ChatGPT account**.
+2. Tap **Sign in with ChatGPT** to authorize in your browser.
+3. Once authorized, image and screen descriptions and follow-up questions will use GPT-4o or GPT-4o mini directly from your plan, without needing separate API keys. Alternatively, you can configure a manual OpenAI API key (`sk-...`).
+
 ### Image descriptions with Gemini
 
 Google's source release does not include the Gemini settings, so **Describe image** only reads text in images, and **Describe screen** does not work, unless you add your own Gemini API key. Backtalk adds its own support for Describe screen, including follow-up questions. To add a key:

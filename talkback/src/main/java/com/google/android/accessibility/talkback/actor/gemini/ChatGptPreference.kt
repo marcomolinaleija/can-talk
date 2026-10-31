@@ -1,0 +1,232 @@
+/*
+ * Copyright 2026 CAN Talk contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package com.google.android.accessibility.talkback.actor.gemini
+
+import android.content.Context
+import android.text.InputType
+import android.widget.EditText
+import android.widget.FrameLayout
+import androidx.appcompat.app.AlertDialog
+import androidx.preference.ListPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import com.google.android.accessibility.talkback.R
+import com.google.android.accessibility.talkback.actor.gemini.local.OnDeviceAiSettings
+import com.google.android.accessibility.utils.SharedPreferencesUtils
+
+/**
+ * Controller for the ChatGPT settings and AI provider selector in Automatic Descriptions.
+ */
+object ChatGptPreference {
+
+  const val PREF_KEY_ACCOUNT = "pref_chatgpt_account"
+  const val PREF_KEY_PROVIDER = "pref_ai_provider"
+
+  /**
+   * Sets up ChatGPT and AI provider preferences if present in the [fragment].
+   */
+  @JvmStatic
+  fun setUp(fragment: PreferenceFragmentCompat) {
+    setUpProviderSelector(fragment)
+    setUpAccountPreference(fragment)
+  }
+
+  private fun setUpProviderSelector(fragment: PreferenceFragmentCompat) {
+    val providerPref = fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER) ?: return
+    val context = fragment.requireContext()
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+
+    // Sync initial value based on on-device and chatgpt status
+    val currentProvider =
+      when {
+        OnDeviceAiSettings.isOnDevice(prefs) -> ChatGptAuthManager.PROVIDER_DEVICE
+        ChatGptAuthManager.isChatGptActive(prefs) -> ChatGptAuthManager.PROVIDER_CHATGPT
+        else -> ChatGptAuthManager.PROVIDER_GEMINI
+      }
+    providerPref.value = currentProvider
+    updateProviderSummary(providerPref, currentProvider)
+
+    providerPref.setOnPreferenceChangeListener { _, newValue ->
+      val selected = newValue as String
+      when (selected) {
+        ChatGptAuthManager.PROVIDER_DEVICE -> {
+          OnDeviceAiSettings.setOnDevice(prefs, true)
+          ChatGptAuthManager.setAiProvider(prefs, ChatGptAuthManager.PROVIDER_DEVICE)
+        }
+        ChatGptAuthManager.PROVIDER_CHATGPT -> {
+          OnDeviceAiSettings.setOnDevice(prefs, false)
+          ChatGptAuthManager.setAiProvider(prefs, ChatGptAuthManager.PROVIDER_CHATGPT)
+        }
+        ChatGptAuthManager.PROVIDER_GEMINI -> {
+          OnDeviceAiSettings.setOnDevice(prefs, false)
+          ChatGptAuthManager.setAiProvider(prefs, ChatGptAuthManager.PROVIDER_GEMINI)
+        }
+      }
+      updateProviderSummary(providerPref, selected)
+      fragment.findPreference<Preference>(PREF_KEY_ACCOUNT)?.let { updateAccountSummary(it) }
+      true
+    }
+  }
+
+  private fun updateProviderSummary(preference: ListPreference, value: String) {
+    val context = preference.context
+    preference.summary =
+      when (value) {
+        ChatGptAuthManager.PROVIDER_CHATGPT -> context.getString(R.string.summary_ai_provider_chatgpt)
+        ChatGptAuthManager.PROVIDER_DEVICE -> context.getString(R.string.summary_ai_provider_device)
+        else -> context.getString(R.string.summary_ai_provider_gemini)
+      }
+  }
+
+  private fun setUpAccountPreference(fragment: PreferenceFragmentCompat) {
+    val preference = fragment.findPreference<Preference>(PREF_KEY_ACCOUNT) ?: return
+    updateAccountSummary(preference)
+    preference.setOnPreferenceClickListener {
+      showAccountDialog(fragment, preference)
+      true
+    }
+  }
+
+  /**
+   * Refreshes the summary of the ChatGPT account preference.
+   */
+  @JvmStatic
+  fun updateAccountSummary(preference: Preference) {
+    val context = preference.context
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+    val isConnected = ChatGptAuthManager.isReady(context)
+    val email = ChatGptAuthManager.getUserEmail(prefs)
+    val model = ChatGptAuthManager.getModel(prefs)
+
+    preference.summary =
+      when {
+        isConnected && email.isNotEmpty() ->
+          context.getString(R.string.summary_pref_chatgpt_account_connected, email, model)
+        isConnected ->
+          context.getString(R.string.summary_pref_chatgpt_account_connected_no_email, model)
+        else ->
+          context.getString(R.string.summary_pref_chatgpt_account_not_connected)
+      }
+  }
+
+  private fun showAccountDialog(fragment: PreferenceFragmentCompat, preference: Preference) {
+    val context = fragment.requireContext()
+    val isConnected = ChatGptAuthManager.isReady(context)
+
+    if (isConnected) {
+      showConnectedDialog(fragment, preference)
+    } else {
+      showLoginDialog(fragment, preference)
+    }
+  }
+
+  private fun showLoginDialog(fragment: PreferenceFragmentCompat, preference: Preference) {
+    val context = fragment.requireContext()
+    AlertDialog.Builder(context)
+      .setTitle(R.string.title_pref_chatgpt_account)
+      .setMessage(R.string.chatgpt_login_dialog_message)
+      .setPositiveButton(R.string.chatgpt_btn_sign_in) { _, _ ->
+        ChatGptAuthManager.startAuthorization(context)
+      }
+      .setNeutralButton(R.string.chatgpt_btn_manual_key) { _, _ ->
+        showManualApiKeyDialog(fragment, preference)
+      }
+      .setNegativeButton(android.R.string.cancel, null)
+      .show()
+  }
+
+  private fun showConnectedDialog(fragment: PreferenceFragmentCompat, preference: Preference) {
+    val context = fragment.requireContext()
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+    val email = ChatGptAuthManager.getUserEmail(prefs)
+    val model = ChatGptAuthManager.getModel(prefs)
+
+    val message = context.getString(R.string.chatgpt_connected_dialog_message, email, model)
+
+    AlertDialog.Builder(context)
+      .setTitle(R.string.chatgpt_connected_dialog_title)
+      .setMessage(message)
+      .setPositiveButton(R.string.chatgpt_btn_change_model) { _, _ ->
+        showModelSelectionDialog(fragment, preference)
+      }
+      .setNeutralButton(R.string.chatgpt_btn_disconnect) { _, _ ->
+        ChatGptAuthManager.disconnect(context)
+        updateAccountSummary(preference)
+      }
+      .setNegativeButton(R.string.chatgpt_btn_close, null)
+      .show()
+  }
+
+  private fun showModelSelectionDialog(fragment: PreferenceFragmentCompat, preference: Preference) {
+    val context = fragment.requireContext()
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+    val currentModel = ChatGptAuthManager.getModel(prefs)
+
+    val models = arrayOf(ChatGptAuthManager.MODEL_GPT_4O, ChatGptAuthManager.MODEL_GPT_4O_MINI)
+    val labels = arrayOf(
+      context.getString(R.string.chatgpt_model_gpt4o_label),
+      context.getString(R.string.chatgpt_model_gpt4o_mini_label)
+    )
+
+    val selectedIndex = if (currentModel == ChatGptAuthManager.MODEL_GPT_4O_MINI) 1 else 0
+
+    AlertDialog.Builder(context)
+      .setTitle(R.string.chatgpt_select_model_title)
+      .setSingleChoiceItems(labels, selectedIndex) { dialog, which ->
+        ChatGptAuthManager.setModel(prefs, models[which])
+        updateAccountSummary(preference)
+        dialog.dismiss()
+      }
+      .setNegativeButton(android.R.string.cancel, null)
+      .show()
+  }
+
+  private fun showManualApiKeyDialog(fragment: PreferenceFragmentCompat, preference: Preference) {
+    val context = fragment.requireContext()
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+
+    val field =
+      EditText(context).apply {
+        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        isSingleLine = true
+        setHint(R.string.chatgpt_manual_key_hint)
+        setText(ChatGptAuthManager.getManualApiKey(prefs))
+      }
+
+    val padding = (24 * context.resources.displayMetrics.density).toInt()
+    val container =
+      FrameLayout(context).apply {
+        setPadding(padding, 0, padding, 0)
+        addView(field)
+      }
+
+    AlertDialog.Builder(context)
+      .setTitle(R.string.chatgpt_manual_key_dialog_title)
+      .setMessage(R.string.chatgpt_manual_key_dialog_message)
+      .setView(container)
+      .setPositiveButton(R.string.gemini_api_key_save) { _, _ ->
+        ChatGptAuthManager.setManualApiKey(prefs, field.text.toString())
+        updateAccountSummary(preference)
+        fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER)?.let {
+          it.value = ChatGptAuthManager.PROVIDER_CHATGPT
+          updateProviderSummary(it, ChatGptAuthManager.PROVIDER_CHATGPT)
+        }
+      }
+      .setNegativeButton(android.R.string.cancel, null)
+      .show()
+  }
+}

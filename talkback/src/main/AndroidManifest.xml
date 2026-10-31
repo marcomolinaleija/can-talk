@@ -316,6 +316,28 @@
             android:targetActivity="com.google.android.accessibility.talkback.soundthemes.SoundThemeInstallActivity"
             android:exported="false" />
 
+        <!-- OAuth callback handler for Sign in with ChatGPT -->
+        <activity
+            android:name="com.google.android.accessibility.talkback.actor.gemini.ChatGptCallbackActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="can.cantalk" android:host="oauth" android:path="/callback" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="cantalk" android:host="oauth" android:path="/callback" />
+            </intent-filter>
+        </activity>
+
         <!-- Custom Label Manager - Summary Activity -->
         <activity
             android:name="com.google.android.accessibility.talkback.labeling.LabelManagerSummaryActivity"

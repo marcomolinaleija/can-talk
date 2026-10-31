@@ -501,6 +501,10 @@ A phone that's opened flat, and that hasn't been held up since the screen came o
 
 ## Image and screen descriptions
 
+### Sign in with ChatGPT
+
+CAN Talk adds support for "Sign in with ChatGPT" in **Automatic descriptions** > **ChatGPT account**, allowing users to link their ChatGPT account and describe images, screens, and ask follow-up questions using their ChatGPT Plus or Pro subscription. It also provides an AI provider selector to switch between ChatGPT, Gemini, and on-device AI.
+
 ### Gemini API key
 
 Google's source release doesn't include working Gemini support, so without an API key, **Describe image** only reads text in images and **Describe screen** doesn't work. Backtalk adds **Automatic descriptions** > **Gemini API key**, where you can add your own key, and its own Describe screen with follow-up questions. For more information, see [Image descriptions with Gemini](README.md#image-descriptions-with-gemini).

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AI Provider Preference -->
+    <string name="title_pref_ai_provider">AI provider</string>
+    <string name="summary_ai_provider_chatgpt">ChatGPT (OpenAI) is active</string>
+    <string name="summary_ai_provider_gemini">Google Gemini is active</string>
+    <string name="summary_ai_provider_device">On-device AI (Gemma) is active</string>
+
+    <string name="ai_provider_chatgpt">ChatGPT (OpenAI)</string>
+    <string name="ai_provider_gemini">Google Gemini</string>
+    <string name="ai_provider_device">On-device AI (Gemma)</string>
+
+    <string-array name="ai_provider_entries">
+        <item>@string/ai_provider_chatgpt</item>
+        <item>@string/ai_provider_gemini</item>
+        <item>@string/ai_provider_device</item>
+    </string-array>
+
+    <string-array name="ai_provider_values" translatable="false">
+        <item>chatgpt</item>
+        <item>gemini</item>
+        <item>device</item>
+    </string-array>
+
+    <!-- ChatGPT Account Preference -->
+    <string name="title_pref_chatgpt_account">ChatGPT account</string>
+    <string name="summary_pref_chatgpt_account_not_connected">Not connected. Tap to sign in with ChatGPT or enter API key</string>
+    <string name="summary_pref_chatgpt_account_connected">Connected as %1$s (%2$s)</string>
+    <string name="summary_pref_chatgpt_account_connected_no_email">Connected (%1$s)</string>
+
+    <string name="chatgpt_login_dialog_message">Sign in with your ChatGPT account to power image and screen descriptions using your personal ChatGPT Plus or Pro subscription, without needing developer API keys or extra fees.</string>
+    <string name="chatgpt_btn_sign_in">Sign in with ChatGPT</string>
+    <string name="chatgpt_btn_manual_key">Manual API key</string>
+    <string name="chatgpt_btn_disconnect">Disconnect</string>
+    <string name="chatgpt_btn_change_model">Change model</string>
+    <string name="chatgpt_btn_close">Close</string>
+
+    <string name="chatgpt_connected_dialog_title">ChatGPT Account</string>
+    <string name="chatgpt_connected_dialog_message">Account: %1$s\nModel: %2$s\n\nImage and screen descriptions are processed using ChatGPT.</string>
+
+    <string name="chatgpt_select_model_title">Choose ChatGPT model</string>
+    <string name="chatgpt_model_gpt4o_label">GPT-4o (Recommended: best intelligence and vision accuracy)</string>
+    <string name="chatgpt_model_gpt4o_mini_label">GPT-4o mini (Fast and light: saves plan quota)</string>
+
+    <string name="chatgpt_manual_key_dialog_title">OpenAI API Key</string>
+    <string name="chatgpt_manual_key_dialog_message">Enter your OpenAI API key (sk-...). To remove it, clear the field and save.</string>
+    <string name="chatgpt_manual_key_hint">OpenAI API key (sk-...)</string>
+
+    <string name="chatgpt_auth_connecting">Connecting with ChatGPT…</string>
+    <string name="chatgpt_auth_success">ChatGPT account connected: %1$s</string>
+    <string name="chatgpt_auth_missing_parameters">Missing OAuth authorization parameters.</string>
+    <string name="chatgpt_auth_error_prefix">ChatGPT error:</string>
+</resources>

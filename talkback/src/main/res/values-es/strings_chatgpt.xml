@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AI Provider Preference -->
+    <string name="title_pref_ai_provider">Proveedor de inteligencia artificial</string>
+    <string name="summary_ai_provider_chatgpt">ChatGPT (OpenAI) está activo</string>
+    <string name="summary_ai_provider_gemini">Google Gemini está activo</string>
+    <string name="summary_ai_provider_device">IA en el dispositivo (Gemma) está activa</string>
+
+    <string name="ai_provider_chatgpt">ChatGPT (OpenAI)</string>
+    <string name="ai_provider_gemini">Google Gemini</string>
+    <string name="ai_provider_device">En el dispositivo (Gemma)</string>
+
+    <string-array name="ai_provider_entries">
+        <item>@string/ai_provider_chatgpt</item>
+        <item>@string/ai_provider_gemini</item>
+        <item>@string/ai_provider_device</item>
+    </string-array>
+
+    <!-- ChatGPT Account Preference -->
+    <string name="title_pref_chatgpt_account">Cuenta de ChatGPT</string>
+    <string name="summary_pref_chatgpt_account_not_connected">Sin vincular. Toca para iniciar sesión con ChatGPT o configurar clave</string>
+    <string name="summary_pref_chatgpt_account_connected">Conectado como %1$s (%2$s)</string>
+    <string name="summary_pref_chatgpt_account_connected_no_email">Conectado (%1$s)</string>
+
+    <string name="chatgpt_login_dialog_message">Inicia sesión con tu cuenta de ChatGPT para procesar las descripciones de imágenes y pantalla con tu plan personal (ChatGPT Plus o Pro), sin necesidad de crear claves ni pagar tokens por separado.</string>
+    <string name="chatgpt_btn_sign_in">Iniciar sesión con ChatGPT</string>
+    <string name="chatgpt_btn_manual_key">Clave API manual</string>
+    <string name="chatgpt_btn_disconnect">Cerrar sesión</string>
+    <string name="chatgpt_btn_change_model">Cambiar modelo</string>
+    <string name="chatgpt_btn_close">Cerrar</string>
+
+    <string name="chatgpt_connected_dialog_title">Cuenta de ChatGPT</string>
+    <string name="chatgpt_connected_dialog_message">Cuenta: %1$s\nModelo: %2$s\n\nLas descripciones de imágenes y pantallas se procesan con ChatGPT.</string>
+
+    <string name="chatgpt_select_model_title">Seleccionar modelo de ChatGPT</string>
+    <string name="chatgpt_model_gpt4o_label">GPT-4o (Recomendado: mayor precisión visual e inteligencia)</string>
+    <string name="chatgpt_model_gpt4o_mini_label">GPT-4o mini (Rápido y ligero: ahorra cuota de uso)</string>
+
+    <string name="chatgpt_manual_key_dialog_title">Clave de API de OpenAI</string>
+    <string name="chatgpt_manual_key_dialog_message">Ingresa tu clave de API de OpenAI (sk-...). Para quitarla, borra el campo y guarda.</string>
+    <string name="chatgpt_manual_key_hint">Clave de API (sk-...)</string>
+
+    <string name="chatgpt_auth_connecting">Conectando con ChatGPT…</string>
+    <string name="chatgpt_auth_success">Cuenta de ChatGPT vinculada: %1$s</string>
+    <string name="chatgpt_auth_missing_parameters">Faltan parámetros de autorización OAuth.</string>
+    <string name="chatgpt_auth_error_prefix">Error de ChatGPT:</string>
+</resources>

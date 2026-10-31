@@ -27,6 +27,7 @@ object TalkBackBackup {
   val IGNORED_KEYS = setOf(
     Updater.PREF_LAST_CHECK_TIME, Updater.PREF_LAST_NOTIFIED_BUILD, MigrationFiles.STATE_PREFS,
     "migration_done", "migration_attempts", "status_location_permission_requested",
+    "pref_chatgpt_pkce_verifier", "pref_chatgpt_pkce_state",
     TalkBackUpdateHelper.PREF_APP_VERSION, TalkBackUpdateHelper.PREF_APP_PREV_VERSION_NAME,
   )
 

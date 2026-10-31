@@ -52,6 +52,7 @@ import com.google.android.accessibility.talkback.actor.ImageCaptioner;
 import com.google.android.accessibility.talkback.actor.gemini.AiCoreEndpoint;
 import com.google.android.accessibility.talkback.actor.gemini.AiCoreEndpoint.AiFeatureDownloadCallback;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiApiKeyPreference;
+import com.google.android.accessibility.talkback.actor.gemini.ChatGptPreference;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiConfiguration;
 import com.google.android.accessibility.talkback.analytics.TalkBackAnalytics;
 import com.google.android.accessibility.talkback.analytics.TalkBackAnalytics.ImageCaptionLogKeys;
@@ -154,12 +155,18 @@ public class AutomaticDescriptionsFragment extends TalkbackBaseFragment {
     setupTextRecognitionPreference();
     setupDetailedImageDescriptionPreference(
         FeatureSwitchDialogResources.DETAILED_IMAGE_DESCRIPTION);
+    ChatGptPreference.setUp(this);
     GeminiApiKeyPreference.setUp(this);
   }
 
   @Override
   public void onResume() {
     super.onResume();
+
+    Preference chatGptPref = findPreference(ChatGptPreference.PREF_KEY_ACCOUNT);
+    if (chatGptPref != null) {
+      ChatGptPreference.updateAccountSummary(chatGptPref);
+    }
 
     // Cancels the download completion notification because users may be led to the settings page by
     // the notification.
