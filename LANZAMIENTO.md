@@ -139,3 +139,14 @@ el identificador antiguo. No demuestran que el nuevo candidato esté listo.
 
 Estas comprobaciones no sustituyen una compilación real, las pruebas de unidad,
 lint ni las pruebas en dispositivos de los APK oficiales.
+
+## Formato obligatorio de Releases en GitHub
+
+El actualizador integrado en la aplicación (`UpdateChecker.kt`) requiere que el texto de cada release en GitHub comience obligatoriamente con el número de compilación y la lista de commits. Si se omite, el actualizador fallará con un error de JSON al buscar actualizaciones.
+
+### Estructura del cuerpo de la release:
+1. **Línea de build**: `build: <número_de_commits>` (ej. `git rev-list --count HEAD`).
+2. **Commits recientes**: Lista de cambios con el prefijo `- <hash> <mensaje>`.
+3. **Notas en español**: Todas las descripciones y notas de versión deben estar redactadas en **español**, detallando novedades, correcciones y cambios relevantes para los usuarios.
+4. **Sincronización `dev`**: Toda nueva versión publicada debe actualizar también la release con tag `dev`, que es el canal consultado por defecto por el actualizador dentro de la aplicación.
+
