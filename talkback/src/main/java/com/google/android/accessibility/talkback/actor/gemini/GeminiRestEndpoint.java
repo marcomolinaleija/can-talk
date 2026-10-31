@@ -27,6 +27,7 @@ import android.util.Base64;
 import com.google.android.accessibility.talkback.actor.gemini.DataFieldUtils.GeminiResponse;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiActor.ErrorReason;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiActor.FinishReason;
+import com.google.android.accessibility.talkback.R;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiActor.GeminiEndpoint;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiActor.GeminiResponseListener;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiCommand.CommonRequest;
@@ -119,6 +120,14 @@ public class GeminiRestEndpoint implements GeminiEndpoint {
 
   private String groqKeyMessage() {
     return GeminiFailure.fromResponse(401, null).forGroq().userMessage(context);
+  }
+
+  private boolean missingChatGptSession() {
+    return ChatGptAuthManager.isChatGptActive(prefs) && !ChatGptAuthManager.isReady(context);
+  }
+
+  private String chatGptSessionMessage() {
+    return context.getString(R.string.summary_pref_chatgpt_account_not_connected);
   }
 
   @Override
@@ -274,6 +283,10 @@ public class GeminiRestEndpoint implements GeminiEndpoint {
       String command, byte[] imageByteArray, GeminiResponseListener geminiResponseListener) {
     if (missingGroqKey()) {
       geminiResponseListener.onResponse(FinishReason.ERROR_RESPONSE, groqKeyMessage());
+      return false;
+    }
+    if (missingChatGptSession()) {
+      geminiResponseListener.onResponse(FinishReason.ERROR_RESPONSE, chatGptSessionMessage());
       return false;
     }
     if (!isSupported()) {

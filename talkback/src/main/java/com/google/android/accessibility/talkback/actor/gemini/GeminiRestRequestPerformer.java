@@ -76,9 +76,10 @@ public class GeminiRestRequestPerformer {
     this.prefs = prefs;
   }
 
-  /** A missing Groq key is reported by the transport with instructions for that provider. */
+  /** A missing Groq or ChatGPT key/session is reported by the transport with instructions for that provider. */
   public boolean isSupported(String geminiKey) {
     return GroqSettings.isSelected(prefs)
+        || ChatGptAuthManager.isChatGptActive(prefs)
         || !TextUtils.isEmpty(geminiKey)
         || isKeylessInitialized();
   }

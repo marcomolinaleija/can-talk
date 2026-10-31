@@ -80,8 +80,8 @@ object ChatGptPreference {
           .putString(OnDeviceAiSettings.PREF_PROVIDER, selected)
           .putString(PREF_KEY_PROVIDER, selected)
           .apply()
-        OnDeviceAiSettings.setOnDevice(prefs, selected == OnDeviceAiSettings.PROVIDER_DEVICE)
-        fragment.findPreference<Preference>(PREF_KEY_ACCOUNT)?.let { updateAccountSummary(it) }
+        refreshUi(fragment)
+        GroqPreferences.refreshUi(fragment)
         true
       }
     }

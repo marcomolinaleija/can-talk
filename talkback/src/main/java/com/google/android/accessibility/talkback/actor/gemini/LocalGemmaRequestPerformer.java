@@ -23,6 +23,7 @@ import android.os.Looper;
 import com.google.android.accessibility.talkback.actor.gemini.local.LocalModelManager;
 import com.google.android.accessibility.talkback.actor.gemini.local.OnDeviceAiSettings;
 import com.google.android.accessibility.utils.SharedPreferencesUtils;
+import com.google.android.libraries.accessibility.utils.log.LogUtils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -94,6 +95,8 @@ public class LocalGemmaRequestPerformer extends GeminiRestRequestPerformer {
   @Override
   public void performRequest(
       String url, String apiKey, JSONObject postData, GeminiRestResponseCallback callback) {
+    LogUtils.i("LocalGemmaRequestPerformer", "performRequest: provider=%s, useOnDevice=%b, useChatGpt=%b",
+        prefs.getString(OnDeviceAiSettings.PREF_PROVIDER, "null"), useOnDevice(), useChatGpt());
     if (useOnDevice()) {
       super.cancelExistingRequestIfNeeded();
       runner.run(postData, loggingFailures(callback));
