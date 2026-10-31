@@ -30,7 +30,11 @@ import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.InputConnection;
 import com.google.android.accessibility.braille.interfaces.BrailleCharacter;
+import com.google.android.accessibility.brailleime.input.Swipe;
+import com.google.android.accessibility.brailleime.search.BrailleSearchQuery;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -287,5 +291,154 @@ public class EmojiManagerTest {
 
     shadowOf(userManager).setUserUnlocked(true);
     assertEquals(Arrays.asList("🔥", "⭐"), lockedManager.getFavorites());
+  }
+
+  @Test
+  public void testEnterAndExitSearchModeWithTwoFingersLeft() {
+    emojiManager.enterEmojiMode(null);
+    assertFalse(emojiManager.isSearchModeActive());
+
+    // Swipe 2 fingers left enters search mode
+    boolean handled =
+        emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.LEFT, 2), null);
+    assertTrue(handled);
+    assertTrue(emojiManager.isSearchModeActive());
+
+    // Swipe 2 fingers left again exits search mode back to emoji browsing
+    handled = emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.LEFT, 2), null);
+    assertTrue(handled);
+    assertFalse(emojiManager.isSearchModeActive());
+    assertTrue(emojiManager.isEmojiModeActive());
+  }
+
+  @Test
+  public void testSearchModeTypingBrailleAndFiltering() {
+    emojiManager.enterEmojiMode(null);
+    emojiManager.testing_setSearchIndex(
+        Arrays.asList(
+            new EmojiManager.EmojiItem("😀", "cara sonriendo"),
+            new EmojiManager.EmojiItem("🐱", "cara de gato"),
+            new EmojiManager.EmojiItem("🚗", "coche")));
+
+    // Enter search mode
+    emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.LEFT, 2), null);
+    assertTrue(emojiManager.isSearchModeActive());
+
+    // Set mock translator for BrailleSearchQuery
+    emojiManager.testing_setSearchQuery(
+        new BrailleSearchQuery(
+            word -> {
+              if (word.size() == 1) return "cara";
+              if (word.size() == 2) return "cara sonriendo";
+              return "";
+            }));
+
+    // Type 1 Braille cell -> query is "cara"
+    emojiManager.onBrailleProduced(new BrailleCharacter("1"), null);
+    assertEquals("cara", emojiManager.getSearchQueryText());
+    List<EmojiManager.EmojiItem> matches = emojiManager.getSearchMatches();
+    assertEquals(2, matches.size());
+    assertEquals("cara de gato", matches.get(0).name);
+    assertEquals("cara sonriendo", matches.get(1).name);
+
+    // Type second Braille cell -> query is "cara sonriendo"
+    emojiManager.onBrailleProduced(new BrailleCharacter("2"), null);
+    assertEquals("cara sonriendo", emojiManager.getSearchQueryText());
+    matches = emojiManager.getSearchMatches();
+    assertEquals(1, matches.size());
+    assertEquals("cara sonriendo", matches.get(0).name);
+    assertEquals("😀", matches.get(0).emoji);
+  }
+
+  @Test
+  public void testSearchNavigationWithOneFingerDownAndUp() {
+    emojiManager.enterEmojiMode(null);
+    emojiManager.testing_setSearchIndex(
+        Arrays.asList(
+            new EmojiManager.EmojiItem("1️⃣", "uno"),
+            new EmojiManager.EmojiItem("2️⃣", "dos"),
+            new EmojiManager.EmojiItem("3️⃣", "tres")));
+
+    emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.LEFT, 2), null);
+    emojiManager.testing_setSearchQuery(new BrailleSearchQuery(word -> "o")); // matches "uno", "dos"
+
+    emojiManager.onBrailleProduced(new BrailleCharacter("1"), null);
+    assertEquals(2, emojiManager.getSearchMatches().size());
+    assertEquals(0, emojiManager.getSearchSelectionIndex());
+    assertEquals("dos", emojiManager.getSelectedSearchItem().name);
+
+    // 1 finger DOWN -> moves to next
+    emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.DOWN, 1), null);
+    assertEquals(1, emojiManager.getSearchSelectionIndex());
+    assertEquals("uno", emojiManager.getSelectedSearchItem().name);
+
+    // 1 finger DOWN again -> wraps to 0
+    emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.DOWN, 1), null);
+    assertEquals(0, emojiManager.getSearchSelectionIndex());
+    assertEquals("dos", emojiManager.getSelectedSearchItem().name);
+
+    // 1 finger UP -> wraps back to 1
+    emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.UP, 1), null);
+    assertEquals(1, emojiManager.getSearchSelectionIndex());
+    assertEquals("uno", emojiManager.getSelectedSearchItem().name);
+  }
+
+  @Test
+  public void testSearchDeleteAndSpaceSwipes() {
+    emojiManager.enterEmojiMode(null);
+    emojiManager.testing_setSearchIndex(
+        Arrays.asList(new EmojiManager.EmojiItem("😀", "sonrisa")));
+
+    emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.LEFT, 2), null);
+    emojiManager.testing_setSearchQuery(
+        new BrailleSearchQuery(word -> word.isEmpty() ? "" : "sonrisa"));
+
+    // Type a cell
+    emojiManager.onBrailleProduced(new BrailleCharacter("1"), null);
+    assertEquals("sonrisa", emojiManager.getSearchQueryText());
+
+    // 1 finger LEFT (backspace)
+    emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.LEFT, 1), null);
+    assertEquals("", emojiManager.getSearchQueryText());
+    assertTrue(emojiManager.getSearchMatches().isEmpty());
+  }
+
+  @Test
+  public void testSearchCommitWithTwoFingersRight() {
+    AtomicReference<CharSequence> committedText = new AtomicReference<>("");
+    View dummyView = new View(context);
+    InputConnection fakeInputConnection =
+        new BaseInputConnection(dummyView, false) {
+          @Override
+          public boolean commitText(CharSequence text, int newCursorPosition) {
+            committedText.set(text);
+            return true;
+          }
+        };
+
+    emojiManager.enterEmojiMode(fakeInputConnection);
+    emojiManager.testing_setSearchIndex(
+        Arrays.asList(new EmojiManager.EmojiItem("🔥", "fuego")));
+
+    emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.LEFT, 2), fakeInputConnection);
+    emojiManager.testing_setSearchQuery(new BrailleSearchQuery(word -> "fuego"));
+    emojiManager.onBrailleProduced(new BrailleCharacter("1"), fakeInputConnection);
+
+    assertEquals(1, emojiManager.getSearchMatches().size());
+    assertEquals("🔥", emojiManager.getSelectedSearchItem().emoji);
+
+    // Swipe 2 fingers RIGHT -> commits selected emoji and exits emoji mode
+    boolean handled =
+        emojiManager.onSwipeProduced(new Swipe(Swipe.Direction.RIGHT, 2), fakeInputConnection);
+    assertTrue(handled);
+    assertEquals("🔥", committedText.get().toString());
+    assertFalse(emojiManager.isEmojiModeActive());
+    assertFalse(emojiManager.isSearchModeActive());
+  }
+
+  @Test
+  public void testNormalizeHelper() {
+    assertEquals("¡hola, corazon mio!", EmojiManager.normalize("¡Hola,  Corazón   MÍO!"));
+    assertEquals("", EmojiManager.normalize(null));
   }
 }

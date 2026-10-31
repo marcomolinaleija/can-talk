@@ -243,4 +243,11 @@ public class EmojiSpeechTest {
     assertEquals(-1, EmojiSpeech.emojiEnd(context, text, 0));
     assertEquals(5, EmojiSpeech.emojiEnd(context, text, 1));
   }
+
+  @Test
+  public void getEmojiNameReturnsLocalizedName() {
+    assertEquals("grinning face", EmojiSpeech.getEmojiName(context, "😀", Locale.US));
+    assertEquals("cara sonriendo", EmojiSpeech.getEmojiName(context, "😀", Locale.forLanguageTag("es")));
+    assertEquals("thumbs up: medium skin tone", EmojiSpeech.getEmojiName(context, "👍🏽", Locale.US));
+  }
 }

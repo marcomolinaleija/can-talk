@@ -42,8 +42,15 @@
   <string name="instruction_section_orientation_lock_title">4. Bloqueo de orientación del teclado</string>
   <string name="instruction_section_orientation_lock_body">Evita que la orientación de los puntos braille se gire de manera involuntaria si mueves o inclinas el teléfono.\n• Gesto: Mantén presionados los puntos 4, 5 y 6 y desliza 1 dedo hacia ARRIBA.\n• La voz de TalkBack confirmará si la orientación quedó bloqueada o desbloqueada.</string>
 
+  <!-- Cadenas para búsqueda de emojis -->
+  <string name="emoji_search_opened">Búsqueda de emojis abierta. Escribe para buscar.</string>
+  <string name="emoji_search_closed">Búsqueda de emojis cerrada.</string>
+  <string name="emoji_search_type_prompt">Escribe para buscar emojis</string>
+  <string name="emoji_search_no_results">Sin resultados de emojis para %s</string>
+  <string name="emoji_search_result">%1$s. %2$d de %3$d</string>
+
   <string name="instruction_section_emojis_title">5. Modo Emojis</string>
-  <string name="instruction_section_emojis_body">• Activar / Salir del modo emoji: Mantén presionados los puntos 4, 5 y 6 y desliza 1 dedo hacia la DERECHA.\n• Navegación de emojis: Selecciona categorías mediante letras braille (A a J) o signos (*, #, $), filas con las letras K a Z, o desliza hacia arriba y abajo para explorar e insertar emojis.</string>
+  <string name="instruction_section_emojis_body">• Activar / Salir del modo emoji: Mantén presionados los puntos 4, 5 y 6 y desliza 1 dedo hacia la DERECHA.\n• Navegación de emojis: Selecciona categorías mediante letras braille (A a J) o signos (*, #, $), filas con las letras K a Z, o desliza hacia arriba y abajo para explorar e insertar emojis.\n• Buscar emojis: Tras activar el modo emoji, desliza 2 dedos a la izquierda para buscar escribiendo normalmente. Desliza hacia abajo o arriba para moverte por los resultados y desliza 2 dedos a la derecha para insertarlo.</string>
 
   <string name="instruction_section_voice_title">6. Entrada de voz</string>
   <string name="instruction_section_voice_body">• Dictado por voz rápido: Mantén presionados los puntos 4, 5 y 6 y desliza 1 dedo hacia ABAJO.\n• Habla claramente y tu dictado se transcribirá directamente en el campo de texto.</string>

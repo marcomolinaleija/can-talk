@@ -223,6 +223,36 @@ public final class EmojiSpeech {
   }
 
   /**
+   * Returns the spoken localized name of {@code emoji} in the current spoken language, or null if not found.
+   */
+  public static @Nullable String getEmojiName(Context context, String emoji) {
+    Locale locale = LanguageSwitch.spokenLanguage(null);
+    if (locale == null) {
+      locale = Locale.getDefault();
+    }
+    return getEmojiName(context, emoji, locale);
+  }
+
+  /**
+   * Returns the spoken localized name of {@code emoji} in {@code locale}, or null if not found.
+   */
+  public static @Nullable String getEmojiName(
+      Context context, String emoji, @Nullable Locale locale) {
+    if (TextUtils.isEmpty(emoji) || !mayHaveEmoji(emoji)) {
+      return null;
+    }
+    EmojiNames.Index emojiIndex = index(context);
+    EmojiNames.@Nullable Match match = emojiIndex.find(emoji, 0);
+    if (match == null) {
+      return null;
+    }
+    if (locale == null) {
+      locale = Locale.getDefault();
+    }
+    return namesFor(context, locale).name(match.emoji());
+  }
+
+  /**
    * Returns the end of the emoji that starts at {@code start} in {@code text}, or -1 if none does
    * or the speech engine reads emoji itself.
    */

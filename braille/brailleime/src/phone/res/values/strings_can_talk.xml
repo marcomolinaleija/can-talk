@@ -43,8 +43,15 @@
   <string name="instruction_section_orientation_lock_title" tools:ignore="MissingTranslation">4. Keyboard orientation lock</string>
   <string name="instruction_section_orientation_lock_body" tools:ignore="MissingTranslation">Prevents the Braille dots from rotating unexpectedly when tilting or moving your phone.\n• Gesture: Hold dots 4, 5, and 6 and swipe UP with 1 finger.\n• Speech feedback will confirm whether the orientation is locked or unlocked.</string>
 
+  <!-- Emoji search mode strings -->
+  <string name="emoji_search_opened" tools:ignore="MissingTranslation">Emoji search opened. Type to search.</string>
+  <string name="emoji_search_closed" tools:ignore="MissingTranslation">Emoji search closed.</string>
+  <string name="emoji_search_type_prompt" tools:ignore="MissingTranslation">Type to search emojis</string>
+  <string name="emoji_search_no_results" tools:ignore="MissingTranslation">No emojis found for %s</string>
+  <string name="emoji_search_result" tools:ignore="MissingTranslation">%1$s. %2$d of %3$d</string>
+
   <string name="instruction_section_emojis_title" tools:ignore="MissingTranslation">5. Emoji mode</string>
-  <string name="instruction_section_emojis_body" tools:ignore="MissingTranslation">• Enter / Exit emoji mode: Hold dots 4, 5, and 6 and swipe RIGHT with 1 finger.\n• Navigate emojis: Use Braille letters A through J or symbols (*, #, $) to choose categories, K through Z for rows, or swipe up and down to explore and insert emojis.</string>
+  <string name="instruction_section_emojis_body" tools:ignore="MissingTranslation">• Enter / Exit emoji mode: Hold dots 4, 5, and 6 and swipe RIGHT with 1 finger.\n• Navigate emojis: Use Braille letters A through J or symbols (*, #, $) to choose categories, K through Z for rows, or swipe up and down to explore and insert emojis.\n• Search emojis: After entering emoji mode, swipe 2 fingers to the left to search by typing normally. Swipe down or up to move through results, and swipe 2 fingers to the right to insert.</string>
 
   <string name="instruction_section_voice_title" tools:ignore="MissingTranslation">6. Voice dictation</string>
   <string name="instruction_section_voice_body" tools:ignore="MissingTranslation">• Quick dictation: Hold dots 4, 5, and 6 and swipe DOWN with 1 finger.\n• Speak your message, and it will be transcribed directly into the active field.</string>

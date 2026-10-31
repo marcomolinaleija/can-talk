@@ -26,17 +26,28 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.accessibility.braille.common.BrailleCommonLog;
 import com.google.android.accessibility.braille.common.BrailleCommonTalkBackSpeaker;
+import com.google.android.accessibility.braille.common.BrailleUserPreferences;
 import com.google.android.accessibility.braille.common.TalkBackSpeaker.AnnounceType;
 import com.google.android.accessibility.braille.interfaces.BrailleCharacter;
+import com.google.android.accessibility.braille.interfaces.BrailleWord;
+import com.google.android.accessibility.braille.translate.BrailleTranslator;
+import com.google.android.accessibility.brailleime.input.Swipe;
+import com.google.android.accessibility.brailleime.search.BrailleSearchQuery;
+import com.google.android.accessibility.utils.output.EmojiSpeech;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Manages categorized emoji browsing, grid navigation, and insertion for the Braille keyboard,
@@ -122,6 +133,9 @@ public class EmojiManager {
   private static final BrailleCharacter CHAR_CONFIRM_EMOJI = new BrailleCharacter("456");
   private static final BrailleCharacter CHAR_TOGGLE_FAVORITE = new BrailleCharacter("36");
 
+  private static final Pattern MARKS = Pattern.compile("\\p{M}+");
+  private static final Pattern SPACES = Pattern.compile("\\s+");
+
   private final Context context;
   private final List<List<String>> categories = new ArrayList<>(TOTAL_CATEGORIES);
   private final List<String> favorites = new ArrayList<>();
@@ -130,6 +144,15 @@ public class EmojiManager {
   private int currentCategory = 0;
   private int currentRow = 0;
   private int currentSelected = 0;
+
+  // Search mode state
+  private final List<EmojiItem> searchIndex = new ArrayList<>();
+  private boolean searchIndexLoaded = false;
+  private boolean isSearchMode = false;
+  private BrailleSearchQuery searchQuery;
+  private final List<EmojiItem> searchMatches = new ArrayList<>();
+  private int searchSelectionIndex = 0;
+  private String searchQueryText = "";
 
   public EmojiManager(@NonNull Context context) {
     this.context = context;
@@ -254,11 +277,54 @@ public class EmojiManager {
       return;
     }
     isEmojiMode = false;
+    exitSearchModeSilently();
     speak(context.getString(R.string.emoji_mode_switched_off));
   }
 
   public void exitEmojiModeSilently() {
     isEmojiMode = false;
+    exitSearchModeSilently();
+  }
+
+  /**
+   * Processes a Swipe gesture when emoji mode is active.
+   *
+   * @return true if the swipe was consumed by emoji mode, false otherwise.
+   */
+  public boolean onSwipeProduced(
+      @NonNull Swipe swipe, @Nullable InputConnection inputConnection) {
+    if (!isEmojiMode) {
+      return false;
+    }
+    int fingers = swipe.getTouchCount();
+    Swipe.Direction direction = swipe.getDirection();
+
+    if (!isSearchMode) {
+      if (fingers == 2 && direction == Swipe.Direction.LEFT) {
+        enterSearchMode();
+        return true;
+      }
+      return false;
+    }
+
+    if (fingers == 1) {
+      switch (direction) {
+        case DOWN -> searchNext();
+        case UP -> searchPrevious();
+        case LEFT -> searchDelete();
+        case RIGHT -> searchSpace();
+      }
+      return true;
+    } else if (fingers == 2) {
+      if (direction == Swipe.Direction.RIGHT) {
+        searchCommit(inputConnection);
+        return true;
+      } else if (direction == Swipe.Direction.LEFT || direction == Swipe.Direction.DOWN) {
+        exitSearchMode();
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -270,6 +336,11 @@ public class EmojiManager {
       @NonNull BrailleCharacter brailleChar, @Nullable InputConnection inputConnection) {
     if (!isEmojiMode) {
       return false;
+    }
+
+    if (isSearchMode) {
+      searchAppend(brailleChar);
+      return true;
     }
 
     // 1. Step navigation
@@ -622,5 +693,282 @@ public class EmojiManager {
       categories.add(new ArrayList<>());
     }
     categories.set(index, emojis);
+    searchIndexLoaded = false;
+  }
+
+  public boolean isSearchModeActive() {
+    return isEmojiMode && isSearchMode;
+  }
+
+  public void enterSearchMode() {
+    ensureSearchIndexLoaded();
+    ensureSearchQuery();
+    isSearchMode = true;
+    if (searchQuery != null) {
+      searchQuery.clear();
+    }
+    searchQueryText = "";
+    searchMatches.clear();
+    searchSelectionIndex = 0;
+    speak(context.getString(R.string.emoji_search_opened));
+  }
+
+  public void exitSearchMode() {
+    if (!isSearchMode) {
+      return;
+    }
+    exitSearchModeSilently();
+    speak(context.getString(R.string.emoji_search_closed));
+  }
+
+  public void exitSearchModeSilently() {
+    isSearchMode = false;
+    if (searchQuery != null) {
+      searchQuery.clear();
+    }
+    searchQueryText = "";
+    searchMatches.clear();
+    searchSelectionIndex = 0;
+  }
+
+  public void search(@Nullable String text) {
+    ensureSearchIndexLoaded();
+    this.searchQueryText = text == null ? "" : text;
+    this.searchSelectionIndex = 0;
+    String needle = normalize(this.searchQueryText);
+    if (needle.isEmpty()) {
+      searchMatches.clear();
+      return;
+    }
+    List<EmojiItem> matches = new ArrayList<>();
+    for (EmojiItem item : searchIndex) {
+      if (item.normalizedName.contains(needle) || item.emoji.contains(needle)) {
+        matches.add(item);
+      }
+    }
+    matches.sort(
+        (a, b) -> {
+          boolean aStarts = a.normalizedName.startsWith(needle);
+          boolean bStarts = b.normalizedName.startsWith(needle);
+          if (aStarts != bStarts) {
+            return aStarts ? -1 : 1;
+          }
+          int nameComp = a.normalizedName.compareTo(b.normalizedName);
+          if (nameComp != 0) {
+            return nameComp;
+          }
+          return a.emoji.compareTo(b.emoji);
+        });
+    searchMatches.clear();
+    searchMatches.addAll(matches);
+  }
+
+  public void searchNext() {
+    if (searchMatches.isEmpty()) {
+      announceSearchResult();
+      return;
+    }
+    searchSelectionIndex = (searchSelectionIndex + 1) % searchMatches.size();
+    announceSearchResult();
+  }
+
+  public void searchPrevious() {
+    if (searchMatches.isEmpty()) {
+      announceSearchResult();
+      return;
+    }
+    searchSelectionIndex =
+        (searchSelectionIndex - 1 + searchMatches.size()) % searchMatches.size();
+    announceSearchResult();
+  }
+
+  public void searchAppend(@NonNull BrailleCharacter cell) {
+    ensureSearchQuery();
+    String text = searchQuery.append(cell);
+    BrailleImeTypingSounds.INSTANCE.play(context, BrailleImeTypingSounds.Key.CHARACTER, false);
+    search(text);
+    announceSearchResult();
+  }
+
+  public void searchDelete() {
+    ensureSearchQuery();
+    String text = searchQuery.delete();
+    BrailleImeTypingSounds.INSTANCE.play(context, BrailleImeTypingSounds.Key.DELETE, false);
+    search(text);
+    announceSearchResult();
+  }
+
+  public void searchSpace() {
+    ensureSearchQuery();
+    String text = searchQuery.append(new BrailleCharacter());
+    BrailleImeTypingSounds.INSTANCE.play(context, BrailleImeTypingSounds.Key.SPACE, false);
+    search(text);
+    announceSearchResult();
+  }
+
+  public void searchCommit(@Nullable InputConnection inputConnection) {
+    EmojiItem item = getSelectedSearchItem();
+    if (item != null) {
+      if (inputConnection != null) {
+        inputConnection.commitText(item.emoji, 1);
+      }
+      speak(context.getString(R.string.emoji_inserted, item.emoji));
+      exitEmojiModeSilently();
+    } else {
+      if (TextUtils.isEmpty(searchQueryText)) {
+        speak(context.getString(R.string.emoji_search_type_prompt));
+      } else {
+        speak(context.getString(R.string.emoji_search_no_results, searchQueryText));
+      }
+    }
+  }
+
+  @Nullable
+  public EmojiItem getSelectedSearchItem() {
+    if (searchSelectionIndex >= 0 && searchSelectionIndex < searchMatches.size()) {
+      return searchMatches.get(searchSelectionIndex);
+    }
+    return null;
+  }
+
+  public void announceSearchResult() {
+    if (TextUtils.isEmpty(searchQueryText)) {
+      speak(context.getString(R.string.emoji_search_type_prompt));
+      return;
+    }
+    if (searchMatches.isEmpty()) {
+      speak(context.getString(R.string.emoji_search_no_results, searchQueryText));
+      return;
+    }
+    EmojiItem item = getSelectedSearchItem();
+    if (item != null) {
+      String label = !TextUtils.isEmpty(item.name) ? item.name : item.emoji;
+      speak(
+          context.getString(
+              R.string.emoji_search_result,
+              label,
+              searchSelectionIndex + 1,
+              searchMatches.size()));
+    }
+  }
+
+  private void ensureSearchIndexLoaded() {
+    if (searchIndexLoaded) {
+      return;
+    }
+    searchIndex.clear();
+    Set<String> seen = new LinkedHashSet<>();
+    for (int i = 0; i < TOTAL_BUILTIN_CATEGORIES; i++) {
+      List<String> list = (i < categories.size()) ? categories.get(i) : Collections.emptyList();
+      for (String emoji : list) {
+        if (!TextUtils.isEmpty(emoji) && seen.add(emoji)) {
+          String name = EmojiSpeech.getEmojiName(context, emoji);
+          if (TextUtils.isEmpty(name)) {
+            name = emoji;
+          }
+          searchIndex.add(new EmojiItem(emoji, name));
+        }
+      }
+    }
+    ensureFavoritesLoaded();
+    for (String emoji : favorites) {
+      if (!TextUtils.isEmpty(emoji) && seen.add(emoji)) {
+        String name = EmojiSpeech.getEmojiName(context, emoji);
+        if (TextUtils.isEmpty(name)) {
+          name = emoji;
+        }
+        searchIndex.add(new EmojiItem(emoji, name));
+      }
+    }
+    searchIndexLoaded = true;
+  }
+
+  private void ensureSearchQuery() {
+    if (searchQuery == null) {
+      searchQuery = createDefaultSearchQuery(context);
+    }
+  }
+
+  private static BrailleSearchQuery createDefaultSearchQuery(Context context) {
+    try {
+      var code = BrailleUserPreferences.readCurrentActiveInputCodeAndCorrect(context);
+      BrailleTranslator translator =
+          BrailleUserPreferences.readTranslatorFactory(context)
+              .create(
+                  context,
+                  code.name(),
+                  BrailleUserPreferences.readContractedMode(context)
+                      && code.isSupportsContracted(context));
+      return new BrailleSearchQuery(translator::translateToPrintPartial);
+    } catch (Throwable t) {
+      BrailleCommonLog.w(TAG, "Error creating BrailleSearchQuery translator: " + t.getMessage());
+      return new BrailleSearchQuery(BrailleWord::toString);
+    }
+  }
+
+  public static String normalize(@Nullable String text) {
+    if (text == null) {
+      return "";
+    }
+    String decomposed = Normalizer.normalize(text, Normalizer.Form.NFD);
+    String stripped = MARKS.matcher(decomposed).replaceAll("");
+    return SPACES.matcher(stripped.toLowerCase(Locale.ROOT).trim()).replaceAll(" ");
+  }
+
+  /** Holds an emoji with its localized name and normalized form for quick search. */
+  public static class EmojiItem {
+    public final String emoji;
+    public final String name;
+    public final String normalizedName;
+
+    public EmojiItem(@NonNull String emoji, @NonNull String name) {
+      this.emoji = emoji;
+      this.name = name;
+      this.normalizedName = normalize(name);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      EmojiItem emojiItem = (EmojiItem) o;
+      return emoji.equals(emojiItem.emoji);
+    }
+
+    @Override
+    public int hashCode() {
+      return emoji.hashCode();
+    }
+  }
+
+  @VisibleForTesting
+  public void testing_setSearchQuery(BrailleSearchQuery query) {
+    this.searchQuery = query;
+  }
+
+  @VisibleForTesting
+  public void testing_setSearchIndex(List<EmojiItem> items) {
+    searchIndex.clear();
+    searchIndex.addAll(items);
+    searchIndexLoaded = true;
+  }
+
+  @VisibleForTesting
+  public List<EmojiItem> getSearchMatches() {
+    return Collections.unmodifiableList(searchMatches);
+  }
+
+  @VisibleForTesting
+  public int getSearchSelectionIndex() {
+    return searchSelectionIndex;
+  }
+
+  @VisibleForTesting
+  public String getSearchQueryText() {
+    return searchQueryText;
   }
 }
