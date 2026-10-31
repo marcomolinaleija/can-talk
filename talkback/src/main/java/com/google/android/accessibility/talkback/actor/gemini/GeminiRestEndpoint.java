@@ -83,6 +83,9 @@ public class GeminiRestEndpoint implements GeminiEndpoint {
         new ScreenOverviewRequester(
             () -> {
               SharedPreferences settings = SharedPreferencesUtils.getSharedPreferences(context);
+              if (GroqSettings.isSelected(settings)) {
+                return PromptStyle.GROQ;
+              }
               if (!OnDeviceAiSettings.INSTANCE.isOnDevice(settings)) {
                 return PromptStyle.CLOUD;
               }
@@ -107,7 +110,15 @@ public class GeminiRestEndpoint implements GeminiEndpoint {
   }
 
   private boolean isSupported() {
-    return !TextUtils.isEmpty(apiKey()) || requestPerformer.isKeylessInitialized();
+    return requestPerformer.isSupported(apiKey());
+  }
+
+  private boolean missingGroqKey() {
+    return GroqSettings.isSelected(prefs) && TextUtils.isEmpty(GroqSettings.userKey(prefs));
+  }
+
+  private String groqKeyMessage() {
+    return GeminiFailure.fromResponse(401, null).forGroq().userMessage(context);
   }
 
   @Override
@@ -217,6 +228,11 @@ public class GeminiRestEndpoint implements GeminiEndpoint {
         command instanceof GeminiCommand.ScreenOverview overview
             ? overview.getListener()
             : ((GeminiCommand.ScreenQuery) command).getListener();
+    if (missingGroqKey()) {
+      listener.onResponse(FinishReason.ERROR_RESPONSE,
+          new OverviewResponse.Error(null, FinishReason.ERROR_RESPONSE, groqKeyMessage()));
+      return false;
+    }
     if (!isSupported()) {
       listener.onError(ErrorReason.UNSUPPORTED);
       return false;
@@ -256,6 +272,10 @@ public class GeminiRestEndpoint implements GeminiEndpoint {
 
   private boolean checkGeminiAvailability(
       String command, byte[] imageByteArray, GeminiResponseListener geminiResponseListener) {
+    if (missingGroqKey()) {
+      geminiResponseListener.onResponse(FinishReason.ERROR_RESPONSE, groqKeyMessage());
+      return false;
+    }
     if (!isSupported()) {
       LogUtils.d(TAG, "Gemini API is not supported");
       geminiResponseListener.onError(ErrorReason.UNSUPPORTED);

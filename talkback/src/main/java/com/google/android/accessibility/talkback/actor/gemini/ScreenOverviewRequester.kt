@@ -40,6 +40,9 @@ internal enum class PromptStyle {
   /** The Gemini API, which handles the full format. */
   CLOUD,
 
+  /** Groq's small output budget: request only the summary, images and answer shown by the UI. */
+  GROQ,
+
   /**
    * A model on the phone. It is asked only for what the result screen shows. The controls list is
    * left out because this build does not show it, and writing it was most of the answer.
@@ -69,7 +72,7 @@ internal class ScreenOverviewRequester(
     val instructions =
       when (style) {
         PromptStyle.CLOUD -> OVERVIEW_INSTRUCTIONS
-        PromptStyle.ON_DEVICE -> ON_DEVICE_OVERVIEW_INSTRUCTIONS
+        PromptStyle.ON_DEVICE, PromptStyle.GROQ -> ON_DEVICE_OVERVIEW_INSTRUCTIONS
         PromptStyle.ON_DEVICE_SHORT -> SHORT_OVERVIEW_INSTRUCTIONS
       }
     val prompt = "$instructions\n${languageInstruction()}\n\nNodes:\n${nodes(tree, style)}"
@@ -102,7 +105,7 @@ internal class ScreenOverviewRequester(
     val instructions =
       when (style) {
         PromptStyle.CLOUD -> QUERY_INSTRUCTIONS
-        PromptStyle.ON_DEVICE -> ON_DEVICE_QUERY_INSTRUCTIONS
+        PromptStyle.ON_DEVICE, PromptStyle.GROQ -> ON_DEVICE_QUERY_INSTRUCTIONS
         PromptStyle.ON_DEVICE_SHORT -> SHORT_QUERY_INSTRUCTIONS
       }
     val prompt =
@@ -173,7 +176,7 @@ internal class ScreenOverviewRequester(
             listener.onResponse(FinishReason.STOP, parse(ScreenJsonRepair.repair(text)))
           } catch (e: ParseException) {
             Log.w(TAG, "Could not parse the screen answer (${text.length} characters)", e)
-            if (style == PromptStyle.CLOUD || text.isBlank()) {
+            if (style == PromptStyle.CLOUD || style == PromptStyle.GROQ || text.isBlank()) {
               listener.onResponse(
                 FinishReason.ERROR_PARSING_RESULT,
                 error(FinishReason.ERROR_PARSING_RESULT),

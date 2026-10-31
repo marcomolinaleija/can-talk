@@ -22,6 +22,7 @@ import static com.google.android.accessibility.utils.input.TextEventInterpretati
 import static com.google.android.accessibility.utils.input.TextEventInterpretation.TEXT_ADD;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.accessibility.AccessibilityEvent;
 import androidx.core.view.accessibility.AccessibilityEventCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
@@ -35,10 +36,12 @@ import com.google.android.accessibility.utils.AccessibilityEventListener;
 import com.google.android.accessibility.utils.AccessibilityNodeInfoUtils;
 import com.google.android.accessibility.utils.FormFactorUtils;
 import com.google.android.accessibility.utils.Performance.EventId;
+import com.google.android.accessibility.utils.SpellChecker;
 import com.google.android.accessibility.utils.input.TextEventInterpretation;
 import com.google.android.accessibility.utils.input.TextEventInterpretation.TextEvent;
 import com.google.android.accessibility.utils.input.TextEventInterpreter;
 import com.google.android.accessibility.utils.input.TextEventInterpreter.InterpretationConsumer;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Filters events that cause hints. */
 public class HintEventInterpreter implements AccessibilityEventListener, InterpretationConsumer {
@@ -149,32 +152,69 @@ public class HintEventInterpreter implements AccessibilityEventListener, Interpr
     TextEventInterpretation textEventInterpretation = interpretation.interpretation;
     AccessibilityNodeInfoCompat node =
         AccessibilityNodeInfoUtils.toCompat(interpretation.event.getSource());
-    if (node == null || textEventInterpretation == null) {
+    if (node == null
+        || textEventInterpretation == null
+        || node.isPassword()
+        || AccessibilityNodeInfoUtils.hasNoSuggestionsNeed(node.getInputType())) {
       return;
     }
 
     @TextEvent int event = textEventInterpretation.getEvent();
     if (event == SELECTION_MOVE_CURSOR_NO_SELECTION
         || (event == TEXT_ADD && node.getTextSelectionStart() == node.getTextSelectionEnd())) {
-      // Don't actively perform spell check to avoid the increase of latency for typing.
-      boolean performSpellCheck = event != TEXT_ADD;
       // Suggestion span may not be ready when receiving a TYPE_VIEW_TEXT_CHANGED event,
       // so spelling suggestion can’t extract in TextEventInterpreter.
       int currentCursorPosition = actorState.getEditState().getCurrentCursorPosition();
-      boolean noSpellingSuggestion =
-          currentCursorPosition == NO_POSITION
-              ? AccessibilityNodeInfoUtils.getSpellingSuggestions(context, node, performSpellCheck)
-                  .isEmpty()
-              : AccessibilityNodeInfoUtils.getSpellingSuggestions(
-                      context, node, currentCursorPosition, performSpellCheck)
-                  .isEmpty();
-      if (noSpellingSuggestion) {
-        return;
+      if (event == TEXT_ADD) {
+        // Don't actively perform spell check to avoid the increase of latency for typing.
+        sendSpellingSuggestionHint(interpretation.eventId, node, currentCursorPosition, null);
+      } else if (node.getTextSelectionStart() == node.getTextSelectionEnd()) {
+        // The spell checker can take 500 ms or more to answer, or not answer at all. Only fields
+        // that getSpellingSuggestions would check are sent to it.
+        SpellChecker.checkInBackground(
+            context,
+            node.getText(),
+            checkedText ->
+                sendSpellingSuggestionHint(
+                    interpretation.eventId, node, currentCursorPosition, checkedText));
       }
-
-      // Sends a hint for spelling suggestion.
-      pipelineInterpretationReceiver.input(
-          interpretation.eventId, new Interpretation.ID(Value.SPELLING_SUGGESTION_HINT));
     }
+  }
+
+  private void sendSpellingSuggestionHint(
+      @Nullable EventId eventId,
+      AccessibilityNodeInfoCompat node,
+      int cursorPosition,
+      @Nullable CharSequence checkedText) {
+    // The answer can come after focus has left the field, and then the hint is for nothing.
+    if (checkedText != null
+        && !(node.refresh()
+            && (node.isAccessibilityFocused() || node.isFocused())
+            && !node.isPassword()
+            && !AccessibilityNodeInfoUtils.hasNoSuggestionsNeed(node.getInputType())
+            && TextUtils.equals(node.getText(), checkedText)
+            && node.getTextSelectionStart() == node.getTextSelectionEnd()
+            && (cursorPosition == NO_POSITION || cursorPosition == node.getTextSelectionEnd()))) {
+      return;
+    }
+    boolean noSpellingSuggestion =
+        checkedText != null
+            ? AccessibilityNodeInfoUtils.getSpellingSuggestions(
+                    checkedText,
+                    cursorPosition == NO_POSITION ? node.getTextSelectionEnd() : cursorPosition)
+                .isEmpty()
+            : (cursorPosition == NO_POSITION
+                ? AccessibilityNodeInfoUtils.getSpellingSuggestions(context, node, false)
+                    .isEmpty()
+                : AccessibilityNodeInfoUtils.getSpellingSuggestions(
+                        context, node, cursorPosition, false)
+                    .isEmpty());
+    if (noSpellingSuggestion) {
+      return;
+    }
+
+    // Sends a hint for spelling suggestion.
+    pipelineInterpretationReceiver.input(
+        eventId, new Interpretation.ID(Value.SPELLING_SUGGESTION_HINT));
   }
 }

@@ -22,7 +22,6 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
-import android.widget.EditText
 import android.widget.FrameLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,6 +39,7 @@ import com.google.android.accessibility.utils.SharedPreferencesUtils
 import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import com.google.android.accessibility.utils.widget.KeyboardSafeEditText
 
 /**
  * The installed sound themes, with the one in use, the settings of the theme in use, and ways to
@@ -240,7 +240,7 @@ class SoundThemesFragment : TalkbackBaseFragment() {
   private fun askForLink() {
     val context = requireContext()
     val field =
-      EditText(context).apply {
+      KeyboardSafeEditText(context).apply {
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
         setHint(R.string.sound_theme_link_hint)
         isSingleLine = true
@@ -257,7 +257,7 @@ class SoundThemesFragment : TalkbackBaseFragment() {
       .setMessage(R.string.sound_theme_link_message)
       .setView(container)
       .setPositiveButton(R.string.sound_theme_install) { _, _ ->
-        val link = field.text.toString().trim()
+        val link = field.text?.toString().orEmpty().trim()
         if (link.isNotEmpty()) {
           startActivity(SoundThemeInstallActivity.linkIntent(context, link))
         }

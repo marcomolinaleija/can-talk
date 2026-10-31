@@ -20,7 +20,6 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.text.InputType
-import android.widget.EditText
 import android.widget.FrameLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
@@ -28,6 +27,7 @@ import androidx.preference.PreferenceFragmentCompat
 import com.google.android.accessibility.talkback.BuildConfig
 import com.google.android.accessibility.talkback.R
 import com.google.android.accessibility.utils.SharedPreferencesUtils
+import com.google.android.accessibility.utils.widget.KeyboardSafeEditText
 
 /** The "Gemini API key" preference in Automatic descriptions settings. */
 object GeminiApiKeyPreference {
@@ -60,7 +60,7 @@ object GeminiApiKeyPreference {
     // A visible password field, so that the key is not learned by the keyboard or offered as a
     // suggestion, but can still be read back after pasting it.
     val field =
-      EditText(context).apply {
+      KeyboardSafeEditText(context).apply {
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
         isSingleLine = true
         setHint(R.string.gemini_api_key_hint)
@@ -78,7 +78,7 @@ object GeminiApiKeyPreference {
       .setMessage(R.string.gemini_api_key_dialog_message)
       .setView(container)
       .setPositiveButton(R.string.gemini_api_key_save) { _, _ ->
-        GeminiApiKey.setUserKey(prefs, field.text.toString())
+        GeminiApiKey.setUserKey(prefs, field.text?.toString().orEmpty())
         updateSummary(preference)
       }
       .setNeutralButton(R.string.gemini_api_key_get) { _, _ ->

@@ -38,7 +38,11 @@ class GeminiFailure(
   val status: String = "",
   /** Google's explanation, or what failed on the phone. Never contains the API key. */
   val message: String = "",
+  private val groq: Boolean = false,
+  val groqLimit: GroqRateLimit? = null,
 ) {
+  /** Groq error text is never spoken as a Gemini failure, nor logged with a pasted key. */
+  fun forGroq(): GeminiFailure = GeminiFailure(kind, statusCode, groq = true, groqLimit = groqLimit)
   enum class Kind {
     /** The phone could not reach Google. */
     NO_CONNECTION,
@@ -58,14 +62,17 @@ class GeminiFailure(
   val logMessage: String
     get() =
       buildString {
+        if (groq) append("Groq ")
         append(kind)
         if (statusCode > 0) append(", HTTP ").append(statusCode)
         if (status.isNotEmpty()) append(' ').append(status)
         if (message.isNotEmpty()) append(": ").append(message)
+        if (groqLimit != null) append(' ').append(groqLimit)
       }
 
   /** What to tell the user. */
   fun userMessage(context: Context): String =
+    if (groq) groqMessage(context) else
     when (kind) {
       Kind.NO_CONNECTION -> context.getString(R.string.gemini_network_error)
       Kind.TIMEOUT -> context.getString(R.string.gemini_error_timeout)
@@ -83,10 +90,39 @@ class GeminiFailure(
       }
     }
 
+  private fun groqMessage(context: Context): String {
+    if (kind == Kind.QUOTA && groqLimit != null) {
+      if (groqLimit.requestTooLarge) return context.getString(R.string.groq_error_request_too_large)
+      return when (groqLimit.window) {
+        GroqRateLimit.Window.DAILY -> context.getString(R.string.groq_error_daily_limit)
+        GroqRateLimit.Window.ACCOUNT -> context.getString(R.string.groq_error_quota)
+        else -> groqLimit.retryAfterMillis?.let {
+          context.getString(R.string.groq_error_rate_limit_wait, (it + 999) / 1000)
+        } ?: context.getString(R.string.groq_error_rate_limit)
+      }
+    }
+    return context.getString(when (kind) {
+    Kind.NO_CONNECTION -> R.string.groq_error_network
+    Kind.TIMEOUT -> R.string.groq_error_timeout
+    Kind.API_KEY -> R.string.groq_error_api_key
+    Kind.QUOTA -> R.string.groq_error_quota
+    Kind.BUSY -> R.string.groq_error_busy
+    Kind.OTHER -> R.string.groq_error_response
+    })
+  }
+
   override fun toString(): String = logMessage
 
   companion object {
     private const val MAX_SPOKEN_DETAILS = 200
+
+    @JvmStatic
+    fun fromGroqVolleyError(error: VolleyError): GeminiFailure =
+      GroqRateLimit.from(error)?.let { groqRateLimit(it) } ?: fromVolleyError(error).forGroq()
+
+    @JvmStatic
+    fun groqRateLimit(limit: GroqRateLimit): GeminiFailure =
+      GeminiFailure(Kind.QUOTA, 429, groq = true, groqLimit = limit)
 
     /** A failure on the phone, such as an answer that could not be read. */
     @JvmStatic

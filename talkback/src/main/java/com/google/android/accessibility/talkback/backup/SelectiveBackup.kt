@@ -299,7 +299,8 @@ internal object SelectiveBackup {
       throw BackupException(BackupFailure.TYPE_MISMATCH)
     if (store == BackupStore.EMOJI || store == BackupStore.CLIPBOARD
       || store == BackupStore.NVDA_REMOTE_GESTURES || store == BackupStore.NVDA_REMOTE_SETTINGS
-      || value.key == "pref_bd_gesture_action_key" || value.key == "pref_gemini_api_key"
+      || value.key == "pref_bd_gesture_action_key"
+      || value.key in setOf("pref_gemini_api_key", "pref_groq_api_key", "pref_on_device_ai_provider")
       || value.key.startsWith("pref_brailleime_calibration_points_") || value.key.startsWith("pref_shortcut_")) {
       if (value.type != PrefType.STRING) throw BackupException(BackupFailure.TYPE_MISMATCH)
     }

@@ -8,7 +8,12 @@ ext {
     // Wear sources are retained, but phone is the only enabled target for this release.
     canTalkWearBuild = providers.gradleProperty('canTalkWearBuild').map { it.toBoolean() }.getOrElse(false)
     canTalkApplicationId = "can.cantalk"
-    talkbackApplicationId = canTalkTestBuild ? canTalkApplicationId + ".cantalktest" : canTalkApplicationId
+    canTalkTestSuffix = providers.gradleProperty('canTalkTestSuffix').getOrElse('cantalktest')
+    canTalkTestName = "can-talk — " + providers.gradleProperty('canTalkTestLabel').getOrElse('prueba')
+    if (canTalkTestBuild && !(canTalkTestSuffix ==~ /[a-z][a-z0-9_]*/)) {
+        throw new GradleException('canTalkTestSuffix must be a lowercase Android package component.')
+    }
+    talkbackApplicationId = canTalkTestBuild ? canTalkApplicationId + "." + canTalkTestSuffix : canTalkApplicationId
 }
 
 android {
@@ -21,7 +26,7 @@ android {
         // Each app variant has its own package and signature permission.
         manifestPlaceholders = [
             migrationPermission: talkbackApplicationId + ".permission.MIGRATE",
-            brailleImeLabel: canTalkTestBuild ? "Teclado braille de can-talk — prueba" : "@string/braille_ime_service_name"
+            brailleImeLabel: canTalkTestBuild ? "Teclado braille de " + canTalkTestName : "@string/braille_ime_service_name"
         ]
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled = true
