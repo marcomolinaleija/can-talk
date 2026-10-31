@@ -132,7 +132,12 @@ internal class ChatGptRequestPerformer(
 
     var connection: HttpURLConnection? = null
     try {
-      val url = URL(ChatGptAuthManager.CHAT_COMPLETIONS_ENDPOINT)
+      val isOAuth = isOAuthToken(token)
+      val endpointUrl =
+        if (isOAuth) ChatGptAuthManager.RESPONSES_ENDPOINT
+        else ChatGptAuthManager.CHAT_COMPLETIONS_ENDPOINT
+
+      val url = URL(endpointUrl)
       connection = (url.openConnection() as HttpURLConnection).apply {
         requestMethod = "POST"
         doOutput = true
@@ -144,7 +149,10 @@ internal class ChatGptRequestPerformer(
       }
       job.currentConnection = connection
 
-      val payload = buildOpenAiPayload(job)
+      val payload = if (isOAuth) buildResponsesPayload(job) else buildChatCompletionsPayload(job)
+      LogUtils.e(TAG, "Executing %s (isOAuth=%b, model=%s, hasImage=%b)",
+        endpointUrl, isOAuth, job.model, job.jpeg != null)
+
       OutputStreamWriter(connection.outputStream, StandardCharsets.UTF_8).use { writer ->
         writer.write(payload.toString())
         writer.flush()
@@ -157,7 +165,7 @@ internal class ChatGptRequestPerformer(
       }
 
       // If unauthorized and we haven't retried yet, attempt token refresh and retry
-      if (statusCode == 401 && !isRetry) {
+      if (statusCode == 401 && !isRetry && isOAuth) {
         LogUtils.w(TAG, "Received HTTP 401 from OpenAI. Attempting token refresh...")
         if (ChatGptAuthManager.refreshAccessToken(context)) {
           executeRequestWithRetry(job, callback, isRetry = true)
@@ -173,23 +181,22 @@ internal class ChatGptRequestPerformer(
           ""
         }
 
+      LogUtils.e(TAG, "Response from %s returned HTTP %d: %s", endpointUrl, statusCode, responseText.take(300))
+
       if (job.cancelled.get()) {
         reportFinished(job) { callback.onCancelled() }
         return
       }
 
       if (statusCode in 200..299) {
-        val jsonResponse = JSONObject(responseText)
-        val choices = jsonResponse.optJSONArray("choices")
-        if (choices == null || choices.length() == 0) {
+        val rawContent = extractContentFromResponse(responseText)
+        if (rawContent.isEmpty()) {
           reportFinished(job) {
-            callback.onFailure(GeminiFailure.other("ChatGPT no devolvió respuestas."))
+            callback.onFailure(GeminiFailure.other("ChatGPT no devolvió texto en la respuesta."))
           }
           return
         }
 
-        val messageObj = choices.getJSONObject(0).optJSONObject("message")
-        val rawContent = messageObj?.optString("content", "") ?: ""
         val processedText =
           if (job.isJson) {
             LocalGemmaRunner.extractJson(rawContent)
@@ -249,7 +256,55 @@ internal class ChatGptRequestPerformer(
     return RequestJob(prompt, jpeg, isJson, model)
   }
 
-  private fun buildOpenAiPayload(job: RequestJob): JSONObject {
+  private fun isOAuthToken(token: String): Boolean = !token.startsWith("sk-")
+
+  /**
+   * Builds the payload for OpenAI Responses API (used for Sign in with ChatGPT OAuth tokens).
+   * POST https://api.openai.com/v1/responses
+   */
+  private fun buildResponsesPayload(job: RequestJob): JSONObject {
+    val payload = JSONObject()
+    payload.put("model", job.model)
+
+    val contentArray = JSONArray()
+
+    val textPart = JSONObject()
+    textPart.put("type", "input_text")
+    textPart.put("text", job.prompt)
+    contentArray.put(textPart)
+
+    if (job.jpeg != null && job.jpeg.isNotEmpty()) {
+      val base64Image = Base64.encodeToString(job.jpeg, Base64.NO_WRAP)
+      val imagePart = JSONObject()
+      imagePart.put("type", "input_image")
+      imagePart.put("image_url", "data:image/jpeg;base64,$base64Image")
+      contentArray.put(imagePart)
+    }
+
+    val userMessage = JSONObject()
+    userMessage.put("role", "user")
+    userMessage.put("content", contentArray)
+
+    val inputArray = JSONArray()
+    inputArray.put(userMessage)
+
+    payload.put("input", inputArray)
+    payload.put("max_output_tokens", 1500)
+
+    if (job.isJson) {
+      val formatObj = JSONObject()
+      formatObj.put("type", "json_object")
+      payload.put("response_format", formatObj)
+    }
+
+    return payload
+  }
+
+  /**
+   * Builds the legacy payload for OpenAI Chat Completions API (used for manual sk-... API keys).
+   * POST https://api.openai.com/v1/chat/completions
+   */
+  private fun buildChatCompletionsPayload(job: RequestJob): JSONObject {
     val payload = JSONObject()
     payload.put("model", job.model)
 
@@ -288,6 +343,48 @@ internal class ChatGptRequestPerformer(
     }
 
     return payload
+  }
+
+  /**
+   * Extracts text content from either Responses API or Chat Completions API responses.
+   */
+  private fun extractContentFromResponse(responseText: String): String {
+    val jsonResponse = JSONObject(responseText)
+
+    // 1. Responses API: top-level "output_text"
+    val outputText = jsonResponse.optString("output_text", "")
+    if (outputText.isNotEmpty()) {
+      return outputText
+    }
+
+    // 2. Responses API: output array
+    val outputArray = jsonResponse.optJSONArray("output")
+    if (outputArray != null && outputArray.length() > 0) {
+      val sb = StringBuilder()
+      for (i in 0 until outputArray.length()) {
+        val item = outputArray.getJSONObject(i)
+        val contentArray = item.optJSONArray("content") ?: continue
+        for (j in 0 until contentArray.length()) {
+          val part = contentArray.getJSONObject(j)
+          if (part.optString("type") == "output_text") {
+            sb.append(part.optString("text", ""))
+          }
+        }
+      }
+      val extracted = sb.toString().trim()
+      if (extracted.isNotEmpty()) {
+        return extracted
+      }
+    }
+
+    // 3. Chat Completions API: choices[0].message.content
+    val choices = jsonResponse.optJSONArray("choices")
+    if (choices != null && choices.length() > 0) {
+      val messageObj = choices.getJSONObject(0).optJSONObject("message")
+      return messageObj?.optString("content", "")?.trim() ?: ""
+    }
+
+    return ""
   }
 
   private fun mapHttpError(statusCode: Int, responseBody: String): GeminiFailure {

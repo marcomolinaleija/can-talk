@@ -57,6 +57,7 @@ object ChatGptAuthManager {
   // OpenAI OIDC & OAuth endpoints
   const val AUTH_ENDPOINT = "https://auth.openai.com/api/accounts/authorize"
   const val TOKEN_ENDPOINT = "https://auth.openai.com/api/accounts/oauth/token"
+  const val RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses"
   const val CHAT_COMPLETIONS_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 
   // OpenAI dynamic_agent_client strictly whitelists http://localhost:1455/auth/callback

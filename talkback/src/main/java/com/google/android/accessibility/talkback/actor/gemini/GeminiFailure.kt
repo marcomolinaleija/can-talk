@@ -65,13 +65,34 @@ class GeminiFailure(
       }
 
   /** What to tell the user. */
-  fun userMessage(context: Context): String =
-    when (kind) {
+  fun userMessage(context: Context): String {
+    val prefs = com.google.android.accessibility.utils.SharedPreferencesUtils.getSharedPreferences(context)
+    val isChatGpt = ChatGptAuthManager.isChatGptActive(prefs)
+
+    return when (kind) {
       Kind.NO_CONNECTION -> context.getString(R.string.gemini_network_error)
       Kind.TIMEOUT -> context.getString(R.string.gemini_error_timeout)
-      Kind.API_KEY -> context.getString(R.string.gemini_error_api_key)
-      Kind.QUOTA -> context.getString(R.string.gemini_error_quota)
-      Kind.BUSY -> context.getString(R.string.gemini_error_busy)
+      Kind.API_KEY -> {
+        if (isChatGpt) {
+          message.ifEmpty { "La sesión de ChatGPT caducó o no es válida. Revisa tu cuenta en Ajustes." }
+        } else {
+          context.getString(R.string.gemini_error_api_key)
+        }
+      }
+      Kind.QUOTA -> {
+        if (isChatGpt) {
+          message.ifEmpty { "Límite de uso o cuota de ChatGPT alcanzado." }
+        } else {
+          context.getString(R.string.gemini_error_quota)
+        }
+      }
+      Kind.BUSY -> {
+        if (isChatGpt) {
+          "Los servidores de ChatGPT están ocupados. Intenta de nuevo más tarde."
+        } else {
+          context.getString(R.string.gemini_error_busy)
+        }
+      }
       Kind.OTHER -> {
         val shortMessage = firstSentence(message)
         when {
@@ -82,6 +103,7 @@ class GeminiFailure(
         }
       }
     }
+  }
 
   override fun toString(): String = logMessage
 
