@@ -24,7 +24,9 @@
 
     <string name="chatgpt_login_dialog_message">Inicia sesión con tu cuenta de ChatGPT para procesar las descripciones de imágenes y pantalla con tu plan personal (ChatGPT Plus o Pro), sin necesidad de crear claves ni pagar tokens por separado.</string>
     <string name="chatgpt_btn_sign_in">Iniciar sesión con ChatGPT</string>
+    <string name="chatgpt_btn_advanced">Opciones avanzadas</string>
     <string name="chatgpt_btn_manual_key">Clave API manual</string>
+    <string name="chatgpt_btn_paste_code">Pegar enlace o código de autorización</string>
     <string name="chatgpt_btn_disconnect">Cerrar sesión</string>
     <string name="chatgpt_btn_change_model">Cambiar modelo</string>
     <string name="chatgpt_btn_close">Cerrar</string>
@@ -39,6 +41,10 @@
     <string name="chatgpt_manual_key_dialog_title">Clave de API de OpenAI</string>
     <string name="chatgpt_manual_key_dialog_message">Ingresa tu clave de API de OpenAI (sk-...). Para quitarla, borra el campo y guarda.</string>
     <string name="chatgpt_manual_key_hint">Clave de API (sk-...)</string>
+
+    <string name="chatgpt_paste_code_dialog_title">Pegar enlace o código de autorización</string>
+    <string name="chatgpt_paste_code_dialog_message">"Si tras iniciar sesión el navegador mostró http://localhost:1455/auth/callback?code=..., copia esa dirección completa de la barra del navegador y pégala aquí."</string>
+    <string name="chatgpt_paste_code_hint">"http://localhost:1455/auth/callback?code=... o código"</string>
 
     <string name="chatgpt_auth_connecting">Conectando con ChatGPT…</string>
     <string name="chatgpt_auth_success">Cuenta de ChatGPT vinculada: %1$s</string>

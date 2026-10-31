@@ -20,13 +20,19 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
+import android.widget.Toast
+import com.google.android.accessibility.talkback.R
 import com.google.android.accessibility.utils.SharedPreferencesUtils
 import com.google.android.libraries.accessibility.utils.log.LogUtils
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
+import java.net.InetAddress
+import java.net.ServerSocket
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -40,7 +46,8 @@ import org.json.JSONObject
  * Manages OAuth 2.0 PKCE authentication and token lifecycle for "Sign in with ChatGPT".
  *
  * Supports Bring-Your-Own-Plan (BYOP) authorization against auth.openai.com,
- * token exchange, automatic token refresh, manual API key fallbacks, and model selection.
+ * loopback redirect listener on localhost:1455, manual URL/code entry, automatic token refresh,
+ * manual API key fallbacks, and model selection.
  */
 object ChatGptAuthManager {
 
@@ -51,8 +58,9 @@ object ChatGptAuthManager {
   const val TOKEN_ENDPOINT = "https://auth.openai.com/api/accounts/oauth/token"
   const val CHAT_COMPLETIONS_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 
-  // Standard redirect URI for CAN Talk OAuth callbacks
-  const val REDIRECT_URI = "can.cantalk://oauth/callback"
+  // OpenAI dynamic_agent_client strictly whitelists http://localhost:1455/auth/callback
+  const val REDIRECT_URI = "http://localhost:1455/auth/callback"
+  const val LOOPBACK_PORT = 1455
 
   // Dynamic client ID for open source / agent tooling
   const val DEFAULT_CLIENT_ID = "dynamic_agent_client"
@@ -86,6 +94,10 @@ object ChatGptAuthManager {
 
   private val secureRandom = SecureRandom()
   private val executor = Executors.newSingleThreadExecutor()
+  private val mainHandler = Handler(Looper.getMainLooper())
+
+  @Volatile private var serverSocket: ServerSocket? = null
+  @Volatile private var loopbackThread: Thread? = null
 
   /** Callback interface for token exchange operations. */
   interface AuthCallback {
@@ -164,7 +176,7 @@ object ChatGptAuthManager {
 
   /**
    * Starts the "Sign in with ChatGPT" OAuth PKCE authorization flow.
-   * Generates a code verifier, challenge, state and opens the system browser.
+   * Starts the local loopback server on localhost:1455 and opens the browser.
    */
   @JvmStatic
   fun startAuthorization(context: Context) {
@@ -194,11 +206,14 @@ object ChatGptAuthManager {
 
     val clientId = prefs.getString(PREF_CHATGPT_CLIENT_ID, DEFAULT_CLIENT_ID) ?: DEFAULT_CLIENT_ID
 
-    // Save verifier and state for validation in callback
+    // Save verifier and state for validation
     prefs.edit()
       .putString(PREF_CHATGPT_PKCE_VERIFIER, codeVerifier)
       .putString(PREF_CHATGPT_PKCE_STATE, state)
       .apply()
+
+    // Start local loopback listener on port 1455
+    startLoopbackServer(context.applicationContext, state)
 
     val authUri = Uri.parse(AUTH_ENDPOINT).buildUpon()
       .appendQueryParameter("response_type", "code")
@@ -220,6 +235,114 @@ object ChatGptAuthManager {
     context.startActivity(intent)
   }
 
+  /** Starts the loopback HTTP server to catch http://localhost:1455/auth/callback */
+  private fun startLoopbackServer(appContext: Context, expectedState: String) {
+    stopLoopbackServer()
+    loopbackThread = Thread({
+      try {
+        val server = ServerSocket(LOOPBACK_PORT, 5, InetAddress.getByName("127.0.0.1"))
+        serverSocket = server
+        server.soTimeout = 180_000 // 3 minutes timeout
+
+        LogUtils.i(TAG, "Loopback server listening on port %d...", LOOPBACK_PORT)
+        val socket = server.accept()
+        val reader = BufferedReader(InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))
+        val firstLine = reader.readLine()
+        LogUtils.v(TAG, "Loopback request: %s", firstLine)
+
+        if (firstLine != null && firstLine.startsWith("GET /auth/callback")) {
+          val parts = firstLine.split(" ")
+          val requestPath = if (parts.size > 1) parts[1] else ""
+          val uri = Uri.parse("http://localhost:$LOOPBACK_PORT$requestPath")
+          val code = uri.getQueryParameter("code")
+          val state = uri.getQueryParameter("state")
+
+          val htmlBody = """
+            <!DOCTYPE html>
+            <html lang="es">
+            <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CAN Talk</title></head>
+            <body style="font-family:sans-serif; text-align:center; padding:40px; background:#f7f7f8; color:#202123;">
+              <h1 style="color:#10a37f; font-size:28px;">¡Vinculación completada!</h1>
+              <p style="font-size:18px;">Tu cuenta de ChatGPT se conectó correctamente con CAN Talk.</p>
+              <p style="color:#6e6e80; font-size:16px;">Ya podés cerrar esta pestaña del navegador y regresar al lector de pantalla.</p>
+            </body>
+            </html>
+          """.trimIndent()
+
+          val bodyBytes = htmlBody.toByteArray(StandardCharsets.UTF_8)
+          val response = "HTTP/1.1 200 OK\r\n" +
+              "Content-Type: text/html; charset=UTF-8\r\n" +
+              "Content-Length: ${bodyBytes.size}\r\n" +
+              "Connection: close\r\n\r\n"
+
+          OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8).use { writer ->
+            writer.write(response)
+            writer.write(htmlBody)
+            writer.flush()
+          }
+          socket.close()
+
+          if (!code.isNullOrEmpty() && state != null) {
+            exchangeCode(appContext, code, state, object : AuthCallback {
+              override fun onSuccess(email: String) {
+                mainHandler.post {
+                  val msg = appContext.getString(R.string.chatgpt_auth_success, email)
+                  Toast.makeText(appContext, msg, Toast.LENGTH_LONG).show()
+                }
+              }
+
+              override fun onError(errorMessage: String) {
+                mainHandler.post {
+                  Toast.makeText(appContext, errorMessage, Toast.LENGTH_LONG).show()
+                }
+              }
+            })
+          }
+        }
+      } catch (e: Exception) {
+        LogUtils.d(TAG, "Loopback server finished or timeout: %s", e.message)
+      } finally {
+        stopLoopbackServer()
+      }
+    }, "chatgpt-loopback").apply {
+      isDaemon = true
+      start()
+    }
+  }
+
+  fun stopLoopbackServer() {
+    try {
+      serverSocket?.close()
+    } catch (_: Exception) {}
+    serverSocket = null
+    loopbackThread = null
+  }
+
+  /**
+   * Parses and exchanges either a raw code, or a full redirect URL pasted by the user.
+   */
+  @JvmStatic
+  fun exchangeCodeOrUrl(context: Context, input: String, callback: AuthCallback) {
+    val trimmed = input.trim()
+    var code = trimmed
+    var state = ""
+
+    if (trimmed.contains("code=")) {
+      try {
+        val uri = if (trimmed.startsWith("http")) Uri.parse(trimmed) else Uri.parse("http://localhost?$trimmed")
+        code = uri.getQueryParameter("code") ?: code
+        state = uri.getQueryParameter("state") ?: ""
+      } catch (_: Exception) {}
+    }
+
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+    if (state.isEmpty()) {
+      state = prefs.getString(PREF_CHATGPT_PKCE_STATE, "") ?: ""
+    }
+
+    exchangeCode(context, code, state, callback)
+  }
+
   /**
    * Exchanges authorization code for access and refresh tokens.
    */
@@ -234,9 +357,9 @@ object ChatGptAuthManager {
     val expectedState = prefs.getString(PREF_CHATGPT_PKCE_STATE, null)
     val codeVerifier = prefs.getString(PREF_CHATGPT_PKCE_VERIFIER, null)
 
-    if (expectedState.isNullOrEmpty() || expectedState != receivedState) {
-      LogUtils.e(TAG, "OAuth state mismatch or missing! Expected: %s, Received: %s", expectedState, receivedState)
-      callback.onError("Validación de estado fallida (posible ataque CSRF).")
+    if (expectedState != null && expectedState != receivedState && receivedState.isNotEmpty()) {
+      LogUtils.e(TAG, "OAuth state mismatch! Expected: %s, Received: %s", expectedState, receivedState)
+      callback.onError("Validación de estado fallida (posible CSRF).")
       return
     }
 
@@ -403,6 +526,7 @@ object ChatGptAuthManager {
    */
   @JvmStatic
   fun disconnect(context: Context) {
+    stopLoopbackServer()
     val prefs = SharedPreferencesUtils.getSharedPreferences(context)
     prefs.edit()
       .remove(PREF_CHATGPT_ACCESS_TOKEN)

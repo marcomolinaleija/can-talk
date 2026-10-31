@@ -30,7 +30,9 @@
 
     <string name="chatgpt_login_dialog_message">Sign in with your ChatGPT account to power image and screen descriptions using your personal ChatGPT Plus or Pro subscription, without needing developer API keys or extra fees.</string>
     <string name="chatgpt_btn_sign_in">Sign in with ChatGPT</string>
+    <string name="chatgpt_btn_advanced">Advanced</string>
     <string name="chatgpt_btn_manual_key">Manual API key</string>
+    <string name="chatgpt_btn_paste_code">Paste link or authorization code</string>
     <string name="chatgpt_btn_disconnect">Disconnect</string>
     <string name="chatgpt_btn_change_model">Change model</string>
     <string name="chatgpt_btn_close">Close</string>
@@ -45,6 +47,10 @@
     <string name="chatgpt_manual_key_dialog_title">OpenAI API Key</string>
     <string name="chatgpt_manual_key_dialog_message">Enter your OpenAI API key (sk-...). To remove it, clear the field and save.</string>
     <string name="chatgpt_manual_key_hint">OpenAI API key (sk-...)</string>
+
+    <string name="chatgpt_paste_code_dialog_title">Paste link or authorization code</string>
+    <string name="chatgpt_paste_code_dialog_message">"If after signing in your browser displayed http://localhost:1455/auth/callback?code=..., copy that full address from the browser\'s address bar and paste it here."</string>
+    <string name="chatgpt_paste_code_hint">"http://localhost:1455/auth/callback?code=... or authorization code"</string>
 
     <string name="chatgpt_auth_connecting">Connecting with ChatGPT…</string>
     <string name="chatgpt_auth_success">ChatGPT account connected: %1$s</string>

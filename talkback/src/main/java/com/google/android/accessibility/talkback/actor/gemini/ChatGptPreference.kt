@@ -17,9 +17,12 @@
 package com.google.android.accessibility.talkback.actor.gemini
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.text.InputType
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.ListPreference
 import androidx.preference.Preference
@@ -35,6 +38,8 @@ object ChatGptPreference {
 
   const val PREF_KEY_ACCOUNT = "pref_chatgpt_account"
   const val PREF_KEY_PROVIDER = "pref_ai_provider"
+
+  private val mainHandler = Handler(Looper.getMainLooper())
 
   /**
    * Sets up ChatGPT and AI provider preferences if present in the [fragment].
@@ -142,8 +147,76 @@ object ChatGptPreference {
       .setPositiveButton(R.string.chatgpt_btn_sign_in) { _, _ ->
         ChatGptAuthManager.startAuthorization(context)
       }
-      .setNeutralButton(R.string.chatgpt_btn_manual_key) { _, _ ->
-        showManualApiKeyDialog(fragment, preference)
+      .setNeutralButton(R.string.chatgpt_btn_advanced) { _, _ ->
+        showAdvancedDialog(fragment, preference)
+      }
+      .setNegativeButton(android.R.string.cancel, null)
+      .show()
+  }
+
+  private fun showAdvancedDialog(fragment: PreferenceFragmentCompat, preference: Preference) {
+    val context = fragment.requireContext()
+    val options = arrayOf(
+      context.getString(R.string.chatgpt_btn_paste_code),
+      context.getString(R.string.chatgpt_btn_manual_key)
+    )
+
+    AlertDialog.Builder(context)
+      .setTitle(R.string.chatgpt_btn_advanced)
+      .setItems(options) { _, which ->
+        when (which) {
+          0 -> showPasteCodeDialog(fragment, preference)
+          1 -> showManualApiKeyDialog(fragment, preference)
+        }
+      }
+      .setNegativeButton(android.R.string.cancel, null)
+      .show()
+  }
+
+  private fun showPasteCodeDialog(fragment: PreferenceFragmentCompat, preference: Preference) {
+    val context = fragment.requireContext()
+    val field =
+      EditText(context).apply {
+        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+        isSingleLine = true
+        setHint(R.string.chatgpt_paste_code_hint)
+      }
+
+    val padding = (24 * context.resources.displayMetrics.density).toInt()
+    val container =
+      FrameLayout(context).apply {
+        setPadding(padding, 0, padding, 0)
+        addView(field)
+      }
+
+    AlertDialog.Builder(context)
+      .setTitle(R.string.chatgpt_paste_code_dialog_title)
+      .setMessage(R.string.chatgpt_paste_code_dialog_message)
+      .setView(container)
+      .setPositiveButton(R.string.gemini_api_key_save) { _, _ ->
+        val input = field.text.toString().trim()
+        if (input.isNotEmpty()) {
+          Toast.makeText(context, R.string.chatgpt_auth_connecting, Toast.LENGTH_SHORT).show()
+          ChatGptAuthManager.exchangeCodeOrUrl(context, input, object : ChatGptAuthManager.AuthCallback {
+            override fun onSuccess(email: String) {
+              mainHandler.post {
+                val msg = context.getString(R.string.chatgpt_auth_success, email)
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                updateAccountSummary(preference)
+                fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER)?.let {
+                  it.value = ChatGptAuthManager.PROVIDER_CHATGPT
+                  updateProviderSummary(it, ChatGptAuthManager.PROVIDER_CHATGPT)
+                }
+              }
+            }
+
+            override fun onError(errorMessage: String) {
+              mainHandler.post {
+                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+              }
+            }
+          })
+        }
       }
       .setNegativeButton(android.R.string.cancel, null)
       .show()
