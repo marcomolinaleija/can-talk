@@ -40,6 +40,7 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.UUID
 import java.util.concurrent.Executors
+import org.json.JSONException
 import org.json.JSONObject
 
 /**
@@ -96,6 +97,8 @@ object ChatGptAuthManager {
   private val executor = Executors.newSingleThreadExecutor()
   private val mainHandler = Handler(Looper.getMainLooper())
 
+  @Volatile private var inFlightVerifier: String? = null
+  @Volatile private var inFlightState: String? = null
   @Volatile private var serverSocket: ServerSocket? = null
   @Volatile private var loopbackThread: Thread? = null
 
@@ -209,6 +212,9 @@ object ChatGptAuthManager {
 
     val clientId = prefs.getString(PREF_CHATGPT_CLIENT_ID, DEFAULT_CLIENT_ID) ?: DEFAULT_CLIENT_ID
 
+    inFlightVerifier = codeVerifier
+    inFlightState = state
+
     // Save verifier and state for validation
     prefs.edit()
       .putString(PREF_CHATGPT_PKCE_VERIFIER, codeVerifier)
@@ -238,6 +244,49 @@ object ChatGptAuthManager {
     context.startActivity(intent)
   }
 
+  private fun buildSuccessHtml(email: String): String {
+    return """
+      <!DOCTYPE html>
+      <html lang="es">
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CAN Talk</title></head>
+      <body style="font-family:sans-serif; text-align:center; padding:40px; background:#f7f7f8; color:#202123;">
+        <h1 style="color:#10a37f; font-size:28px;">¡Vinculación completada!</h1>
+        <p style="font-size:18px;">Tu cuenta de ChatGPT (${email.ifEmpty { "Plus/Pro" }}) se conectó correctamente con CAN Talk.</p>
+        <p style="color:#6e6e80; font-size:16px;">Ya podés cerrar esta pestaña del navegador y regresar al lector de pantalla.</p>
+      </body>
+      </html>
+    """.trimIndent()
+  }
+
+  private fun buildErrorHtml(title: String, detail: String): String {
+    return """
+      <!DOCTYPE html>
+      <html lang="es">
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CAN Talk</title></head>
+      <body style="font-family:sans-serif; text-align:center; padding:40px; background:#f7f7f8; color:#202123;">
+        <h1 style="color:#ef4444; font-size:28px;">$title</h1>
+        <p style="font-size:18px;">Ocurrió un problema al vincular tu cuenta con OpenAI:</p>
+        <div style="color:#b91c1c; font-size:16px; background:#fee2e2; padding:14px; border-radius:8px; display:inline-block; max-width:90%; word-break:break-all; text-align:left;">$detail</div>
+        <p style="color:#6e6e80; font-size:16px; margin-top:24px;">Regresa a CAN Talk para intentar nuevamente.</p>
+      </body>
+      </html>
+    """.trimIndent()
+  }
+
+  private fun writeHttpResponse(socket: java.net.Socket, statusCode: Int, statusText: String, htmlBody: String) {
+    val bodyBytes = htmlBody.toByteArray(StandardCharsets.UTF_8)
+    val response = "HTTP/1.1 $statusCode $statusText\r\n" +
+        "Content-Type: text/html; charset=UTF-8\r\n" +
+        "Content-Length: ${bodyBytes.size}\r\n" +
+        "Connection: close\r\n\r\n"
+
+    OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8).use { writer ->
+      writer.write(response)
+      writer.write(htmlBody)
+      writer.flush()
+    }
+  }
+
   /** Starts the loopback HTTP server to catch http://localhost:1455/auth/callback */
   private fun startLoopbackServer(appContext: Context, expectedState: String) {
     stopLoopbackServer()
@@ -259,47 +308,53 @@ object ChatGptAuthManager {
           val uri = Uri.parse("http://localhost:$LOOPBACK_PORT$requestPath")
           val code = uri.getQueryParameter("code")
           val state = uri.getQueryParameter("state")
+          val callbackClientId = uri.getQueryParameter("client_id")
+          val error = uri.getQueryParameter("error")
+          val errorDesc = uri.getQueryParameter("error_description")
 
-          val htmlBody = """
-            <!DOCTYPE html>
-            <html lang="es">
-            <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CAN Talk</title></head>
-            <body style="font-family:sans-serif; text-align:center; padding:40px; background:#f7f7f8; color:#202123;">
-              <h1 style="color:#10a37f; font-size:28px;">¡Vinculación completada!</h1>
-              <p style="font-size:18px;">Tu cuenta de ChatGPT se conectó correctamente con CAN Talk.</p>
-              <p style="color:#6e6e80; font-size:16px;">Ya podés cerrar esta pestaña del navegador y regresar al lector de pantalla.</p>
-            </body>
-            </html>
-          """.trimIndent()
+          LogUtils.e(TAG, "Callback received: code=%s, state=%s, callbackClientId=%s, error=%s",
+            code?.take(8), state, callbackClientId, error)
 
-          val bodyBytes = htmlBody.toByteArray(StandardCharsets.UTF_8)
-          val response = "HTTP/1.1 200 OK\r\n" +
-              "Content-Type: text/html; charset=UTF-8\r\n" +
-              "Content-Length: ${bodyBytes.size}\r\n" +
-              "Connection: close\r\n\r\n"
-
-          OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8).use { writer ->
-            writer.write(response)
-            writer.write(htmlBody)
-            writer.flush()
+          if (!error.isNullOrEmpty()) {
+            val detail = errorDesc ?: error
+            val html = buildErrorHtml("Error de autorización", detail)
+            writeHttpResponse(socket, 400, "Bad Request", html)
+            socket.close()
+            mainHandler.post {
+              Toast.makeText(appContext, "OpenAI: $detail", Toast.LENGTH_LONG).show()
+            }
+            return@Thread
           }
-          socket.close()
 
-          if (!code.isNullOrEmpty() && state != null) {
-            exchangeCode(appContext, code, state, object : AuthCallback {
-              override fun onSuccess(email: String) {
-                mainHandler.post {
-                  val msg = appContext.getString(R.string.chatgpt_auth_success, email)
-                  Toast.makeText(appContext, msg, Toast.LENGTH_LONG).show()
-                }
-              }
+          if (code.isNullOrEmpty()) {
+            val html = buildErrorHtml("Error de autorización", "No se recibió código de autorización.")
+            writeHttpResponse(socket, 400, "Bad Request", html)
+            socket.close()
+            mainHandler.post {
+              Toast.makeText(appContext, "Falta código de autorización.", Toast.LENGTH_LONG).show()
+            }
+            return@Thread
+          }
 
-              override fun onError(errorMessage: String) {
-                mainHandler.post {
-                  Toast.makeText(appContext, errorMessage, Toast.LENGTH_LONG).show()
-                }
-              }
-            })
+          // Exchange tokens synchronously on background loopback thread before replying to browser
+          val exchangeResult = exchangeCodeSync(appContext, code, state ?: "", callbackClientId)
+          if (exchangeResult.isSuccess) {
+            val email = exchangeResult.getOrThrow()
+            val html = buildSuccessHtml(email)
+            writeHttpResponse(socket, 200, "OK", html)
+            socket.close()
+            mainHandler.post {
+              val msg = appContext.getString(R.string.chatgpt_auth_success, email)
+              Toast.makeText(appContext, msg, Toast.LENGTH_LONG).show()
+            }
+          } else {
+            val errorMsg = exchangeResult.exceptionOrNull()?.message ?: "Error al intercambiar tokens con OpenAI."
+            val html = buildErrorHtml("Error al intercambiar tokens", errorMsg)
+            writeHttpResponse(socket, 400, "Bad Request", html)
+            socket.close()
+            mainHandler.post {
+              Toast.makeText(appContext, errorMsg, Toast.LENGTH_LONG).show()
+            }
           }
         }
       } catch (e: Exception) {
@@ -329,115 +384,157 @@ object ChatGptAuthManager {
     val trimmed = input.trim()
     var code = trimmed
     var state = ""
+    var callbackClientId: String? = null
 
-    if (trimmed.contains("code=")) {
+    if (trimmed.contains("code=") || trimmed.contains("client_id=")) {
       try {
         val uri = if (trimmed.startsWith("http")) Uri.parse(trimmed) else Uri.parse("http://localhost?$trimmed")
         code = uri.getQueryParameter("code") ?: code
         state = uri.getQueryParameter("state") ?: ""
+        callbackClientId = uri.getQueryParameter("client_id")
       } catch (_: Exception) {}
     }
 
     val prefs = SharedPreferencesUtils.getSharedPreferences(context)
     if (state.isEmpty()) {
-      state = prefs.getString(PREF_CHATGPT_PKCE_STATE, "") ?: ""
+      state = prefs.getString(PREF_CHATGPT_PKCE_STATE, "") ?: inFlightState ?: ""
     }
 
-    exchangeCode(context, code, state, callback)
+    exchangeCode(context, code, state, callback, callbackClientId)
+  }
+
+  /**
+   * Synchronously exchanges authorization code for access and refresh tokens.
+   */
+  @JvmStatic
+  @Synchronized
+  fun exchangeCodeSync(
+    context: Context,
+    code: String,
+    receivedState: String,
+    callbackClientId: String? = null
+  ): Result<String> {
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+    val expectedState = prefs.getString(PREF_CHATGPT_PKCE_STATE, null) ?: inFlightState
+    val codeVerifier = prefs.getString(PREF_CHATGPT_PKCE_VERIFIER, null) ?: inFlightVerifier
+
+    LogUtils.e(TAG, "exchangeCodeSync: code=%s, receivedState=%s, expectedState=%s, callbackClientId=%s",
+      code.take(8) + "...", receivedState, expectedState, callbackClientId)
+
+    if (expectedState != null && expectedState != receivedState && receivedState.isNotEmpty()) {
+      val msg = "Validación de estado fallida (posible CSRF)."
+      LogUtils.e(TAG, "OAuth state mismatch! Expected: %s, Received: %s", expectedState, receivedState)
+      return Result.failure(IllegalStateException(msg))
+    }
+
+    if (codeVerifier.isNullOrEmpty()) {
+      val msg = "No se encontró el verificador PKCE."
+      LogUtils.e(TAG, "Missing code verifier in SharedPreferences and memory.")
+      return Result.failure(IllegalStateException(msg))
+    }
+
+    // Dynamic registration provides client_id via the callback query parameter
+    val clientId = callbackClientId?.takeUnless { it.isEmpty() }
+      ?: prefs.getString(PREF_CHATGPT_CLIENT_ID, null)?.takeUnless { it.isEmpty() || it == DEFAULT_CLIENT_ID }
+      ?: DEFAULT_CLIENT_ID
+
+    LogUtils.e(TAG, "Exchanging code with client_id: %s", clientId)
+
+    return try {
+      val postParams = mapOf(
+        "grant_type" to "authorization_code",
+        "client_id" to clientId,
+        "code" to code,
+        "redirect_uri" to REDIRECT_URI,
+        "code_verifier" to codeVerifier
+      )
+
+      val jsonResponse = executePostForm(TOKEN_ENDPOINT, postParams)
+      if (jsonResponse == null) {
+        val msg = "No se recibió respuesta del servidor de autorización."
+        LogUtils.e(TAG, msg)
+        return Result.failure(IllegalStateException(msg))
+      }
+
+      if (jsonResponse.has("error")) {
+        val errorDesc = jsonResponse.optString("error_description", jsonResponse.optString("error"))
+        val msg = "Error de OpenAI: $errorDesc"
+        LogUtils.e(TAG, "Token endpoint error: %s (payload: %s)", msg, jsonResponse)
+        return Result.failure(IllegalStateException(msg))
+      }
+
+      val accessToken = jsonResponse.getString("access_token")
+      val refreshToken = jsonResponse.optString("refresh_token", "")
+      val expiresIn = jsonResponse.optLong("expires_in", 3600L)
+      val idToken = jsonResponse.optString("id_token", "")
+      val issuedClientId = jsonResponse.optString("client_id", "")
+
+      val expiresAt = System.currentTimeMillis() + (expiresIn * 1000L)
+
+      // Parse claims from ID token
+      var email = ""
+      var name = ""
+      if (idToken.isNotEmpty()) {
+        val claims = decodeJwtPayload(idToken)
+        email = claims.optString("email", "")
+        name = claims.optString("name", "")
+      }
+      if (email.isEmpty()) {
+        email = "ChatGPT Plus/Pro"
+      }
+
+      val finalClientId = when {
+        issuedClientId.isNotEmpty() && issuedClientId != DEFAULT_CLIENT_ID -> issuedClientId
+        !callbackClientId.isNullOrEmpty() && callbackClientId != DEFAULT_CLIENT_ID -> callbackClientId
+        else -> null
+      }
+
+      val editor = prefs.edit()
+        .putString(PREF_CHATGPT_ACCESS_TOKEN, accessToken)
+        .putLong(PREF_CHATGPT_TOKEN_EXPIRES_AT, expiresAt)
+        .putString(PREF_CHATGPT_USER_EMAIL, email)
+        .putString(PREF_CHATGPT_USER_NAME, name)
+        .putString(PREF_AI_PROVIDER, PROVIDER_CHATGPT)
+        .remove(PREF_CHATGPT_PKCE_VERIFIER)
+        .remove(PREF_CHATGPT_PKCE_STATE)
+
+      if (refreshToken.isNotEmpty()) {
+        editor.putString(PREF_CHATGPT_REFRESH_TOKEN, refreshToken)
+      }
+      if (finalClientId != null) {
+        editor.putString(PREF_CHATGPT_CLIENT_ID, finalClientId)
+      }
+      editor.apply()
+
+      inFlightVerifier = null
+      inFlightState = null
+
+      LogUtils.e(TAG, "Successfully authenticated with ChatGPT as %s, clientId=%s", email, finalClientId ?: clientId)
+      Result.success(email)
+    } catch (e: Exception) {
+      LogUtils.e(TAG, "Exception exchanging code: %s", e.message)
+      Result.failure(e)
+    }
   }
 
   /**
    * Exchanges authorization code for access and refresh tokens.
    */
   @JvmStatic
+  @JvmOverloads
   fun exchangeCode(
     context: Context,
     code: String,
     receivedState: String,
-    callback: AuthCallback
+    callback: AuthCallback,
+    callbackClientId: String? = null
   ) {
-    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
-    val expectedState = prefs.getString(PREF_CHATGPT_PKCE_STATE, null)
-    val codeVerifier = prefs.getString(PREF_CHATGPT_PKCE_VERIFIER, null)
-
-    if (expectedState != null && expectedState != receivedState && receivedState.isNotEmpty()) {
-      LogUtils.e(TAG, "OAuth state mismatch! Expected: %s, Received: %s", expectedState, receivedState)
-      callback.onError("Validación de estado fallida (posible CSRF).")
-      return
-    }
-
-    if (codeVerifier.isNullOrEmpty()) {
-      LogUtils.e(TAG, "Missing code verifier in SharedPreferences.")
-      callback.onError("No se encontró el verificador PKCE.")
-      return
-    }
-
-    val clientId = prefs.getString(PREF_CHATGPT_CLIENT_ID, DEFAULT_CLIENT_ID) ?: DEFAULT_CLIENT_ID
-
     executor.execute {
-      try {
-        val postParams = mapOf(
-          "grant_type" to "authorization_code",
-          "client_id" to clientId,
-          "code" to code,
-          "redirect_uri" to REDIRECT_URI,
-          "code_verifier" to codeVerifier
-        )
-
-        val jsonResponse = executePostForm(TOKEN_ENDPOINT, postParams)
-        if (jsonResponse == null) {
-          callback.onError("No se recibió respuesta del servidor de autorización.")
-          return@execute
-        }
-
-        if (jsonResponse.has("error")) {
-          val errorDesc = jsonResponse.optString("error_description", jsonResponse.optString("error"))
-          callback.onError("Error de OpenAI: $errorDesc")
-          return@execute
-        }
-
-        val accessToken = jsonResponse.getString("access_token")
-        val refreshToken = jsonResponse.optString("refresh_token", "")
-        val expiresIn = jsonResponse.optLong("expires_in", 3600L)
-        val idToken = jsonResponse.optString("id_token", "")
-        val issuedClientId = jsonResponse.optString("client_id", "")
-
-        val expiresAt = System.currentTimeMillis() + (expiresIn * 1000L)
-
-        // Parse claims from ID token
-        var email = ""
-        var name = ""
-        if (idToken.isNotEmpty()) {
-          val claims = decodeJwtPayload(idToken)
-          email = claims.optString("email", "")
-          name = claims.optString("name", "")
-        }
-        if (email.isEmpty()) {
-          email = "ChatGPT Plus/Pro"
-        }
-
-        val editor = prefs.edit()
-          .putString(PREF_CHATGPT_ACCESS_TOKEN, accessToken)
-          .putLong(PREF_CHATGPT_TOKEN_EXPIRES_AT, expiresAt)
-          .putString(PREF_CHATGPT_USER_EMAIL, email)
-          .putString(PREF_CHATGPT_USER_NAME, name)
-          .putString(PREF_AI_PROVIDER, PROVIDER_CHATGPT)
-          .remove(PREF_CHATGPT_PKCE_VERIFIER)
-          .remove(PREF_CHATGPT_PKCE_STATE)
-
-        if (refreshToken.isNotEmpty()) {
-          editor.putString(PREF_CHATGPT_REFRESH_TOKEN, refreshToken)
-        }
-        if (issuedClientId.isNotEmpty() && issuedClientId != DEFAULT_CLIENT_ID) {
-          editor.putString(PREF_CHATGPT_CLIENT_ID, issuedClientId)
-        }
-        editor.apply()
-
-        LogUtils.i(TAG, "Successfully authenticated with ChatGPT as %s", email)
-        callback.onSuccess(email)
-      } catch (e: Exception) {
-        LogUtils.e(TAG, "Error exchanging code: %s", e.message)
-        callback.onError("Error al conectar: ${e.message}")
+      val result = exchangeCodeSync(context, code, receivedState, callbackClientId)
+      if (result.isSuccess) {
+        callback.onSuccess(result.getOrThrow())
+      } else {
+        callback.onError(result.exceptionOrNull()?.message ?: "Error desconocido")
       }
     }
   }
@@ -571,10 +668,26 @@ object ChatGptAuthManager {
 
       val responseCode = connection.responseCode
       val stream = if (responseCode in 200..299) connection.inputStream else connection.errorStream
-      if (stream == null) return null
+      if (stream == null) {
+        LogUtils.e(TAG, "POST %s returned HTTP %d with null stream", endpointUrl, responseCode)
+        return null
+      }
 
       val responseText = BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() }
-      return JSONObject(responseText)
+      LogUtils.e(TAG, "POST %s returned HTTP %d: %s", endpointUrl, responseCode, responseText)
+
+      return try {
+        JSONObject(responseText)
+      } catch (e: JSONException) {
+        LogUtils.e(TAG, "Non-JSON response (HTTP %d): %s", responseCode, responseText)
+        JSONObject().apply {
+          put("error", "HTTP $responseCode")
+          put("error_description", responseText)
+        }
+      }
+    } catch (e: Exception) {
+      LogUtils.e(TAG, "executePostForm failed for %s: %s", endpointUrl, e.message)
+      throw e
     } finally {
       connection.disconnect()
     }

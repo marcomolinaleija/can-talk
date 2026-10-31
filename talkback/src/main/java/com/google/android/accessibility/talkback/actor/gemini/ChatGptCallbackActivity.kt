@@ -77,6 +77,8 @@ class ChatGptCallbackActivity : Activity() {
 
     showFeedback(getString(R.string.chatgpt_auth_connecting))
 
+    val callbackClientId = data.getQueryParameter("client_id")
+
     ChatGptAuthManager.exchangeCode(
       applicationContext,
       code,
@@ -96,7 +98,8 @@ class ChatGptCallbackActivity : Activity() {
             finish()
           }
         }
-      }
+      },
+      callbackClientId
     )
   }
 
