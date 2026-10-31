@@ -268,13 +268,20 @@ object ChatGptPreference {
     val prefs = SharedPreferencesUtils.getSharedPreferences(context)
     val currentModel = ChatGptAuthManager.getModel(prefs)
 
-    val models = arrayOf(ChatGptAuthManager.MODEL_GPT_4O, ChatGptAuthManager.MODEL_GPT_4O_MINI)
+    val models = arrayOf(
+      ChatGptAuthManager.MODEL_GPT_6_1_SOL,
+      ChatGptAuthManager.MODEL_GPT_6_LUNA,
+      ChatGptAuthManager.MODEL_GPT_6_ASTRA,
+      ChatGptAuthManager.MODEL_GPT_4O
+    )
     val labels = arrayOf(
-      context.getString(R.string.chatgpt_model_gpt4o_label),
-      context.getString(R.string.chatgpt_model_gpt4o_mini_label)
+      "GPT-6.1 Sol (Plus / Pro - Recomendado)",
+      "GPT-6 Luna (Rápido / Estándar)",
+      "GPT-6 Astra (Avanzado)",
+      "GPT-4o (Clave API manual)"
     )
 
-    val selectedIndex = if (currentModel == ChatGptAuthManager.MODEL_GPT_4O_MINI) 1 else 0
+    val selectedIndex = models.indexOf(currentModel).let { if (it >= 0) it else 0 }
 
     AlertDialog.Builder(context)
       .setTitle(R.string.chatgpt_select_model_title)

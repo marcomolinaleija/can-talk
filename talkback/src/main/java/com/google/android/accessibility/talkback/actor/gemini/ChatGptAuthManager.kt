@@ -90,9 +90,12 @@ object ChatGptAuthManager {
   const val PREF_CHATGPT_HOST_ID = "pref_chatgpt_host_id"
 
   // Supported models
+  const val MODEL_GPT_6_1_SOL = "gpt-6.1-sol"
+  const val MODEL_GPT_6_LUNA = "gpt-6-luna"
+  const val MODEL_GPT_6_ASTRA = "gpt-6-astra"
   const val MODEL_GPT_4O = "gpt-4o"
   const val MODEL_GPT_4O_MINI = "gpt-4o-mini"
-  const val DEFAULT_MODEL = MODEL_GPT_4O
+  const val DEFAULT_MODEL = MODEL_GPT_6_1_SOL
 
   private val secureRandom = SecureRandom()
   private val executor = Executors.newSingleThreadExecutor()
@@ -137,11 +140,18 @@ object ChatGptAuthManager {
     return !accessToken.isNullOrEmpty() || !refreshToken.isNullOrEmpty()
   }
 
-  /** Returns the user-selected model or the default gpt-4o. */
+  /** Returns the user-selected model or the default gpt-6.1-sol. */
   @JvmStatic
   fun getModel(prefs: SharedPreferences): String {
-    return prefs.getString(PREF_CHATGPT_MODEL, DEFAULT_MODEL)?.trim().takeUnless { it.isNullOrEmpty() }
-      ?: DEFAULT_MODEL
+    val model =
+      prefs.getString(PREF_CHATGPT_MODEL, DEFAULT_MODEL)?.trim().takeUnless { it.isNullOrEmpty() }
+        ?: DEFAULT_MODEL
+    // If the saved model was the deprecated gpt-4o or gpt-4o-mini on an OAuth session, migrate to default
+    val hasManualKey = prefs.getString(PREF_CHATGPT_MANUAL_API_KEY, null)?.trim()?.isNotEmpty() == true
+    if (!hasManualKey && (model == MODEL_GPT_4O || model == MODEL_GPT_4O_MINI)) {
+      return DEFAULT_MODEL
+    }
+    return model
   }
 
   /** Saves the selected model in preferences. */

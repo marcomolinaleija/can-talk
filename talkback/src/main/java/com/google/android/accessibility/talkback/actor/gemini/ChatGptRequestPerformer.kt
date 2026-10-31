@@ -175,16 +175,44 @@ internal class ChatGptRequestPerformer(
 
       val stream = if (statusCode in 200..299) connection.inputStream else connection.errorStream
       val responseText =
-        if (stream != null) {
-          BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() }
-        } else {
+        if (stream == null) {
           ""
+        } else if (isOAuth && statusCode in 200..299) {
+          val reader = BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8))
+          val sb = StringBuilder()
+          var line = reader.readLine()
+          while (line != null) {
+            val trimmed = line.trim()
+            if (trimmed.startsWith("data:")) {
+              val dataStr = trimmed.substring(5).trim()
+              if (dataStr == "[DONE]") break
+              try {
+                val evt = JSONObject(dataStr)
+                if (evt.optString("type") == "response.output_text.delta") {
+                  sb.append(evt.optString("delta", ""))
+                }
+              } catch (_: Exception) {
+              }
+            }
+            line = reader.readLine()
+          }
+          sb.toString().trim()
+        } else {
+          BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() }
         }
 
       LogUtils.e(TAG, "Response from %s returned HTTP %d: %s", endpointUrl, statusCode, responseText.take(300))
 
       if (job.cancelled.get()) {
         reportFinished(job) { callback.onCancelled() }
+        return
+      }
+
+      // If model not supported and we haven't retried, fallback to gpt-6-luna
+      if (statusCode == 400 && !isRetry && isOAuth && responseText.contains("model is not supported")) {
+        LogUtils.w(TAG, "Model %s not supported, falling back to %s...", job.model, ChatGptAuthManager.MODEL_GPT_6_LUNA)
+        val fallbackJob = RequestJob(job.prompt, job.jpeg, job.isJson, ChatGptAuthManager.MODEL_GPT_6_LUNA)
+        executeRequestWithRetry(fallbackJob, callback, isRetry = true)
         return
       }
 
@@ -265,6 +293,8 @@ internal class ChatGptRequestPerformer(
   private fun buildResponsesPayload(job: RequestJob): JSONObject {
     val payload = JSONObject()
     payload.put("model", job.model)
+    payload.put("store", false)
+    payload.put("stream", true)
 
     val contentArray = JSONArray()
 
