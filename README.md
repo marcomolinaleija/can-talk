@@ -8,7 +8,9 @@ APK with the shared signing key, preserving compatibility with installed copies.
 Do not change that key without a coordinated migration. The optional `release`
 variant requires a separate private key and cannot update these installations.
 See [COMPILACION.md](COMPILACION.md) for build instructions and
-[LANZAMIENTO.md](LANZAMIENTO.md) for publication.
+[LANZAMIENTO.md](LANZAMIENTO.md) for the authoritative step-by-step release procedure.
+Current GitHub Actions workflows build and check artifacts only; they do not
+publish releases automatically.
 The upstream documentation below describes Backtalk; CAN Talk's updater only
 checks this fork's repository.
 

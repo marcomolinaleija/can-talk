@@ -1,6 +1,6 @@
 # Compilar can-talk
 
-Esta guía permite compilar el lector y su teclado braille desde una copia del repositorio. Los comandos de Windows se verificaron con PowerShell 7, Temurin JDK 21 y un Android SDK local. Para empezar a probar en un teléfono que ya tenga BackTalk instalado, usa la compilación independiente.
+Esta guía prepara el entorno y permite compilar el lector y su teclado braille desde una copia del repositorio. Para distribuir una versión nueva, seguir el procedimiento único de [LANZAMIENTO.md](LANZAMIENTO.md): versión/notas, validación, commit, APK definitivo, firma, publicación y verificación. Los comandos de Windows se verificaron con PowerShell 7, Temurin JDK 21 y un Android SDK local. Para empezar a probar en un teléfono que ya tenga BackTalk instalado, usa la compilación independiente.
 
 ## Requisitos
 
@@ -35,7 +35,7 @@ git pull --ff-only origin codex/desarrollo
 git switch -c codex/nombre-del-cambio
 ```
 
-Después de compilar y probar, integra la rama en `codex/desarrollo` y resuelve allí los conflictos. Cuando los cambios estén aprobados, decide si fusionar `codex/desarrollo` en `master`. No publiques en `master` como parte de la preparación del entorno: un push a esa rama activa la publicación automática descrita al final de esta guía.
+Después de compilar y probar, integra la rama en `codex/desarrollo` y resuelve allí los conflictos. Cuando los cambios estén aprobados, decide si fusionar `codex/desarrollo` en `master`. No hagas push a `master` como parte de la preparación del entorno: activa el workflow de compilación, pruebas y lint, no la publicación de releases. El push de una rama y la publicación son acciones distintas.
 
 ## Preparar Windows
 
@@ -159,18 +159,20 @@ Estos identificadores corresponden a las variantes habitual y de pruebas de tel�
 
 Ambas compilaciones escriben el APK de teléfono en `build/outputs/apk/phone/debug/cantalk-phone-debug.apk`: una sustituye el archivo generado por la otra. Comprueba qué variante compilaste antes de instalar. Los APK antiguos de reloj que existan en `build/` no se borran ni se incluyen en los artefactos de lanzamiento.
 
-El nombre del archivo proviene de `rootProject.name = 'cantalk'` en `settings.gradle`; no cambia el identificador Android ni la firma. El workflow manual de candidatos prepara el APK oficial como `cantalk.apk`, sin publicarlo. Los APKs antiguos con prefijo `backtalk` no se renombran automáticamente: usa el archivo de la nueva compilación.
+El nombre del archivo proviene de `rootProject.name = 'cantalk'` en `settings.gradle`; no cambia el identificador Android ni la firma. El publicador local copia el APK habitual como `cantalk.apk`. El workflow manual de candidatos también prepara un archivo con ese nombre, pero corresponde a otra variante y no es el camino vigente de distribución.
 
-Los APK de desarrollo habituales (`debug`) se firman con `keystore/debug.keystore`, la clave compartida del proyecto. La variante `-Prueba` se firma con la clave debug local de Android, normalmente en `$HOME/.android/debug.keystore`. El proyecto desactiva `debuggable` para mejorar el rendimiento del lector. El número de versión depende del número de commits y el nombre de desarrollo incluye la fecha de compilación.
+La distribución 1.0.x utiliza **`phoneDebug` sin `-Prueba`**: paquete `can.cantalk`, firma compartida `keystore/debug.keystore`, minificación activada y `debuggable=false`. La versión visible procede de `version.gradle` y **no añade un sufijo automático de fecha**. El código Android es `70000000 + número de commits`; no confundir código con nombre de versión.
 
-Los APK oficiales (`release`) usan exclusivamente una clave privada externa, configurada con `CANTALK_KEYSTORE_PATH`, `CANTALK_STORE_PASSWORD`, `CANTALK_KEY_ALIAS` y `CANTALK_KEY_PASSWORD`. La versión elegida es `1.0.0-rc.1`, definida en `version.gradle`; se puede sobrescribir con `-PcanTalkReleaseVersion=VERSION`. Los APK debug añaden un sufijo `-dev-` con fecha para distinguirlos del candidato oficial. Se rechaza la clave debug compartida y la combinación `release` con `-Prueba`. Si falta la firma, la compilación falla antes de ejecutar tareas; no genera un APK oficial con una firma alternativa. `release` mantiene la optimización y `debuggable=false`. Un responsable compilará y firmará localmente y otro colaborador custodiará una copia de recuperación. Consulta [LANZAMIENTO.md](LANZAMIENTO.md) para preparar una versión.
+La variante `-Prueba` usa su propio identificador y la clave debug local de Android, normalmente `$HOME/.android/debug.keystore`. No se debe publicar ese APK como actualización de `can.cantalk`.
 
-Android solo permite actualizar un paquete con la misma firma. Conserva la clave correspondiente a la variante para que tus siguientes APKs actualicen tu instalación. Si aparece `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, compila con `-Prueba` para instalar junto al BackTalk existente. Esa variante tiene ajustes y permisos propios. No es necesario desinstalar el lector actual.
+La variante opcional `release` usa una clave privada externa (`CANTALK_KEYSTORE_PATH`, `CANTALK_STORE_PASSWORD`, `CANTALK_KEY_ALIAS`, `CANTALK_KEY_PASSWORD`). No es la distribución vigente y una firma distinta no actualiza las instalaciones 1.0.x actuales. No usar `-Release`, sobrescribir la versión con propiedades de Gradle ni configurar otra firma para el flujo habitual. El antiguo candidato `1.0.0-rc.1` es histórico, no la versión actual de `version.gradle`. Consultar [LANZAMIENTO.md](LANZAMIENTO.md) antes de preparar una entrega.
+
+Android solo permite actualizar un paquete con la misma firma. Conserva la clave correspondiente a la variante para que tus siguientes APKs actualicen tu instalación. Si aparece `INSTALL_FAILED_UPDATE_INCOMPATIBLE` al actualizar, detenerse y comprobar la firma: no desinstalar el lector para eludir el problema. Solo para pruebas independientes se puede compilar con `-Prueba`, que instala otra aplicación con ajustes y permisos propios; no sustituye una actualización compatible.
 
 Para comprobar la firma en Windows:
 
 ```powershell
-& "$env:ANDROID_HOME\build-tools\36.0.0\apksigner.bat" verify --verbose .\build\outputs\apk\phone\debug\cantalk-phone-debug.apk
+& "$env:ANDROID_HOME\build-tools\36.0.0\apksigner.bat" verify --verbose --print-certs .\build\outputs\apk\phone\debug\cantalk-phone-debug.apk
 ```
 
 ## Instalar por ADB
@@ -265,9 +267,11 @@ Android 12 o posterior también escucha los cambios de modo de audio.
 
 ## Automatización en GitHub
 
-El workflow `.github/workflows/build.yml` compila el APK de desarrollo de teléfono, ejecuta las pruebas de teléfono y lint. No publica versiones ni recibe la clave de producción. Su APK usa la clave debug compartida y no debe distribuirse como una versión oficial.
+El workflow `.github/workflows/build.yml` compila el APK de desarrollo de teléfono, ejecuta las pruebas de teléfono y lint. No publica versiones ni recibe la clave de producción. Su APK usa la clave compartida de la variante habitual, pero el artefacto de CI por sí solo no es una release: aún requiere las validaciones, metadatos y publicación de [LANZAMIENTO.md](LANZAMIENTO.md).
 
-El workflow manual `.github/workflows/release-candidate.yml` queda como alternativa futura a la firma local elegida. Requiere seleccionar `master`, indicar una versión y configurar cuatro secretos: `CANTALK_KEYSTORE_BASE64`, `CANTALK_STORE_PASSWORD`, `CANTALK_KEY_ALIAS` y `CANTALK_KEY_PASSWORD`. Valida la clave, ejecuta pruebas y lint, compila el APK `release` de teléfono y verifica su firma. Guarda el APK junto con SHA-256, certificado y datos del commit como un artefacto descargable. No publica una release, no instala el APK y elimina la copia temporal de la clave al terminar.
+El workflow manual `.github/workflows/release-candidate.yml` conserva un procedimiento alternativo de firma privada, limitado a `master`. Pide una versión y cuatro secretos: `CANTALK_KEYSTORE_BASE64`, `CANTALK_STORE_PASSWORD`, `CANTALK_KEY_ALIAS` y `CANTALK_KEY_PASSWORD`. Ejecuta pruebas/lint, compila `phoneRelease` y guarda artefactos, sin publicar ni instalar. No usarlo para actualizar la distribución 1.0.x firmada con la clave compartida. Su valor predeterminado histórico no define la versión actual de la app.
+
+**No existe todavía un workflow que compile y publique automáticamente una release.** Ni un push normal ni los workflows anteriores alimentan por sí solos los canales de actualización. El procedimiento vigente es el publicador local descrito en [LANZAMIENTO.md](LANZAMIENTO.md).
 
 Desde 1.0.3, el actualizador de teléfono consulta `https://api.github.com/repos/marcomolinaleija/can-talk/releases/latest` y busca `cantalk.apk` y `update.json`. El JSON contiene versión, código y SHA-256 del APK. Las notas de GitHub se muestran completas y no determinan si hay actualización. La fuente editorial compartida con la opción Novedades es `talkback/src/main/res/raw/release_notes.txt`. El canal `dev` conserva la cabecera `build:` únicamente por compatibilidad con versiones anteriores. Véase `LANZAMIENTO.md` para publicar ambos canales.
 

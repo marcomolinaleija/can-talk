@@ -52,12 +52,17 @@ confundan con commits. No quitar esta compatibilidad todavía.
 
 ## Compilación y publicación
 
+La guía operativa única es [LANZAMIENTO.md](LANZAMIENTO.md). `COMPILACION.md`
+describe el entorno y las variantes, no otro procedimiento de publicación.
+Las versiones de los ejemplos no autorizan volver a publicar un tag existente.
+
 1. Comprobar los cambios con pruebas proporcionales; actualizar las notas.
 2. Confirmar el código antes de compilar: el APK debe identificar ese commit.
 3. Ejecutar `pwsh -File .\compilar.ps1` (`:assemblePhoneDebug`).
 4. Verificar paquete `can.cantalk`, versión, código, firma y SHA-256.
 5. Publicar solo con autorización explícita:
-   `pwsh -File .\publicar-release.ps1 -Version 1.0.3 -SkipBuild`.
+   `pwsh -File .\publicar-release.ps1 -Version 1.0.4 -SkipBuild`
+   (ejemplo de versión nueva, que debe estar preparada en el código y las notas).
 
 El APK de distribución actual es `build/outputs/apk/phone/debug/cantalk-phone-debug.apk`:
 minificado, no depurable y firmado con `keystore/debug.keystore`. NO cambiar a
@@ -73,3 +78,6 @@ un remoto upstream y la selección implícita puede apuntar al repositorio equiv
 
 Commit, push, compilación y publicación requieren autorización por separado.
 Nunca forzar tags semánticos existentes; únicamente `dev` es móvil.
+No ejecutar dos publicaciones simultáneas ni repetir el script a ciegas tras un
+fallo parcial; inspeccionar el estado y seguir la recuperación de la guía.
+GitHub Actions aún no publica releases automáticamente.
