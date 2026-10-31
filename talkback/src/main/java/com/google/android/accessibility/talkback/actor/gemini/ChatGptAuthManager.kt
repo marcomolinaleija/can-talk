@@ -197,10 +197,13 @@ object ChatGptAuthManager {
     secureRandom.nextBytes(stateBytes)
     val state = Base64.encodeToString(stateBytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP).trim()
 
-    // Ensure persistent host ID for dynamic client registration
+    // Ensure persistent host ID for dynamic client registration (OpenAI requires urn:uuid:<uuid> URI format)
     var hostId = prefs.getString(PREF_CHATGPT_HOST_ID, null)
     if (hostId.isNullOrEmpty()) {
-      hostId = UUID.randomUUID().toString()
+      hostId = "urn:uuid:" + UUID.randomUUID().toString()
+      prefs.edit().putString(PREF_CHATGPT_HOST_ID, hostId).apply()
+    } else if (!hostId.startsWith("urn:uuid:")) {
+      hostId = "urn:uuid:$hostId"
       prefs.edit().putString(PREF_CHATGPT_HOST_ID, hostId).apply()
     }
 
