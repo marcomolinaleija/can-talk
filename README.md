@@ -3,12 +3,12 @@
 This repository is the CAN Talk fork, with Android application ID `can.cantalk`.
 The independent test app uses `can.cantalk.cantalktest`. This release targets
 phones. Wear OS sources are retained with their build variants disabled by default.
-Official release builds
-require a private signing key supplied outside Git. The selected candidate is
-`1.0.0-rc.1`; a maintainer builds and signs locally, with a second collaborator
-keeping a recovery copy. Development builds still use debug keys and a dated
-`-dev-` version suffix. See [COMPILACION.md](COMPILACION.md) for
-build instructions and [LANZAMIENTO.md](LANZAMIENTO.md) for release preparation.
+The current 1.0.x distribution uses the minified, non-debuggable `phoneDebug`
+APK with the shared signing key, preserving compatibility with installed copies.
+Do not change that key without a coordinated migration. The optional `release`
+variant requires a separate private key and cannot update these installations.
+See [COMPILACION.md](COMPILACION.md) for build instructions and
+[LANZAMIENTO.md](LANZAMIENTO.md) for publication.
 The upstream documentation below describes Backtalk; CAN Talk's updater only
 checks this fork's repository.
 
@@ -103,13 +103,21 @@ Earlier CAN Talk builds used `fyi.quin.backtalk` or `fyi.quin.backtalk.cantalkte
 
 ## Updates
 
-CAN Talk checks the [dev release in marcomolinaleija/can-talk](https://github.com/marcomolinaleija/can-talk/releases/tag/dev) for the phone APK `cantalk.apk` and only offers a build whose commit count is higher than the installed build. Automatic publication of development APKs is disabled while the first official release and its signing key are prepared. The manual **Release candidate** workflow builds the signed phone artifact from `master`; it does not publish a GitHub release. No watch APK is built or distributed for this release.
+CAN Talk 1.0.3+ checks this fork's [latest stable release](https://github.com/marcomolinaleija/can-talk/releases/latest)
+through GitHub's public API. The `update.json` asset contains APK version codes
+and SHA-256 checksums; the release body is used only as editorial notes. Updates
+must have a higher version code. The installed version's notes are also available
+offline in settings, from `talkback/src/main/res/raw/release_notes.txt`.
+The `dev` pre-release is synchronized for older clients only. No watch APK is built
+or distributed. Publication instructions are in [LANZAMIENTO.md](LANZAMIENTO.md).
 
 To check now, go to **Check for updates** in CAN Talk settings. Automatic checks run shortly after the screen reader starts and about once a day while it runs. Turn off **Automatically check for updates** to disable them. An available update shows a notification with its changes; tap it to download and open Android's installation prompt. The first time, Android asks you to allow CAN Talk to install apps.
 
 The connection is prepared for this repository. The app includes no GitHub credentials: checks query GitHub's public API directly. An accessible public release is required for automatic update downloads. CAN Talk never falls back to Backtalk's releases.
 
-Android only installs an update with the same package ID and signing key. Official release APKs require CAN Talk's private production key; the shared debug key is only for development. The independent `-Prueba` app has a different ID and no corresponding release asset, so update settings and automatic checks are disabled for that variant. See [COMPILACION.md](COMPILACION.md) for building and signing.
+Android only installs an update with the same package ID and signing key. Keep
+the shared distribution key for existing 1.0.x installations; a new private key
+requires a separately coordinated migration.
 
 ## Run
 

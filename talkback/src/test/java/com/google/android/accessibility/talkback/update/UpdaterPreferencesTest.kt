@@ -79,6 +79,28 @@ class UpdaterPreferencesTest {
   }
 
   @Test
+  fun installedReleaseNotesAreAvailableOffline() {
+    val controller = Robolectric.buildActivity(UpdatePreferencesActivity::class.java)
+    controller.get().setTheme(androidx.appcompat.R.style.Theme_AppCompat)
+    controller.setup()
+    try {
+      val fragment = UpdatePreferencesFragment()
+      controller.get().supportFragmentManager.beginTransaction()
+        .add(android.R.id.content, fragment).commitNow()
+      val preference = fragment.findPreference<Preference>(fragment.getString(R.string.pref_new_feature_in_talkback_entry_point_key))!!
+      assertTrue(preference.isVisible)
+      assertEquals(fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.VERSION_NAME), preference.summary)
+      preference.performClick()
+      val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog()
+      assertTrue(dialog.isShowing)
+      val text = dialog.findViewById<android.widget.TextView>(android.R.id.message).text.toString()
+      assertEquals(controller.get().resources.openRawResource(R.raw.release_notes).bufferedReader().use { it.readText().trim() }, text)
+      assertTrue(text.contains("CAN Talk ${BuildConfig.VERSION_NAME}"))
+      dialog.dismiss()
+    } finally { controller.pause().stop().destroy() }
+  }
+
+  @Test
   fun independentTestAppHidesUpdateSettings() {
     val controller = Robolectric.buildActivity(UpdatePreferencesActivity::class.java)
     controller.get().independentTestApp = true

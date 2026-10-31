@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" xmlns:tools="http://schemas.android.com/tools">
+    <!-- New updater labels are localized in English and Spanish; other locales use English. -->
+    <string name="title_pref_release_notes" tools:ignore="MissingTranslation">What is new</string>
+    <string name="update_version_notification_text" tools:ignore="MissingTranslation">Version %1$s. Tap to install.</string>
+    <string name="update_version_dialog_title" tools:ignore="MissingTranslation">CAN Talk %1$s is available</string>
+    <string name="update_release_notes_title" tools:ignore="MissingTranslation">What is new in CAN Talk %1$s</string>
     <!-- Title of the setting that checks GitHub for a newer development build of CAN Talk. [CHAR LIMIT=40] -->
     <string name="title_pref_check_for_updates">Check for updates</string>
     <!-- Summary of the check for updates setting, with the version of the running app. [CHAR LIMIT=NONE] -->
-    <string name="summary_pref_check_for_updates">Version <xliff:g id="version" example="1.0.2">%1$s</xliff:g></string>
+    <string name="summary_pref_check_for_updates">Version <xliff:g id="version" example="1.0.3">%1$s</xliff:g></string>
     <!-- Title of the switch that turns daily update checks on or off. [CHAR LIMIT=40] -->
     <string name="title_pref_auto_update_check">Automatically check for updates</string>
     <!-- Summary of the automatic update check switch. [CHAR LIMIT=NONE] -->
@@ -11,10 +16,6 @@
 
     <!-- Title of the notification that says a new build is available. [CHAR LIMIT=NONE] -->
     <string name="update_notification_title">CAN Talk update available</string>
-    <!-- Text of the update notification when it has no list of changes. [CHAR LIMIT=NONE] -->
-    <string name="update_notification_text">Build <xliff:g id="build" example="97">%1$d</xliff:g>. Tap to install.</string>
-    <!-- Title of the dialog that offers to install a new build. [CHAR LIMIT=NONE] -->
-    <string name="update_dialog_title">CAN Talk build <xliff:g id="build" example="97">%1$d</xliff:g> is available</string>
     <!-- Button in the update dialog that downloads and installs the new build. [CHAR LIMIT=20] -->
     <string name="update_dialog_install">Install</string>
 

@@ -1,0 +1,17 @@
+CAN Talk 1.0.3
+
+Actualizaciones y novedades
+
+- La búsqueda de actualizaciones consulta la última versión estable en GitHub y utiliza datos de versión independientes del texto de las notas.
+- El aviso de actualización muestra las notas completas escritas para esa versión, no una lista recortada de commits.
+- La opción Novedades de los ajustes muestra los cambios de la versión instalada, incluso sin conexión a Internet.
+- Se comprueba la integridad del APK antes de instalarlo y se rechazan versiones anteriores o que no coincidan con la actualización anunciada.
+
+Estabilidad de la voz
+
+- Se incorporan las correcciones de Marco para conservar el identificador de cada anuncio, continuar la cola cuando falla un audio de caché y manejar respuestas sin identificador del sintetizador.
+- Se aíslan los parámetros de cada anuncio para evitar interferencias entre solicitudes de voz.
+
+Pendiente de comprobación en dispositivo
+
+- Estas correcciones no confirman todavía la solución del cambio de sintetizador con la pantalla apagada en el HONOR X6b Plus. Se necesita repetir ese caso en el teléfono afectado.

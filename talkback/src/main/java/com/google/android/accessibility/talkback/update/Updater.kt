@@ -49,6 +49,7 @@ import com.google.android.libraries.accessibility.utils.log.LogUtils
 import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
+import java.security.MessageDigest
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -82,13 +83,13 @@ object Updater {
   private val executor = Executors.newSingleThreadExecutor()
   private var serviceContext: Context? = null
 
-  private val startupCheck = Runnable { serviceContext?.let { checkAutomatically(it, true) } }
+  private val startupCheck = Runnable { serviceContext?.let { checkAutomatically(it) } }
 
   private val periodicCheck =
     object : Runnable {
       override fun run() {
         val context = serviceContext ?: return
-        checkAutomatically(context, false)
+        checkAutomatically(context)
         mainHandler.postDelayed(this, POLL_INTERVAL_MS)
       }
     }
@@ -116,6 +117,13 @@ object Updater {
   /** Sets up the "Check for updates" preference in the main settings screen. */
   @JvmStatic
   fun setUpPreferences(fragment: PreferenceFragmentCompat) {
+    fragment.findPreference<Preference>(fragment.getString(R.string.pref_new_feature_in_talkback_entry_point_key))?.let {
+      it.summary = fragment.getString(R.string.summary_pref_check_for_updates, BuildConfig.VERSION_NAME)
+      it.setOnPreferenceClickListener {
+        fragment.activity?.let { activity -> showInstalledReleaseNotes(activity) }
+        true
+      }
+    }
     val supported = UpdateChecker.supportsPackage(fragment.requireContext().packageName)
     fragment.findPreference<Preference>(fragment.getString(R.string.pref_auto_update_check_key))?.let {
       it.isVisible = supported
@@ -140,7 +148,7 @@ object Updater {
       R.bool.pref_auto_update_check_default,
     )
 
-  private fun checkAutomatically(context: Context, ignoreInterval: Boolean) {
+  private fun checkAutomatically(context: Context) {
     if (!isAutomaticCheckEnabled(context)) {
       return
     }
@@ -148,7 +156,7 @@ object Updater {
     val now = System.currentTimeMillis()
     val lastCheck = prefs.getLong(PREF_LAST_CHECK_TIME, 0)
     // A clock that moved back also makes a check due.
-    if (!ignoreInterval && now >= lastCheck && now - lastCheck < CHECK_INTERVAL_MS) {
+    if (now >= lastCheck && now - lastCheck < CHECK_INTERVAL_MS) {
       return
     }
     executor.execute {
@@ -203,7 +211,7 @@ object Updater {
     if (update.move) {
       context.getString(R.string.update_move_notification_text)
     } else {
-      context.getString(R.string.update_notification_text, update.build)
+      context.getString(R.string.update_version_notification_text, update.versionName)
     }
 
   private fun describe(context: Context, update: UpdateInfo): String =
@@ -216,17 +224,17 @@ object Updater {
       title = activity.getString(R.string.update_move_title)
       message = activity.getString(R.string.update_move_dialog_message)
     } else {
-      title = activity.getString(R.string.update_dialog_title, update.build)
+      title = activity.getString(R.string.update_version_dialog_title, update.versionName)
       message =
         update.changes
           .joinToString("\n")
-          .ifEmpty { activity.getString(R.string.update_notification_text, update.build) }
+          .ifEmpty { activity.getString(R.string.update_version_notification_text, update.versionName) }
     }
     A11yAlertDialogWrapper.materialDialogBuilder(activity)
       .setTitle(title)
       .setMessage(message)
       .setPositiveButton(R.string.update_dialog_install) { _, _ ->
-        install(activity, update.downloadUrl)
+        install(activity, update.downloadUrl, update.sha256, update.versionCode)
       }
       .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.dismiss() }
       .setCancelable(true)
@@ -239,6 +247,8 @@ object Updater {
       Intent(context, UpdateReceiver::class.java)
         .setAction(UpdateReceiver.ACTION_INSTALL)
         .putExtra(UpdateReceiver.EXTRA_DOWNLOAD_URL, update.downloadUrl)
+        .putExtra(UpdateReceiver.EXTRA_SHA256, update.sha256)
+        .putExtra(UpdateReceiver.EXTRA_VERSION_CODE, update.versionCode)
     val pendingIntent =
       PendingIntent.getBroadcast(
         context,
@@ -268,7 +278,7 @@ object Updater {
    * Backtalk under its new app ID installs as a new app. Anything else is refused.
    */
   @JvmStatic
-  fun install(context: Context, downloadUrl: String) {
+  fun install(context: Context, downloadUrl: String, sha256: String, versionCode: Long) {
     val appContext = context.applicationContext
     if (!appContext.packageManager.canRequestPackageInstalls()) {
       val intent =
@@ -291,9 +301,9 @@ object Updater {
     toast(appContext, R.string.update_downloading)
     executor.execute {
       try {
-        val apk = download(appContext, downloadUrl)
+        val apk = download(appContext, downloadUrl, sha256)
         try {
-          installApk(appContext, apk)
+          installApk(appContext, apk, versionCode)
         } finally {
           apk.delete()
         }
@@ -307,17 +317,36 @@ object Updater {
     }
   }
 
-  private fun download(context: Context, url: String): File {
+  internal fun download(
+    context: Context,
+    url: String,
+    sha256: String,
+    connectionFactory: (Context, String) -> HttpURLConnection = UpdateChecker::openConnection,
+  ): File {
+    if (!UpdateChecker.isDownloadUrl(url) || !Regex("[a-fA-F0-9]{64}").matches(sha256)) {
+      throw IOException("Invalid update download metadata")
+    }
     val directory = File(context.cacheDir, "update")
     directory.mkdirs()
     val file = File(directory, APK_FILE_NAME)
-    val connection = UpdateChecker.openConnection(context, url)
+    val connection = connectionFactory(context, url)
     try {
       val code = connection.responseCode
       if (code != HttpURLConnection.HTTP_OK) {
         throw IOException("Download returned HTTP $code")
       }
-      connection.inputStream.use { input -> file.outputStream().use { input.copyTo(it) } }
+      val digest = MessageDigest.getInstance("SHA-256")
+      connection.inputStream.use { input ->
+        java.security.DigestInputStream(input, digest).use { checked ->
+          file.outputStream().use { checked.copyTo(it) }
+        }
+      }
+      if (digest.digest().joinToString("") { "%02x".format(it) } != sha256.lowercase()) {
+        throw IOException("The APK checksum does not match the release")
+      }
+    } catch (e: Exception) {
+      file.delete()
+      throw e
     } finally {
       connection.disconnect()
     }
@@ -326,8 +355,17 @@ object Updater {
 
   private class WrongPackageException(message: String) : Exception(message)
 
-  private fun installApk(context: Context, apk: File) {
+  private fun installApk(context: Context, apk: File, expectedVersionCode: Long) {
     val info = readArchive(context, apk)
+    @Suppress("DEPRECATION")
+    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info?.longVersionCode else info?.versionCode?.toLong()
+    @Suppress("DEPRECATION")
+    val installed = context.packageManager.getPackageInfo(context.packageName, 0)
+    @Suppress("DEPRECATION")
+    val installedCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) installed.longVersionCode else installed.versionCode.toLong()
+    if (versionCode != expectedVersionCode || expectedVersionCode <= installedCode) {
+      throw WrongPackageException("Unexpected or older APK version")
+    }
     val apkPackage = info?.packageName
     val kind = AppIdMove.installKind(apkPackage, context.packageName, isSameSigner(context, info))
     when (kind) {
@@ -484,5 +522,18 @@ object Updater {
 
   private fun toast(context: Context, @StringRes message: Int, duration: Int = Toast.LENGTH_SHORT) {
     Toast.makeText(context, message, duration).show()
+  }
+
+  /** The installed version's editorial notes are bundled, so this works offline. */
+  @JvmStatic
+  fun showInstalledReleaseNotes(activity: Activity) {
+    val notes = activity.resources.openRawResource(R.raw.release_notes)
+      .bufferedReader(Charsets.UTF_8).use { it.readText().trim() }
+    A11yAlertDialogWrapper.materialDialogBuilder(activity)
+      .setTitle(activity.getString(R.string.update_release_notes_title, BuildConfig.VERSION_NAME))
+      .setMessage(notes)
+      .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
+      .create()
+      .show()
   }
 }

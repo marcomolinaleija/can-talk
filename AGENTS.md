@@ -1,53 +1,75 @@
-# Reglas y Guías de Desarrollo para CAN Talk
+# Reglas de desarrollo y publicación de CAN Talk
 
-Este documento contiene directivas obligatorias para cualquier agente o desarrollador que trabaje en el repositorio de **CAN Talk**.
+## Versión y notas
 
----
+- Notas, títulos y resúmenes de releases siempre en español profesional y accesible.
+- La fuente única de las notas es `talkback/src/main/res/raw/release_notes.txt`.
+  Comienza con `CAN Talk x.y.z`. Se empaqueta en el APK y se utiliza como cuerpo
+  de la release estable y como asset `release-notes.txt`.
+- La opción Novedades muestra este archivo de la versión instalada, sin red.
+- Antes de compilar, actualizar `version.gradle`, los ejemplos de versión en
+  `values`, `values-es`, `values-b+es+419` y `values-cs` de `strings_update.xml`,
+  y la referencia correspondiente de `lint-baseline.xml`.
 
-## 🚀 Flujo de Publicación de Lanzamientos (Releases)
+## Contrato del actualizador desde 1.0.3
 
-Al preparar y publicar una nueva versión en GitHub, se DEBEN seguir estrictamente las siguientes reglas:
+- Consultar únicamente `https://api.github.com/repos/marcomolinaleija/can-talk/releases/latest`
+  para versiones estables públicas, sin credenciales dentro de la app.
+- GitHub proporciona `tag_name`, `body` y `assets`. `body` es texto editorial:
+  NO se obtiene de él el número de versión, compilación ni lista de commits.
+- Cada release incluye `cantalk.apk` y `update.json`, con este contrato:
 
-### 1. Idioma de las Notas de Versión
-- **Siempre en español**: Todas las notas de lanzamiento (`release notes`), títulos y resúmenes de cambios deben estar redactados en español claro, profesional y accesible.
-
-### 2. Estructura Obligatoria del Cuerpo de la Release (Contrato del Actualizador)
-El actualizador dentro de la app ([UpdateChecker.kt](talkback/src/main/java/com/google/android/accessibility/talkback/update/UpdateChecker.kt)) parsea el cuerpo (`body`) de la release mediante expresiones regulares. **Si no tiene este formato exacto al inicio, el actualizador fallará en los teléfonos de los usuarios con un error de JSON**:
-
-```markdown
-build: <número_total_de_commits>
-
-- <hash_corto> <mensaje_del_commit>
-- <hash_corto> <mensaje_del_commit>
-
-## CAN Talk <versión>
-
-<Notas de versión en español explicadas para el usuario final>
+```json
+{
+  "schemaVersion": 1,
+  "commit": "SHA completo del commit compilado",
+  "apks": {
+    "cantalk.apk": {
+      "versionCode": 70000334,
+      "versionName": "1.0.3",
+      "sha256": "64 caracteres hexadecimales del APK"
+    }
+  }
+}
 ```
 
-- **`build: <número>`**: Se obtiene ejecutando `git rev-list --count HEAD`.
-- **Lista de cambios**: Líneas `- <hash_corto> <mensaje_en_español>`. **IMPORTANTE**: La app muestra el texto posterior al hash directamente en el diálogo de actualización del teléfono del usuario. Aunque los commits de Git estén en inglés, los mensajes de estas líneas deben redactarse siempre en español claro y comprensible.
-- **Notas en español**: Separador y secciones con novedades, correcciones y mejoras detalladas.
+- Obtener versión y código del APK real y metadatos de Gradle, no del texto.
+  Conservar `versionCode = 70000000 + git rev-list --count HEAD` y no publicar
+  un código menor o igual al último distribuido.
+- El actualizador exige assets terminados (`state=uploaded`), misma release y
+  repositorio, HTTPS y checksum válido. Mantener las rutas estables inmutables.
+- Wear OS está desactivado; no ofrecer el APK de teléfono a un reloj. Una futura
+  publicación Wear necesita `cantalk-wear.apk` y su entrada independiente en el JSON.
 
-### 3. Sincronización Doble en GitHub
-CAN Talk utiliza dos referencias en GitHub Releases:
-1. **La release oficial de versión**: Con su tag semántico (ej. `1.0.2`).
-2. **La release del canal `dev`**: Tag `dev` (marcada como pre-release). **Este es el endpoint exacto que consulta el botón "Buscar actualizaciones" dentro de la app**. Ambas releases deben contener el mismo APK (`cantalk.apk`) y el mismo cuerpo estructurado.
+## Compatibilidad con 1.0.0–1.0.2
 
-### 4. Compilación y Firma del APK
-- La compilación oficial de distribución se genera con:
-  ```powershell
-  pwsh -File .\compilar.ps1
-  ```
-  (ejecuta `:assemblePhoneDebug`, con `minifyEnabled = true`, `debuggable = false` y firma compartida `keystore/debug.keystore`).
-- El archivo resultante (`build/outputs/apk/phone/debug/cantalk-phone-debug.apk`) se renombra a `cantalk.apk` para subirse como asset.
-- **NO cambiar la firma a una release key no coordinada**: rompería las actualizaciones automáticas para todos los usuarios existentes (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
+Estos clientes siguen consultando `releases/tags/dev` y parseando sus notas.
+Al publicar se actualiza también `dev`, como pre-release, con el mismo APK y JSON.
+Solo su cuerpo conserva `build: <total de commits>` y una línea
+`- <hash corto> <resumen en español>`, seguidos de las notas completas.
+El script adapta las viñetas editoriales para que los clientes antiguos no las
+confundan con commits. No quitar esta compatibilidad todavía.
 
-### 5. Bump de Versión en el Código
-Antes de compilar la release, actualizar la versión en:
-- `version.gradle` (`talkbackVersionName = "x.y.z"`)
-- `talkback/src/main/res/values/strings_update.xml`
-- `talkback/src/main/res/values-es/strings_update.xml`
-- `talkback/src/main/res/values-b+es+419/strings_update.xml`
-- `talkback/src/main/res/values-cs/strings_update.xml`
-- `lint-baseline.xml`
+## Compilación y publicación
+
+1. Comprobar los cambios con pruebas proporcionales; actualizar las notas.
+2. Confirmar el código antes de compilar: el APK debe identificar ese commit.
+3. Ejecutar `pwsh -File .\compilar.ps1` (`:assemblePhoneDebug`).
+4. Verificar paquete `can.cantalk`, versión, código, firma y SHA-256.
+5. Publicar solo con autorización explícita:
+   `pwsh -File .\publicar-release.ps1 -Version 1.0.3 -SkipBuild`.
+
+El APK de distribución actual es `build/outputs/apk/phone/debug/cantalk-phone-debug.apk`:
+minificado, no depurable y firmado con `keystore/debug.keystore`. NO cambiar a
+una clave distinta sin una migración coordinada: impediría actualizar las instalaciones.
+La clave compartida es pública y no ofrece la protección de una clave privada;
+el checksum detecta inconsistencias, no sustituye una firma privada.
+
+El script genera `build/releases/<versión>/`, valida el APK, crea un tag de versión
+sin sobrescribirlo, sube assets a una release en borrador antes de publicarla y
+sincroniza `dev`. Se detiene ante errores nativos. No sustituye pruebas de dispositivo.
+Usar siempre `--repo marcomolinaleija/can-talk` con `gh`: este checkout también tiene
+un remoto upstream y la selección implícita puede apuntar al repositorio equivocado.
+
+Commit, push, compilación y publicación requieren autorización por separado.
+Nunca forzar tags semánticos existentes; únicamente `dev` es móvil.
