@@ -72,7 +72,7 @@ public abstract class GeminiOptInDialog extends BaseDialog {
     TextView textView = root.findViewById(R.id.ai_descriptiog_promotion_dialog_message);
     if (dialogMessageResId != -1 && textView != null) {
       String tos = GeminiFunctionUtils.termsLinkText(context, dialogMessageResId);
-      String rawText = context.getString(dialogMessageResId, tos);
+      String rawText = GeminiFunctionUtils.descriptionConsentText(context, dialogMessageResId, tos);
       SpannableString text = new SpannableString(rawText);
       int spanIndexStart = rawText.indexOf(tos);
       if (spanIndexStart >= 0) {

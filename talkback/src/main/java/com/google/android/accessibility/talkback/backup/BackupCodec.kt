@@ -99,7 +99,9 @@ internal object BackupCodec {
     var items = 0
     for (i in 0 until array.length()) {
       val obj = array.optJSONObject(i) ?: throw BackupException(BackupFailure.INVALID_FORMAT)
-      BackupJson.fields(obj, setOf("id", "stores", "labels", "files", "computers"))
+      // v2 exports before NVDA Remote profiles did not include computers. Keep the original
+      // checksum/shape valid, treating only the absent optional array as empty.
+      BackupJson.fields(obj, setOf("id", "stores", "labels", "files"), setOf("computers"))
       val category = BackupCategory.fromId(BackupJson.string(obj, "id", 80))
         ?: throw BackupException(BackupFailure.UNSUPPORTED_VERSION)
       if (category in sections) throw BackupException(BackupFailure.INVALID_FORMAT)
@@ -157,7 +159,9 @@ internal object BackupCodec {
           catch (_: Exception) { throw BackupException(BackupFailure.INVALID_FORMAT) }
         }
       }
-      val computerArray = obj.optJSONArray("computers") ?: JSONArray()
+      val computerArray = if (obj.has("computers")) {
+        obj.optJSONArray("computers") ?: throw BackupException(BackupFailure.INVALID_FORMAT)
+      } else JSONArray()
       if (computerArray.length() > 100) throw BackupException(BackupFailure.TOO_LARGE)
       val computers = (0 until computerArray.length()).map {
         val item = computerArray.optJSONObject(it) ?: throw BackupException(BackupFailure.INVALID_FORMAT)

@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import com.google.android.accessibility.utils.widget.KeyboardSafeEditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -201,7 +202,7 @@ internal class NvdaRemoteComputersDialog(
     fun message(resource: Int) = TextView(activity).apply { setText(resource); content.addView(this) }
     fun input(resource: Int, value: String, type: Int = InputType.TYPE_CLASS_TEXT): EditText {
       val label = message(resource)
-      return EditText(activity).apply {
+      return KeyboardSafeEditText(activity).apply {
         id = View.generateViewId(); isSaveEnabled = false
         inputType = type; setText(value)
         label.labelFor = id

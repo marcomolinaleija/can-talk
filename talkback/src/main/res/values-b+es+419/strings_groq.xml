@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="description_provider_ask">Preguntar a %1$s</string>
+  <string name="description_provider_type">Escribir una pregunta para %1$s</string>
+  <string name="description_provider_local_name">la IA local</string>
+  <string name="description_stop_listening">Detener escucha</string>
+  <string name="title_pref_description_provider">IA para describir imágenes y pantallas</string>
+  <string-array name="description_provider_entries">
+    <item>Gemini</item>
+    <item>Groq — Qwen 3.8 27B (vista previa)</item>
+    <item>Modelo en el dispositivo</item>
+  </string-array>
+  <string name="title_pref_groq_api_key">Clave de API de Groq</string>
+  <string name="groq_terms_link">políticas y condiciones de Groq</string>
+  <string name="groq_description_consent">Groq describe las imágenes y capturas seleccionadas mediante IA generativa. Las imágenes, el contenido de pantalla y tus preguntas se envían a Groq. El uso está sujeto a los límites y precios de tu cuenta. Las descripciones pueden contener errores. Puedes cambiar el proveedor en los ajustes de descripciones automáticas.\n\nSe aplican las %1$s.</string>
+  <string name="groq_api_key_set">Tu clave de API de Groq está guardada</string>
+  <string name="groq_api_key_not_set">Agrega tu clave de API de Groq para describir imágenes y pantallas con Groq</string>
+  <string name="groq_api_key_hint">Pega tu clave de API de Groq</string>
+  <string name="groq_api_key_message">Obtén una clave en console.groq.com/keys. Al seleccionar Groq, las imágenes, capturas y preguntas se envían a Groq. El uso está sujeto a los límites y precios de tu cuenta. Qwen 3.8 27B es un modelo en vista previa y su disponibilidad puede cambiar. Vacía este campo para eliminar la clave.</string>
+  <string name="groq_error_network">No se pudo conectar con Groq. Revisa tu conexión a Internet.</string>
+  <string name="groq_error_timeout">Groq tardó demasiado en responder. Inténtalo de nuevo.</string>
+  <string name="groq_error_api_key">Agrega o revisa tu clave de API de Groq en los ajustes de descripciones automáticas.</string>
+  <string name="groq_error_quota">Se alcanzó el límite de uso de Groq. Inténtalo más tarde o revisa tu cuenta.</string>
+  <string name="groq_error_rate_limit">Groq está limitando las solicitudes. Espera un poco y vuelve a intentarlo.</string>
+  <string name="groq_error_rate_limit_wait">Espera %1$d segundos antes de otra descripción con Groq.</string>
+  <string name="groq_error_daily_limit">Se alcanzó el límite diario de Groq. Inténtalo cuando se renueve el límite de tu cuenta.</string>
+  <string name="groq_error_request_too_large">Groq rechazó la descripción porque supera el límite de tokens de tu cuenta. Prueba otro proveedor de descripciones o revisa tus límites en Groq.</string>
+  <string name="groq_error_busy">Groq está ocupado. Vuelve a intentarlo en unos instantes.</string>
+  <string name="groq_error_response">Groq no pudo completar la descripción. Comprueba que el modelo esté disponible para tu cuenta e inténtalo de nuevo.</string>
+</resources>

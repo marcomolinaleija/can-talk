@@ -57,13 +57,12 @@
           app:icon="@drawable/ic_mic"
           app:iconTint="@null" />
 
-      <EditText
+      <com.google.android.accessibility.utils.widget.KeyboardSafeEditText
           android:id="@+id/question_edit_filed"
           android:layout_width="wrap_content"
           android:layout_height="match_parent"
           android:layout_weight="3"
           android:inputType="text"
-          android:autofillHints="@string/image_qna_button_text"
           android:hint="@string/image_qna_typing_button_text"
           android:textSize="16sp"/>
 

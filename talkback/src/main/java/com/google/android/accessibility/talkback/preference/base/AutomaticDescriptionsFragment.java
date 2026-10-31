@@ -53,6 +53,7 @@ import com.google.android.accessibility.talkback.actor.gemini.AiCoreEndpoint;
 import com.google.android.accessibility.talkback.actor.gemini.AiCoreEndpoint.AiFeatureDownloadCallback;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiApiKeyPreference;
 import com.google.android.accessibility.talkback.actor.gemini.ChatGptPreference;
+import com.google.android.accessibility.talkback.actor.gemini.GroqPreferences;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiConfiguration;
 import com.google.android.accessibility.talkback.analytics.TalkBackAnalytics;
 import com.google.android.accessibility.talkback.analytics.TalkBackAnalytics.ImageCaptionLogKeys;
@@ -157,11 +158,13 @@ public class AutomaticDescriptionsFragment extends TalkbackBaseFragment {
         FeatureSwitchDialogResources.DETAILED_IMAGE_DESCRIPTION);
     ChatGptPreference.setUp(this);
     GeminiApiKeyPreference.setUp(this);
+    GroqPreferences.setUp(this);
   }
 
   @Override
   public void onResume() {
     super.onResume();
+    GroqPreferences.setUp(this);
 
     ChatGptPreference.refreshUi(this);
 

@@ -39,6 +39,7 @@ import android.os.Bundle;
 import android.os.LocaleList;
 import android.os.Parcelable;
 import android.text.Spannable;
+import android.text.InputType;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.ClickableSpan;
@@ -3167,7 +3168,7 @@ public class AccessibilityNodeInfoUtils {
    */
   public static ImmutableList<SpellingSuggestion> getSpellingSuggestions(
       Context context, AccessibilityNodeInfoCompat node, boolean activeSpellCheck) {
-    if (node == null || hasNoSuggestionsNeed(node.getInputType())) {
+    if (node == null || node.isPassword() || hasNoSuggestionsNeed(node.getInputType())) {
       return ImmutableList.of();
     }
 
@@ -3195,8 +3196,20 @@ public class AccessibilityNodeInfoUtils {
       AccessibilityNodeInfoCompat node,
       int cursorPosition,
       boolean activeSpellCheck) {
+    if (node == null
+        || node.isPassword()
+        || hasNoSuggestionsNeed(node.getInputType())
+        || node.getTextSelectionStart() != node.getTextSelectionEnd()) {
+      return ImmutableList.of();
+    }
     @Nullable CharSequence text =
         activeSpellCheck ? SpellChecker.getTextWithSuggestionSpans(context, node) : node.getText();
+    return getSpellingSuggestions(text, cursorPosition);
+  }
+
+  /** Extracts suggestions from already checked text without starting a spell checker session. */
+  public static ImmutableList<SpellingSuggestion> getSpellingSuggestions(
+      @Nullable CharSequence text, int cursorPosition) {
     List<SpellingSuggestion> spellingSuggestions = new ArrayList<>();
     if (TextUtils.isEmpty(text) || !(text instanceof Spannable spannedText)) {
       LogUtils.v(TAG, "getSpellingSuggestions() text is null or not a Spannable");
@@ -3347,7 +3360,7 @@ public class AccessibilityNodeInfoUtils {
    */
   private static ImmutableList<SuggestionSpan> getSuggestionSpans(
       Context context, AccessibilityNodeInfoCompat node) {
-    if (node == null) {
+    if (node == null || node.isPassword()) {
       return ImmutableList.of();
     }
     return getSuggestionSpans(context, node.getText(), node.getInputType());
@@ -3383,8 +3396,17 @@ public class AccessibilityNodeInfoUtils {
    * Returns {@code true}, if the input method for the {@code node} won't display spelling
    * suggestions.
    */
-  private static boolean hasNoSuggestionsNeed(int input) {
-    return input == TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+  public static boolean hasNoSuggestionsNeed(int input) {
+    int inputClass = input & InputType.TYPE_MASK_CLASS;
+    int variation = input & InputType.TYPE_MASK_VARIATION;
+    if (inputClass == InputType.TYPE_CLASS_NUMBER) {
+      return variation == InputType.TYPE_NUMBER_VARIATION_PASSWORD;
+    }
+    return (input & TYPE_TEXT_FLAG_NO_SUGGESTIONS) != 0
+        || (inputClass == InputType.TYPE_CLASS_TEXT
+            && (variation == InputType.TYPE_TEXT_VARIATION_PASSWORD
+                || variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                || variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD));
   }
 
   private static boolean nodeMatchesAnyClassName(

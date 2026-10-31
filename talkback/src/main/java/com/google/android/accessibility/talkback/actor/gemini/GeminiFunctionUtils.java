@@ -708,10 +708,24 @@ public class GeminiFunctionUtils {
 
   /** The link text for the terms in the dialog message {@code messageRes}. */
   public static String termsLinkText(Context context, @StringRes int messageRes) {
+    if (isGroqConsentMessage(context, messageRes)) {
+      return context.getString(R.string.groq_terms_link);
+    }
     return context.getString(
         isGeminiApiConsentMessage(messageRes)
             ? R.string.gemini_api_terms_link
             : R.string.dialog_message_gen_ai_tos_link);
+  }
+
+  private static boolean isGroqConsentMessage(Context context, @StringRes int messageRes) {
+    return isGeminiApiConsentMessage(messageRes)
+        && GroqSettings.isSelected(SharedPreferencesUtils.getSharedPreferences(context));
+  }
+
+  /** Names the service that will actually receive the selected image or screenshot. */
+  public static String descriptionConsentText(Context context, @StringRes int messageRes, String link) {
+    return context.getString(isGroqConsentMessage(context, messageRes)
+        ? R.string.groq_description_consent : messageRes, link);
   }
 
   /**
@@ -722,16 +736,18 @@ public class GeminiFunctionUtils {
   public static ClickableSpan createClickableSpanForTerms(
       Context context, BaseDialog dialog, boolean isDimming, @StringRes int messageRes) {
     return createClickableSpanForTerms(
-        context, dialog, isDimming, isGeminiApiConsentMessage(messageRes));
+        context, dialog, isDimming,
+        isGroqConsentMessage(context, messageRes) ? GroqSettings.TERMS_URL
+            : isGeminiApiConsentMessage(messageRes) ? GEMINI_API_TERMS_URL : GEMINI_TOS_URL);
   }
 
   private static ClickableSpan createClickableSpanForTerms(
-      Context context, BaseDialog dialog, boolean isDimming, boolean geminiApi) {
+      Context context, BaseDialog dialog, boolean isDimming, String termsUrl) {
     return new ClickableSpan() {
       @Override
       public void onClick(View widget) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse(geminiApi ? GEMINI_API_TERMS_URL : GEMINI_TOS_URL));
+        intent.setData(Uri.parse(termsUrl));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
         dialog.dismissDialog();

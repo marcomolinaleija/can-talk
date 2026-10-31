@@ -384,6 +384,7 @@ public class ImageCaptionResultBottomSheet {
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
+      DescriptionProviderUi.bind(viewHolder.itemView);
       if (viewHolder instanceof ImageCaptionResultViewHolder imageCaptionResultViewHolder) {
         // Page of the image captioning result.
         imageCaptionResultViewHolder.setIsScreenDescription(isScreenDescription);

@@ -21,6 +21,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import com.google.android.accessibility.utils.widget.KeyboardSafeEditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -143,7 +144,7 @@ class NvdaRemoteActivity : AppCompatActivity() {
     }
     fun input(resource: Int, type: Int): EditText {
       val label = label(resource)
-      return EditText(this).apply {
+      return KeyboardSafeEditText(this).apply {
         id = View.generateViewId()
         label.labelFor = id
         inputType = type

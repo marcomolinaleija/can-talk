@@ -123,6 +123,7 @@ public class ImageQnaChatAdapter extends RecyclerView.Adapter<ImageQnaChatAdapte
 
   @Override
   public void onBindViewHolder(@NonNull ChatViewHolder chatViewHolder, int position) {
+    DescriptionProviderUi.bind(chatViewHolder.itemView);
     ImageQnaMessage message = messages.get(position);
     chatViewHolder.setMessageText(message);
     chatViewHolder.setGeminiMotion(message);

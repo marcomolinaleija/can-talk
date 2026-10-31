@@ -10,7 +10,6 @@ import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -21,6 +20,7 @@ import androidx.preference.Preference
 import com.google.android.accessibility.talkback.R
 import com.google.android.accessibility.talkback.preference.base.TalkbackBaseFragment
 import com.google.android.accessibility.utils.material.A11yAlertDialogWrapper
+import com.google.android.accessibility.utils.widget.KeyboardSafeEditText
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -168,10 +168,10 @@ class BackupRestoreFragment : TalkbackBaseFragment(R.xml.backup_restore_preferen
       var secret: CharArray? = null
       if (exporting && protect!!.isChecked) {
         val first = password!!.text; val second = confirm!!.text
-        if (first.length !in 8..256) {
+        if (first == null || first.length !in 8..256) {
           password.error = getString(R.string.backup_password_length); password.requestFocus(); return@setOnClickListener
         }
-        if (first.length != second.length || (0 until first.length).any { first[it] != second[it] }) {
+        if (second == null || first.length != second.length || (0 until first.length).any { first[it] != second[it] }) {
           confirm.error = getString(R.string.backup_password_mismatch); confirm.requestFocus(); return@setOnClickListener
         }
         secret = CharArray(first.length) { first[it] }
@@ -197,15 +197,16 @@ class BackupRestoreFragment : TalkbackBaseFragment(R.xml.backup_restore_preferen
     var submitted = false
     show(wrapper)
     wrapper.setOnDismissListener {
-      password.text.clear()
+      password.text?.clear()
       if (!submitted) state.encryptedImport = null
       if (dialog === wrapper) dialog = null
     }
     wrapper.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
-      if (password.text.isEmpty() || password.text.length > 256) {
+      val entered = password.text
+      if (entered == null || entered.isEmpty() || entered.length > 256) {
         password.error = getString(R.string.backup_password_length); return@setOnClickListener
       }
-      val secret = CharArray(password.text.length) { password.text[it] }
+      val secret = CharArray(entered.length) { entered[it] }
       submitted = true; wrapper.dismiss()
       state.run {
         try { BackupUiState.Result.ImportReady(BackupCodec.decode(json, secret)) }
@@ -248,7 +249,7 @@ class BackupRestoreFragment : TalkbackBaseFragment(R.xml.backup_restore_preferen
     setPadding(padding, padding / 2, padding, padding / 2); isSaveEnabled = false
   }
   private fun text(resource: Int) = TextView(requireContext()).apply { setText(resource); isSaveEnabled = false }
-  private fun passwordField(hint: Int) = EditText(requireContext()).apply {
+  private fun passwordField(hint: Int) = KeyboardSafeEditText(requireContext()).apply {
     setHint(hint)
     inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
     imeOptions = EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
