@@ -90,16 +90,16 @@ object ChatGptAuthManager {
   const val PREF_CHATGPT_HOST_ID = "pref_chatgpt_host_id"
 
   // Supported models
-  const val MODEL_GPT_6_1_SOL = "gpt-6.1-sol"
   const val MODEL_GPT_6_LUNA = "gpt-6-luna"
+  const val MODEL_GPT_6_1_SOL = "gpt-6.1-sol"
   const val MODEL_GPT_6_ASTRA = "gpt-6-astra"
   const val MODEL_GPT_4O = "gpt-4o"
   const val MODEL_GPT_4O_MINI = "gpt-4o-mini"
-  const val DEFAULT_MODEL = MODEL_GPT_6_1_SOL
+  const val DEFAULT_MODEL = MODEL_GPT_6_LUNA
 
   private val secureRandom = SecureRandom()
   private val executor = Executors.newSingleThreadExecutor()
-  private val mainHandler = Handler(Looper.getMainLooper())
+  private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
 
   @Volatile private var inFlightVerifier: String? = null
   @Volatile private var inFlightState: String? = null
@@ -115,22 +115,31 @@ object ChatGptAuthManager {
   /** Returns whether ChatGPT is the currently selected active AI provider. */
   @JvmStatic
   fun isChatGptActive(prefs: SharedPreferences): Boolean {
-    val provider = prefs.getString(PREF_AI_PROVIDER, PROVIDER_CHATGPT)
+    val provider = prefs.getString(
+      com.google.android.accessibility.talkback.actor.gemini.local.OnDeviceAiSettings.PREF_PROVIDER,
+      prefs.getString(PREF_AI_PROVIDER, PROVIDER_CHATGPT)
+    )
     return provider == PROVIDER_CHATGPT
   }
 
   /** Sets the active AI provider in preferences. */
   @JvmStatic
   fun setAiProvider(prefs: SharedPreferences, provider: String) {
-    prefs.edit().putString(PREF_AI_PROVIDER, provider).apply()
+    prefs.edit()
+      .putString(com.google.android.accessibility.talkback.actor.gemini.local.OnDeviceAiSettings.PREF_PROVIDER, provider)
+      .putString(PREF_AI_PROVIDER, provider)
+      .apply()
   }
 
   /**
    * Returns whether ChatGPT has a valid session (OAuth tokens or manual API key).
    */
   @JvmStatic
-  fun isReady(context: Context): Boolean {
-    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
+  fun isReady(context: Context): Boolean =
+    isReady(SharedPreferencesUtils.getSharedPreferences(context))
+
+  @JvmStatic
+  fun isReady(prefs: SharedPreferences): Boolean {
     val manualKey = prefs.getString(PREF_CHATGPT_MANUAL_API_KEY, null)?.trim()
     if (!manualKey.isNullOrEmpty()) {
       return true
@@ -603,6 +612,18 @@ object ChatGptAuthManager {
   }
 
   /**
+   * Retrieves a valid access token or manual API key without checking network refresh.
+   */
+  @JvmStatic
+  fun getValidAccessToken(prefs: SharedPreferences): String? {
+    val manualKey = prefs.getString(PREF_CHATGPT_MANUAL_API_KEY, null)?.trim()
+    if (!manualKey.isNullOrEmpty()) {
+      return manualKey
+    }
+    return prefs.getString(PREF_CHATGPT_ACCESS_TOKEN, null)
+  }
+
+  /**
    * Retrieves a valid access token or manual API key.
    * Automatically refreshes access token if expired or about to expire (< 5 minutes).
    */
@@ -639,8 +660,12 @@ object ChatGptAuthManager {
    */
   @JvmStatic
   fun disconnect(context: Context) {
+    disconnect(SharedPreferencesUtils.getSharedPreferences(context))
+  }
+
+  @JvmStatic
+  fun disconnect(prefs: SharedPreferences) {
     stopLoopbackServer()
-    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
     prefs.edit()
       .remove(PREF_CHATGPT_ACCESS_TOKEN)
       .remove(PREF_CHATGPT_REFRESH_TOKEN)

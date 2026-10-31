@@ -6,6 +6,7 @@
   <string name="description_stop_listening">Detener escucha</string>
   <string name="title_pref_description_provider">IA para describir imágenes y pantallas</string>
   <string-array name="description_provider_entries">
+    <item>ChatGPT (OpenAI)</item>
     <item>Gemini</item>
     <item>Groq — Qwen 3.8 27B (vista previa)</item>
     <item>Modelo en el dispositivo</item>

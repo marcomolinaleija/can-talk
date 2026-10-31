@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import com.google.android.accessibility.talkback.R
+import com.google.android.accessibility.talkback.actor.gemini.ChatGptAuthManager
 import com.google.android.accessibility.talkback.actor.gemini.GroqSettings
 import com.google.android.accessibility.talkback.actor.gemini.local.OnDeviceAiSettings
 import com.google.android.accessibility.utils.SharedPreferencesUtils
@@ -17,14 +18,16 @@ internal object DescriptionProviderUi {
     val prefs = SharedPreferencesUtils.getSharedPreferences(context)
     val groq = GroqSettings.isSelected(prefs)
     val local = OnDeviceAiSettings.isOnDevice(prefs)
+    val chatgpt = !groq && !local && ChatGptAuthManager.isChatGptActive(prefs)
     val provider = when {
       groq -> "Groq"
       local -> context.getString(R.string.description_provider_local_name)
+      chatgpt -> "ChatGPT"
       else -> "Gemini"
     }
-    val ask = if (groq || local) context.getString(R.string.description_provider_ask, provider)
+    val ask = if (groq || local || chatgpt) context.getString(R.string.description_provider_ask, provider)
       else context.getString(R.string.image_qna_button_text)
-    val type = if (groq || local) context.getString(R.string.description_provider_type, provider)
+    val type = if (groq || local || chatgpt) context.getString(R.string.description_provider_type, provider)
       else context.getString(R.string.image_qna_typing_button_text)
 
     fun label(id: Int, text: String) {

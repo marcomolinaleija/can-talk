@@ -20,7 +20,6 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -28,8 +27,10 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.accessibility.talkback.R
+import com.google.android.accessibility.talkback.actor.gemini.local.LocalModelManager
 import com.google.android.accessibility.talkback.actor.gemini.local.OnDeviceAiSettings
 import com.google.android.accessibility.utils.SharedPreferencesUtils
+import com.google.android.accessibility.utils.widget.KeyboardSafeEditText
 
 /**
  * Controller for the ChatGPT settings and AI provider selector in Automatic Descriptions.
@@ -51,50 +52,39 @@ object ChatGptPreference {
   }
 
   private fun setUpProviderSelector(fragment: PreferenceFragmentCompat) {
-    val providerPref = fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER) ?: return
+    val providerPref = fragment.findPreference<ListPreference>(OnDeviceAiSettings.PREF_PROVIDER)
+      ?: fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER)
+      ?: return
     val context = fragment.requireContext()
     val prefs = SharedPreferencesUtils.getSharedPreferences(context)
 
-    // Sync initial value based on on-device and chatgpt status
+    // Sync initial value based on on-device, groq, chatgpt or gemini status
     val currentProvider =
       when {
-        OnDeviceAiSettings.isOnDevice(prefs) -> ChatGptAuthManager.PROVIDER_DEVICE
+        OnDeviceAiSettings.isOnDevice(prefs) -> OnDeviceAiSettings.PROVIDER_DEVICE
+        GroqSettings.isSelected(prefs) -> GroqSettings.PROVIDER
         ChatGptAuthManager.isChatGptActive(prefs) -> ChatGptAuthManager.PROVIDER_CHATGPT
-        else -> ChatGptAuthManager.PROVIDER_GEMINI
+        else -> OnDeviceAiSettings.PROVIDER_CLOUD
       }
+    providerPref.isPersistent = false
     providerPref.value = currentProvider
-    updateProviderSummary(providerPref, currentProvider)
+    providerPref.summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
 
     providerPref.setOnPreferenceChangeListener { _, newValue ->
       val selected = newValue as String
-      when (selected) {
-        ChatGptAuthManager.PROVIDER_DEVICE -> {
-          OnDeviceAiSettings.setOnDevice(prefs, true)
-          ChatGptAuthManager.setAiProvider(prefs, ChatGptAuthManager.PROVIDER_DEVICE)
-        }
-        ChatGptAuthManager.PROVIDER_CHATGPT -> {
-          OnDeviceAiSettings.setOnDevice(prefs, false)
-          ChatGptAuthManager.setAiProvider(prefs, ChatGptAuthManager.PROVIDER_CHATGPT)
-        }
-        ChatGptAuthManager.PROVIDER_GEMINI -> {
-          OnDeviceAiSettings.setOnDevice(prefs, false)
-          ChatGptAuthManager.setAiProvider(prefs, ChatGptAuthManager.PROVIDER_GEMINI)
-        }
+      if (selected == OnDeviceAiSettings.PROVIDER_DEVICE && !LocalModelManager.get(context).isReady()) {
+        Toast.makeText(context, R.string.pref_on_device_ai_enable_needs_model, Toast.LENGTH_LONG).show()
+        false
+      } else {
+        prefs.edit()
+          .putString(OnDeviceAiSettings.PREF_PROVIDER, selected)
+          .putString(PREF_KEY_PROVIDER, selected)
+          .apply()
+        OnDeviceAiSettings.setOnDevice(prefs, selected == OnDeviceAiSettings.PROVIDER_DEVICE)
+        fragment.findPreference<Preference>(PREF_KEY_ACCOUNT)?.let { updateAccountSummary(it) }
+        true
       }
-      updateProviderSummary(providerPref, selected)
-      fragment.findPreference<Preference>(PREF_KEY_ACCOUNT)?.let { updateAccountSummary(it) }
-      true
     }
-  }
-
-  private fun updateProviderSummary(preference: ListPreference, value: String) {
-    val context = preference.context
-    preference.summary =
-      when (value) {
-        ChatGptAuthManager.PROVIDER_CHATGPT -> context.getString(R.string.summary_ai_provider_chatgpt)
-        ChatGptAuthManager.PROVIDER_DEVICE -> context.getString(R.string.summary_ai_provider_device)
-        else -> context.getString(R.string.summary_ai_provider_gemini)
-      }
   }
 
   private fun setUpAccountPreference(fragment: PreferenceFragmentCompat) {
@@ -112,16 +102,18 @@ object ChatGptPreference {
   @JvmStatic
   fun refreshUi(fragment: PreferenceFragmentCompat) {
     fragment.findPreference<Preference>(PREF_KEY_ACCOUNT)?.let { updateAccountSummary(it) }
-    fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER)?.let { pref ->
+    val providerPref = fragment.findPreference<ListPreference>(OnDeviceAiSettings.PREF_PROVIDER)
+      ?: fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER)
+    providerPref?.let { pref ->
       val prefs = SharedPreferencesUtils.getSharedPreferences(fragment.requireContext())
       val currentProvider =
         when {
-          OnDeviceAiSettings.isOnDevice(prefs) -> ChatGptAuthManager.PROVIDER_DEVICE
+          OnDeviceAiSettings.isOnDevice(prefs) -> OnDeviceAiSettings.PROVIDER_DEVICE
+          GroqSettings.isSelected(prefs) -> GroqSettings.PROVIDER
           ChatGptAuthManager.isChatGptActive(prefs) -> ChatGptAuthManager.PROVIDER_CHATGPT
-          else -> ChatGptAuthManager.PROVIDER_GEMINI
+          else -> OnDeviceAiSettings.PROVIDER_CLOUD
         }
       pref.value = currentProvider
-      updateProviderSummary(pref, currentProvider)
     }
   }
 
@@ -194,8 +186,9 @@ object ChatGptPreference {
 
   private fun showPasteCodeDialog(fragment: PreferenceFragmentCompat, preference: Preference) {
     val context = fragment.requireContext()
+    val prefs = SharedPreferencesUtils.getSharedPreferences(context)
     val field =
-      EditText(context).apply {
+      KeyboardSafeEditText(context).apply {
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
         isSingleLine = true
         setHint(R.string.chatgpt_paste_code_hint)
@@ -213,7 +206,7 @@ object ChatGptPreference {
       .setMessage(R.string.chatgpt_paste_code_dialog_message)
       .setView(container)
       .setPositiveButton(R.string.gemini_api_key_save) { _, _ ->
-        val input = field.text.toString().trim()
+        val input = field.text?.toString()?.trim().orEmpty()
         if (input.isNotEmpty()) {
           Toast.makeText(context, R.string.chatgpt_auth_connecting, Toast.LENGTH_SHORT).show()
           ChatGptAuthManager.exchangeCodeOrUrl(context, input, object : ChatGptAuthManager.AuthCallback {
@@ -222,10 +215,8 @@ object ChatGptPreference {
                 val msg = context.getString(R.string.chatgpt_auth_success, email)
                 Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                 updateAccountSummary(preference)
-                fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER)?.let {
-                  it.value = ChatGptAuthManager.PROVIDER_CHATGPT
-                  updateProviderSummary(it, ChatGptAuthManager.PROVIDER_CHATGPT)
-                }
+                ChatGptAuthManager.setAiProvider(prefs, ChatGptAuthManager.PROVIDER_CHATGPT)
+                refreshUi(fragment)
               }
             }
 
@@ -269,14 +260,14 @@ object ChatGptPreference {
     val currentModel = ChatGptAuthManager.getModel(prefs)
 
     val models = arrayOf(
-      ChatGptAuthManager.MODEL_GPT_6_1_SOL,
       ChatGptAuthManager.MODEL_GPT_6_LUNA,
+      ChatGptAuthManager.MODEL_GPT_6_1_SOL,
       ChatGptAuthManager.MODEL_GPT_6_ASTRA,
       ChatGptAuthManager.MODEL_GPT_4O
     )
     val labels = arrayOf(
-      "GPT-6.1 Sol (Plus / Pro - Recomendado)",
-      "GPT-6 Luna (Rápido / Estándar)",
+      "GPT-6 Luna (Recomendado: rápido y fluido)",
+      "GPT-6.1 Sol (Plus / Pro)",
       "GPT-6 Astra (Avanzado)",
       "GPT-4o (Clave API manual)"
     )
@@ -299,7 +290,7 @@ object ChatGptPreference {
     val prefs = SharedPreferencesUtils.getSharedPreferences(context)
 
     val field =
-      EditText(context).apply {
+      KeyboardSafeEditText(context).apply {
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
         isSingleLine = true
         setHint(R.string.chatgpt_manual_key_hint)
@@ -318,12 +309,10 @@ object ChatGptPreference {
       .setMessage(R.string.chatgpt_manual_key_dialog_message)
       .setView(container)
       .setPositiveButton(R.string.gemini_api_key_save) { _, _ ->
-        ChatGptAuthManager.setManualApiKey(prefs, field.text.toString())
+        ChatGptAuthManager.setManualApiKey(prefs, field.text?.toString().orEmpty())
         updateAccountSummary(preference)
-        fragment.findPreference<ListPreference>(PREF_KEY_PROVIDER)?.let {
-          it.value = ChatGptAuthManager.PROVIDER_CHATGPT
-          updateProviderSummary(it, ChatGptAuthManager.PROVIDER_CHATGPT)
-        }
+        ChatGptAuthManager.setAiProvider(prefs, ChatGptAuthManager.PROVIDER_CHATGPT)
+        refreshUi(fragment)
       }
       .setNegativeButton(android.R.string.cancel, null)
       .show()

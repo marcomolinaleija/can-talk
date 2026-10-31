@@ -25,14 +25,20 @@ object GroqPreferences {
     val prefs = SharedPreferencesUtils.getSharedPreferences(context)
     fragment.findPreference<ListPreference>(OnDeviceAiSettings.PREF_PROVIDER)?.apply {
       isPersistent = false
-      value = prefs.getString(OnDeviceAiSettings.PREF_PROVIDER, OnDeviceAiSettings.PROVIDER_CLOUD)
+      value = prefs.getString(OnDeviceAiSettings.PREF_PROVIDER, prefs.getString("pref_ai_provider", ChatGptAuthManager.PROVIDER_CHATGPT))
       summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
       setOnPreferenceChangeListener { _, newValue ->
-        if (newValue == OnDeviceAiSettings.PROVIDER_DEVICE && !LocalModelManager.get(context).isReady()) {
+        val selected = newValue as String
+        if (selected == OnDeviceAiSettings.PROVIDER_DEVICE && !LocalModelManager.get(context).isReady()) {
           Toast.makeText(context, R.string.pref_on_device_ai_enable_needs_model, Toast.LENGTH_LONG).show()
           false
         } else {
-          prefs.edit().putString(OnDeviceAiSettings.PREF_PROVIDER, newValue as String).apply()
+          prefs.edit()
+            .putString(OnDeviceAiSettings.PREF_PROVIDER, selected)
+            .putString("pref_ai_provider", selected)
+            .apply()
+          OnDeviceAiSettings.setOnDevice(prefs, selected == OnDeviceAiSettings.PROVIDER_DEVICE)
+          ChatGptPreference.refreshUi(fragment)
           true
         }
       }

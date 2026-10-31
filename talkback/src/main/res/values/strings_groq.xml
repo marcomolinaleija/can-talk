@@ -6,11 +6,13 @@
   <string name="description_stop_listening">Stop listening</string>
   <string name="title_pref_description_provider">AI for image and screen descriptions</string>
   <string-array name="description_provider_entries">
+    <item>ChatGPT (OpenAI)</item>
     <item>Gemini</item>
     <item>Groq — Qwen 3.8 27B (preview)</item>
     <item>On-device model</item>
   </string-array>
   <string-array name="description_provider_values" translatable="false">
+    <item>chatgpt</item>
     <item>cloud</item>
     <item>groq</item>
     <item>device</item>

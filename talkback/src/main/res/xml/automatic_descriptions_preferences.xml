@@ -21,10 +21,10 @@
       android:title="@string/title_pref_text_recognition" />
 
   <com.google.android.accessibility.material.preference.AccessibilitySuiteListPreference
-      android:key="pref_ai_provider"
-      android:title="@string/title_pref_ai_provider"
-      android:entries="@array/ai_provider_entries"
-      android:entryValues="@array/ai_provider_values"
+      android:key="pref_on_device_ai_provider"
+      android:title="@string/title_pref_description_provider"
+      android:entries="@array/description_provider_entries"
+      android:entryValues="@array/description_provider_values"
       android:defaultValue="chatgpt" />
 
   <com.google.android.accessibility.material.preference.AccessibilitySuitePreference

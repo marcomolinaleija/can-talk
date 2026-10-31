@@ -180,23 +180,33 @@ internal class ChatGptRequestPerformer(
         } else if (isOAuth && statusCode in 200..299) {
           val reader = BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8))
           val sb = StringBuilder()
+          val rawFallback = StringBuilder()
+          var isSse = false
           var line = reader.readLine()
           while (line != null) {
             val trimmed = line.trim()
             if (trimmed.startsWith("data:")) {
+              isSse = true
               val dataStr = trimmed.substring(5).trim()
               if (dataStr == "[DONE]") break
               try {
                 val evt = JSONObject(dataStr)
-                if (evt.optString("type") == "response.output_text.delta") {
+                val type = evt.optString("type")
+                if (type == "response.output_text.delta" || type == "response.text.delta") {
                   sb.append(evt.optString("delta", ""))
                 }
               } catch (_: Exception) {
               }
+            } else if (!isSse) {
+              rawFallback.append(line).append("\n")
             }
             line = reader.readLine()
           }
-          sb.toString().trim()
+          if (isSse) {
+            sb.toString().trim()
+          } else {
+            rawFallback.toString().trim()
+          }
         } else {
           BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() }
         }
@@ -375,48 +385,6 @@ internal class ChatGptRequestPerformer(
     return payload
   }
 
-  /**
-   * Extracts text content from either Responses API or Chat Completions API responses.
-   */
-  private fun extractContentFromResponse(responseText: String): String {
-    val jsonResponse = JSONObject(responseText)
-
-    // 1. Responses API: top-level "output_text"
-    val outputText = jsonResponse.optString("output_text", "")
-    if (outputText.isNotEmpty()) {
-      return outputText
-    }
-
-    // 2. Responses API: output array
-    val outputArray = jsonResponse.optJSONArray("output")
-    if (outputArray != null && outputArray.length() > 0) {
-      val sb = StringBuilder()
-      for (i in 0 until outputArray.length()) {
-        val item = outputArray.getJSONObject(i)
-        val contentArray = item.optJSONArray("content") ?: continue
-        for (j in 0 until contentArray.length()) {
-          val part = contentArray.getJSONObject(j)
-          if (part.optString("type") == "output_text") {
-            sb.append(part.optString("text", ""))
-          }
-        }
-      }
-      val extracted = sb.toString().trim()
-      if (extracted.isNotEmpty()) {
-        return extracted
-      }
-    }
-
-    // 3. Chat Completions API: choices[0].message.content
-    val choices = jsonResponse.optJSONArray("choices")
-    if (choices != null && choices.length() > 0) {
-      val messageObj = choices.getJSONObject(0).optJSONObject("message")
-      return messageObj?.optString("content", "")?.trim() ?: ""
-    }
-
-    return ""
-  }
-
   private fun mapHttpError(statusCode: Int, responseBody: String): GeminiFailure {
     var errorMsg = ""
     var errorType = ""
@@ -460,5 +428,62 @@ internal class ChatGptRequestPerformer(
 
   companion object {
     private const val TAG = "ChatGptRequestPerformer"
+
+    /**
+     * Extracts text content from either Responses API, Chat Completions API responses, or raw text.
+     */
+    @JvmStatic
+    internal fun extractContentFromResponse(responseText: String): String {
+      val trimmed = responseText.trim()
+      if (trimmed.isEmpty()) return ""
+
+      // If it doesn't look like JSON, it's already plain text (e.g. from SSE deltas).
+      if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+        return trimmed
+      }
+
+      return try {
+        val jsonResponse = JSONObject(trimmed)
+
+        // 1. Responses API: top-level "output_text"
+        val outputText = jsonResponse.optString("output_text", "")
+        if (outputText.isNotEmpty()) {
+          return outputText
+        }
+
+        // 2. Responses API: output array
+        val outputArray = jsonResponse.optJSONArray("output")
+        if (outputArray != null && outputArray.length() > 0) {
+          val sb = StringBuilder()
+          for (i in 0 until outputArray.length()) {
+            val item = outputArray.getJSONObject(i)
+            val contentArray = item.optJSONArray("content") ?: continue
+            for (j in 0 until contentArray.length()) {
+              val part = contentArray.getJSONObject(j)
+              if (part.optString("type") == "output_text") {
+                sb.append(part.optString("text", ""))
+              }
+            }
+          }
+          val extracted = sb.toString().trim()
+          if (extracted.isNotEmpty()) {
+            return extracted
+          }
+        }
+
+        // 3. Chat Completions API: choices[0].message.content
+        val choices = jsonResponse.optJSONArray("choices")
+        if (choices != null && choices.length() > 0) {
+          val messageObj = choices.getJSONObject(0).optJSONObject("message")
+          return messageObj?.optString("content", "")?.trim() ?: ""
+        }
+
+        // 4. Model-generated JSON (e.g. for structured screen description)
+        trimmed
+      } catch (_: JSONException) {
+        // Non-JSON or malformed JSON, return raw text
+        trimmed
+      }
+    }
   }
 }
