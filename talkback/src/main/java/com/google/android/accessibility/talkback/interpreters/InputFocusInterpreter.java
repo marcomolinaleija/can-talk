@@ -28,9 +28,11 @@ import com.google.android.accessibility.utils.AccessibilityEventListener;
 import com.google.android.accessibility.utils.AccessibilityNodeInfoUtils;
 import com.google.android.accessibility.utils.AccessibilityWindowInfoUtils;
 import com.google.android.accessibility.utils.FocusFinder;
+import com.google.android.accessibility.utils.FormFactorUtils;
 import com.google.android.accessibility.utils.Performance.EventId;
 import com.google.android.accessibility.utils.Role;
 import com.google.android.accessibility.utils.Role.RoleName;
+import com.google.android.accessibility.utils.input.SelectionEventInterpreter;
 import com.google.android.libraries.accessibility.utils.log.LogUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -265,6 +267,14 @@ public class InputFocusInterpreter
       AccessibilityEvent event) {
     AccessibilityNodeInfoCompat sourceNode = AccessibilityNodeInfoUtils.toCompat(event.getSource());
     if (sourceNode == null) {
+      return null;
+    }
+
+    // SoundAlive repeatedly selects its active equalizer preset as app state. It is also a
+    // top-level scroll item, but following that selection steals focus after every swipe/touch.
+    // Real input-focus events keep their own synchronization path; preserve TV's selection model.
+    if (!FormFactorUtils.isAndroidTv()
+        && SelectionEventInterpreter.isSoundAliveButton(sourceNode)) {
       return null;
     }
 
