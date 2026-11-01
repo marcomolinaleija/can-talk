@@ -17,6 +17,18 @@ function Invoke-Native([string]$Command, [string[]]$Arguments) {
     return $output
 }
 
+# Older clients read only hash-prefixed bullet lines; keep their visible text editorial.
+function Get-LegacyReleaseBody([string]$Notes, [int]$Build, [string]$Commit) {
+    $shortHash = $Commit.Substring(0, 7)
+    $summaries = @($Notes -split '\r?\n' | Where-Object { $_.StartsWith('- ') } |
+        ForEach-Object { "- $shortHash $($_.Substring(2))" })
+    if ($summaries.Count -eq 0) {
+        $summaries = @("- $shortHash $(($Notes -split '\r?\n')[0])")
+    }
+    $legacyNotes = $Notes -replace '(?m)^- ', '• '
+    return "build: $Build`n`n$($summaries -join "`n")`n`n$legacyNotes"
+}
+
 # Fail before any build, tag or publication if source and notes are inconsistent.
 if (Invoke-Native git @('status', '--porcelain')) { throw 'El árbol debe estar limpio y confirmado antes de publicar.' }
 $head = (Invoke-Native git @('rev-parse', 'HEAD')).Trim()
@@ -78,8 +90,7 @@ $manifest = Join-Path $artifactDirectory 'update.json'
 $notesFile = Join-Path $artifactDirectory 'release-notes.txt'
 Set-Content -LiteralPath $notesFile -Value $notes -Encoding utf8NoBOM
 $legacyFile = Join-Path $artifactDirectory 'dev-notes.txt'
-$legacyNotes = $notes -replace '(?m)^- ', '• '
-Set-Content -LiteralPath $legacyFile -Value "build: $count`n`n- $($head.Substring(0,7)) Búsqueda de actualizaciones y estabilidad de la voz mejoradas.`n`n$legacyNotes" -Encoding utf8NoBOM
+Set-Content -LiteralPath $legacyFile -Value (Get-LegacyReleaseBody $notes $count $head) -Encoding utf8NoBOM
 if ($SoloPreparar) {
     Write-Host "Artefactos preparados sin tag, push ni publicación: $artifactDirectory"
     return

@@ -168,12 +168,13 @@ Revisar `build/releases/<versión>/`:
 | `dev-notes.txt` | Cuerpo de compatibilidad: build, resumen con hash y notas con viñetas adaptadas. No se sube como asset. |
 
 Comprobar que JSON, APK y commit coinciden y que las notas son correctas. El
-publicador actual genera un resumen legacy fijo que menciona actualizador y voz:
-revisar su pertinencia para futuras versiones; no asumir que resume automáticamente
-sus cambios. Si ese resumen no corresponde a la versión, resolver el ajuste del
-publicador antes de continuar. Editar únicamente `dev-notes.txt` no lo corrige:
-el script lo regenera al publicar. `-ArchivoNotas` solo acepta texto coincidente
-con el TXT canónico.
+resumen visible para clientes antiguos se genera a partir de las viñetas del TXT,
+con los prefijos técnicos que esos clientes necesitan. Si no hay viñetas, se usa
+la primera línea de las notas como resumen. El cuerpo completo conserva las
+notas con las viñetas adaptadas para no duplicar sus anuncios en esos clientes.
+Revisar el resultado en `dev-notes.txt`; el script lo regenera al publicar, por
+lo que las correcciones deben hacerse en el TXT canónico. `-ArchivoNotas` solo
+acepta texto coincidente con ese TXT.
 
 La previsualización valida árbol limpio, avance de versión/código, ausencia del
 tag remoto y metadatos/firma del APK. No sustituye comparar el certificado con

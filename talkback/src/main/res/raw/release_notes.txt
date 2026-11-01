@@ -1,22 +1,6 @@
-CAN Talk 1.0.3
+CAN Talk 1.0.4
 
-Actualizaciones y novedades
-
-- La búsqueda de actualizaciones consulta la última versión estable en GitHub y utiliza datos de versión independientes del texto de las notas.
-- El aviso de actualización muestra las notas completas escritas para esa versión, no una lista recortada de commits.
-- La opción Novedades de los ajustes muestra los cambios de la versión instalada, incluso sin conexión a Internet.
-- Se comprueba la integridad del APK antes de instalarlo y se rechazan versiones anteriores o que no coincidan con la actualización anunciada.
-
-Estabilidad de la voz
-
-- Se incorporan las correcciones de Marco para conservar el identificador de cada anuncio, continuar la cola cuando falla un audio de caché y manejar respuestas sin identificador del sintetizador.
-- Se aíslan los parámetros de cada anuncio para evitar interferencias entre solicitudes de voz.
-
-Arranque del lector
-
-- Se evita que la carga de los gestos de navegación web braille cierre el lector antes del primer desbloqueo tras reiniciar el teléfono. Las asignaciones personalizadas se conservan y se cargan después de desbloquear.
-
-Pendiente de comprobación en dispositivo
-
-- Estas correcciones no confirman todavía la solución del cambio de sintetizador con la pantalla apagada en el HONOR X6b Plus. Se necesita repetir ese caso en el teléfono afectado.
-- La corrección de arranque también necesita comprobarse tras reiniciar el teléfono afectado, antes del primer desbloqueo.
+- Busca emojis por su nombre con el teclado braille. En el panel de emojis, desliza dos dedos a la izquierda para buscar, escribe en braille y recorre los resultados deslizando un dedo arriba o abajo. Desliza dos dedos a la derecha para insertar el emoji elegido.
+- Se corrige un cierre al abrir la recalibración de puntos del teclado braille en Android 11.
+- Se mejora la navegación por el ecualizador de Samsung para evitar que el foco vuelva solo al mismo botón.
+- Se corrige un fallo que podía cerrar el lector al reiniciar el teléfono, antes del primer desbloqueo. Los gestos personalizados se conservan.
