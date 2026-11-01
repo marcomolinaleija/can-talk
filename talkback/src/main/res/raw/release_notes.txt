@@ -12,6 +12,11 @@ Estabilidad de la voz
 - Se incorporan las correcciones de Marco para conservar el identificador de cada anuncio, continuar la cola cuando falla un audio de caché y manejar respuestas sin identificador del sintetizador.
 - Se aíslan los parámetros de cada anuncio para evitar interferencias entre solicitudes de voz.
 
+Arranque del lector
+
+- Se evita que la carga de los gestos de navegación web braille cierre el lector antes del primer desbloqueo tras reiniciar el teléfono. Las asignaciones personalizadas se conservan y se cargan después de desbloquear.
+
 Pendiente de comprobación en dispositivo
 
 - Estas correcciones no confirman todavía la solución del cambio de sintetizador con la pantalla apagada en el HONOR X6b Plus. Se necesita repetir ese caso en el teléfono afectado.
+- La corrección de arranque también necesita comprobarse tras reiniciar el teléfono afectado, antes del primer desbloqueo.

@@ -2,6 +2,8 @@
 package com.google.android.accessibility.talkback.web
 
 import android.content.Context
+import android.content.SharedPreferences
+import android.os.UserManager
 import com.google.android.accessibility.talkback.R
 import com.google.android.accessibility.talkback.focusmanagement.NavigationTarget
 import com.google.android.accessibility.talkback.remote.NvdaRemoteGesture
@@ -39,8 +41,13 @@ enum class BrailleWebAction(val label: Int) {
   EXIT(R.string.braille_web_exit)
 }
 
-class BrailleWebBindings(context: Context) {
-  private val prefs = context.getSharedPreferences("braille_web_gestures_v1", Context.MODE_PRIVATE)
+class BrailleWebBindings(private val context: Context) {
+  private fun preferences(): SharedPreferences? {
+    // The service starts during Direct Boot, before credential-protected storage is available.
+    // Recheck on each access so the same instance picks up existing assignments after unlock.
+    if (!context.getSystemService(UserManager::class.java).isUserUnlocked) return null
+    return context.getSharedPreferences("braille_web_gestures_v1", Context.MODE_PRIVATE)
+  }
 
   fun resolve(gesture: NvdaRemoteGesture): BrailleWebAction? {
     if (gesture.dots != null) return when (gesture.dots) {
@@ -53,9 +60,10 @@ class BrailleWebBindings(context: Context) {
       return BrailleWebAction.MENU
     if (gesture.held.isEmpty() && gesture.fingers == 2 && gesture.direction == "LEFT")
       return BrailleWebAction.EXIT
+    val prefs = preferences()
     val ids = listOf(gesture.id, gesture.copy(swipedDot = 0).id).distinct()
     for (id in ids) {
-      prefs.getString(id, null)?.let { value ->
+      prefs?.getString(id, null)?.let { value ->
         return BrailleWebAction.entries.firstOrNull { it.name == value }
       }
     }
@@ -76,8 +84,12 @@ class BrailleWebBindings(context: Context) {
       (gesture.fingers == 2 && gesture.direction == "LEFT"))
 
   fun assign(gesture: NvdaRemoteGesture, action: BrailleWebAction) {
+    val prefs = preferences() ?: return
     prefs.edit().putString(gesture.id, action.name).apply()
   }
 
-  fun reset() { prefs.edit().clear().apply() }
+  fun reset() {
+    val prefs = preferences() ?: return
+    prefs.edit().clear().apply()
+  }
 }
