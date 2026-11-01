@@ -24,6 +24,17 @@ class DirectTouchAppsTest {
     AppEntry(pkg, label, enabled)
 
   @Test
+  fun enabledKeyboardWithoutLauncherIsListedOnceAndIntegratedKeyboardIsExcluded() {
+    val candidates = DirectTouchApps.candidates(
+      listOf("game" to "Game", "keyboard" to "Keyboard settings"),
+      listOf("abk" to "Advanced Braille Keyboard", "keyboard" to "Keyboard", "self" to "Braille"),
+      "self",
+    )
+    assertEquals(listOf("game", "keyboard", "abk"), candidates.map { it.first })
+    assertEquals("Advanced Braille Keyboard", candidates.last().second)
+  }
+
+  @Test
   fun enabledAppsComeFirst() {
     val sorted = DirectTouchApps.sort(listOf(app("a", "Alpha"), app("z", "Zed", enabled = true)))
     assertEquals(listOf("z", "a"), sorted.map { it.packageName })

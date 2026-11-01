@@ -78,6 +78,10 @@ object DirectTouchSettings {
 
   fun isAppEnabled(prefs: SharedPreferences, pkg: String): Boolean = pkg in stringSet(prefs, PREF_APPS)
 
+  /** External IMEs use the existing app selection; the integrated IME keeps its own handling. */
+  fun isKeyboardEnabled(prefs: SharedPreferences, pkg: String?, ownPackage: String): Boolean =
+    isMasterEnabled(prefs) && pkg != null && pkg != ownPackage && isAppEnabled(prefs, pkg)
+
   fun setAppEnabled(prefs: SharedPreferences, pkg: String, enabled: Boolean) {
     val apps = stringSet(prefs, PREF_APPS)
     prefs.edit().putStringSet(PREF_APPS, if (enabled) apps + pkg else apps - pkg).apply()
