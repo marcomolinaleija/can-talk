@@ -1,6 +1,4 @@
-CAN Talk 1.0.4
+CAN Talk 1.0.5
 
-- Busca emojis por su nombre con el teclado braille. En el panel de emojis, desliza dos dedos a la izquierda para buscar, escribe en braille y recorre los resultados deslizando un dedo arriba o abajo. Desliza dos dedos a la derecha para insertar el emoji elegido.
-- Se corrige un cierre al abrir la recalibración de puntos del teclado braille en Android 11.
-- Se mejora la navegación por el ecualizador de Samsung para evitar que el foco vuelva solo al mismo botón.
-- Se corrige un fallo que podía cerrar el lector al reiniciar el teléfono, antes del primer desbloqueo. Los gestos personalizados se conservan.
+- Las opciones Describir pantalla y Describir imagen vuelven a aparecer en el menú durante las llamadas normales y de WhatsApp, incluso con el teléfono bloqueado.
+- Se corrigen posibles repeticiones de palabras al borrar una letra y seguir escribiendo con el teclado braille sin abreviar.

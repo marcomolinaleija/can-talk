@@ -305,6 +305,14 @@ public class EditBufferUnContracted implements EditBuffer {
         textToSpeak = BrailleTranslateUtils.getDotsText(context.getResources(), brailleCharacter);
       }
       EditBufferUtils.speakDelete(context, talkBack, textToSpeak);
+    } else if (!holdings.isEmpty()
+        && keyCode == KeyEvent.KEYCODE_DEL
+        && BrailleCommonUtils.isTextField(imeConnection.editorInfo)
+        && !BrailleCommonUtils.isPasswordField(imeConnection.editorInfo)) {
+      // Keep the editor's composing region in sync with holdings. A delete key event can finish
+      // composition in some editors, making the next append insert the whole word again.
+      holdings.remove(holdings.size() - 1);
+      imeConnection.inputConnection.setComposingText(translator.translateToPrint(holdings), 1);
     } else {
       // Otherwise, remove the terminal root, and forward a deletion press to the Editor.
       if (!holdings.isEmpty()) {

@@ -35,7 +35,6 @@ import com.google.android.accessibility.talkback.contextmenu.ContextMenuItem;
 import com.google.android.accessibility.talkback.contextmenu.ContextMenuItem.DeferredType;
 import com.google.android.accessibility.utils.FeatureSupport;
 import com.google.android.accessibility.utils.SettingsUtils;
-import com.google.android.accessibility.utils.monitor.ScreenMonitor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,8 +54,8 @@ public class RuleScreenOverview extends NodeMenuRule {
 
   @Override
   public boolean accept(Context context, AccessibilityNodeInfoCompat node) {
-    return !ScreenMonitor.isDeviceLocked(context)
-        && SettingsUtils.allowLinksOutOfSettings(context)
+    // Like the gesture, keep manual descriptions available over the lock screen, including calls.
+    return SettingsUtils.allowLinksOutOfSettings(context)
         && FeatureSupport.canTakeScreenShotByAccessibilityService()
         && GeminiConfiguration.screenOverviewEnabled(context);
   }
