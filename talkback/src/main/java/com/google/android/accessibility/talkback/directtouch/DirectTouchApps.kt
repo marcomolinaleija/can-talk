@@ -19,6 +19,14 @@ package com.google.android.accessibility.talkback.directtouch
 data class AppEntry(val packageName: String, val label: String, val enabled: Boolean)
 
 object DirectTouchApps {
+  /** Include enabled IMEs without launcher activities, once per external package. */
+  fun candidates(
+    launcherApps: List<Pair<String, String>>,
+    keyboards: List<Pair<String, String>>,
+    ownPackage: String,
+  ): List<Pair<String, String>> =
+    (launcherApps + keyboards).distinctBy { it.first }.filter { it.first != ownPackage }
+
   /** Enabled apps first, then alphabetical by label ignoring case, with ties broken by package. */
   fun sort(apps: List<AppEntry>): List<AppEntry> =
     apps.sortedWith(

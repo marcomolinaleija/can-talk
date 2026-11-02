@@ -57,7 +57,7 @@ import com.google.android.accessibility.utils.output.ThemeVibrations
  * Touch goes back to Backtalk as soon as a dialog, another app, the notification shade or a text
  * field needs the screen reader, or the screen turns off. The keyboard stays with Backtalk without
  * ending direct touch, because its window is cut out of the passthrough region unless direct typing
- * is on for the app.
+ * is on for the app. Selected external keyboards receive direct touch in every app.
  *
  * Everything comes from Backtalk's own window, screen and display monitors, so there is no tree
  * scan. Turning direct touch off takes effect at once. Turning it on waits [DEBOUNCE_MS] so that a
@@ -81,8 +81,8 @@ class DirectTouchController(
   private var screenInteractive = true
   private var displayOn = true
   private var active = false
-  // Whether the passthrough region now holds just the navigation bar, while direct touch is off.
-  private var navBarRegionSent = false
+  // Whether a keyboard or navigation bar region was sent while app direct touch is off.
+  private var partRegionSent = false
   private var paused = false
 
   // The system holds preference listeners weakly, so this must stay a field.
@@ -176,16 +176,16 @@ class DirectTouchController(
     prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
     handler.removeCallbacks(reevaluate)
     handler.removeCallbacks(recheck)
-    if (active || navBarRegionSent) {
+    if (active || partRegionSent) {
       active = false
-      navBarRegionSent = false
+      partRegionSent = false
       clearRegion()
     }
   }
 
   private fun scheduleEvaluate() {
     handler.removeCallbacks(reevaluate)
-    if (active) {
+    if (active || partRegionSent) {
       // Handing back must not wait, and neither must a region that changed under us.
       evaluate()
     } else {
@@ -204,20 +204,21 @@ class DirectTouchController(
     val directTyping = mainPackage != null && DirectTouchSettings.isDirectTyping(prefs, mainPackage)
     val shouldBeActive = mainPackage != null && shouldBeActive(windows, mainPackage)
     val navBarDirect = isNavBarDirect()
+    val keyboards = directKeyboards(windows)
     if (shouldBeActive) {
-      navBarRegionSent = false
-      applyRegion(windows, directTyping, navBarDirect)
+      partRegionSent = false
+      applyRegion(windows, directTyping, navBarDirect, keyboards)
     }
     if (shouldBeActive != active) {
       active = shouldBeActive
       if (!active) {
         clearRegion()
-        navBarRegionSent = false
+        partRegionSent = false
       }
       announce(active)
     }
     if (!active) {
-      updateNavBarRegion(windows, navBarDirect)
+      updatePartRegion(windows, navBarDirect, keyboards)
     }
   }
 
@@ -282,21 +283,33 @@ class DirectTouchController(
     feedback.returnFeedback(Performance.EVENT_ID_UNTRACKED, Feedback.speech(label, options))
   }
 
-  /**
-   * While direct touch is off, keeps the navigation bar alone in the passthrough region if lift to
-   * activate is on for it, and takes it out again once it isn't or the bar is gone. The region is
-   * sent again on every look, because other services can clear the shared one.
-   */
-  private fun updateNavBarRegion(windows: List<AccessibilityWindowInfo>, navBarDirect: Boolean) {
-    val navBars = if (navBarDirect) navigationBarBounds(windows) else emptyList()
-    if (navBars.isNotEmpty()) {
-      val region = Region()
-      navBars.forEach { region.union(it) }
-      sendRegion(region)
-      navBarRegionSent = true
-    } else if (navBarRegionSent) {
+  /** Keeps selected keyboard windows and the optional navigation bar direct independently of apps. */
+  private fun updatePartRegion(
+    windows: List<AccessibilityWindowInfo>,
+    navBarDirect: Boolean,
+    keyboards: List<AccessibilityWindowInfo>,
+  ) {
+    val parts =
+      (if (navBarDirect) navigationBarBounds(windows) else emptyList()) +
+        keyboards.map { window -> Rect().also { window.getBoundsInScreen(it) } }
+    if (parts.isNotEmpty()) {
+      sendRegion(DirectTouchRegions.partialRegion(parts))
+      partRegionSent = true
+    } else if (partRegionSent) {
       clearRegion()
-      navBarRegionSent = false
+      partRegionSent = false
+    }
+  }
+
+  private fun directKeyboards(windows: List<AccessibilityWindowInfo>): List<AccessibilityWindowInfo> {
+    if (!screenInteractive || !displayOn || !DirectTouchSettings.isMasterEnabled(prefs)) {
+      return emptyList()
+    }
+    return windows.filter { window ->
+      window.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
+        DirectTouchSettings.isKeyboardEnabled(
+          prefs, window.root?.packageName?.toString(), service.packageName
+        )
     }
   }
 
@@ -373,11 +386,12 @@ class DirectTouchController(
     windows: List<AccessibilityWindowInfo>,
     directTyping: Boolean,
     navBarDirect: Boolean,
+    keyboards: List<AccessibilityWindowInfo>,
   ) {
     val display = displayBounds()
     val excluded = mutableListOf<Rect>()
     windows.forEach { window ->
-      if (DirectTouchRegions.shouldExcludeWindow(window.type, directTyping)) {
+      if (DirectTouchRegions.shouldExcludeWindow(window.type, directTyping) && window !in keyboards) {
         val bounds = Rect()
         window.getBoundsInScreen(bounds)
         val isNavBar =
