@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!--
       Source: Possible user requests from voice commands to read from top.
       Description: Looks for keyword "read" to see if user has asked to read from top. [CHAR LIMIT=40]
@@ -336,6 +336,14 @@
   <string name="voice_commands_help_text_editing_description">Type, select, and copy text</string>
   <!-- The description of voice command - input text. [CHAR_LIMIT=NONE] -->
   <string name="voice_commands_help_type_text">Type [OK]</string>
+  <!-- Voice command help: placing a call to a contact or phone number. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_help_call" tools:ignore="MissingTranslation">Call [contact] or Call [phone number]</string>
+  <!-- Voice command help: explains confirming a call, calling on speaker and choosing between contacts. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_help_call_description" tools:ignore="MissingTranslation">CAN Talk repeats who it will call, and you say yes to confirm. Add \"on speaker\" to turn the speaker on. If several contacts match, you choose by number</string>
+  <!-- Voice command help: answering, declining or ending a call. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_help_call_control" tools:ignore="MissingTranslation">Answer the call, Decline, or Hang up</string>
+  <!-- Voice command help: other phrases for call control, and the permissions it asks for. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_help_call_control_description" tools:ignore="MissingTranslation">Also \"pick up the call\", \"reject the call\" and \"end call\". CAN Talk asks for the phone and contacts permissions the first time</string>
 
   <!-- The description of voice command "Copy". [CHAR_LIMIT=NONE] -->
   <string name="voice_commands_help_copy_description">Select text before copying</string>
@@ -371,4 +379,35 @@
   <string name="voice_commands_help_label_description">Add or edit a custom label to say \"submit\"</string>
   <!-- The description of voice command "Stop". [CHAR_LIMIT=NONE] -->
   <string name="voice_commands_help_stop_description">Stop current voice command</string>
+  <!-- Spoken before placing a call; %1$s is the contact name or the digits of the number. The user says yes to call. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_confirm" tools:ignore="MissingTranslation">Calling %1$s, say yes to confirm</string>
+  <!-- Spoken before placing a call that starts on speaker; %1$s is the contact name or the digits of the number. The user says yes to call. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_confirm_speaker" tools:ignore="MissingTranslation">Calling %1$s on speaker, say yes to confirm</string>
+  <!-- Spoken as a call is placed; %1$s is the contact name or the digits of the number. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_calling" tools:ignore="MissingTranslation">Calling %1$s</string>
+  <!-- Spoken when the user does not confirm a call, or the choice is not understood. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_cancelled" tools:ignore="MissingTranslation">Call cancelled</string>
+  <!-- Spoken when no contact matches the name the user said; %1$s is that name. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_contact_not_found" tools:ignore="MissingTranslation">Could not find %1$s in your contacts</string>
+  <!-- Spoken when several contacts match; %1$d is how many, %2$s is the name the user said and %3$s is the numbered list. [CHAR_LIMIT=NONE] -->
+  <plurals name="voice_commands_call_choose" tools:ignore="MissingTranslation">
+    <item quantity="one">I found %1$d contact for %2$s. %3$s Say its number to choose.</item>
+    <item quantity="other">I found %1$d contacts for %2$s. %3$s Say a number to choose.</item>
+  </plurals>
+  <!-- One numbered entry in the list of matching contacts; %1$d is its number and %2$s is the contact name. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_choose_item" tools:ignore="MissingTranslation">%1$d, %2$s.</string>
+  <!-- Spoken before Android asks for the phone and contacts permissions that calling by voice needs. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_permission_needed" tools:ignore="MissingTranslation">To make and answer calls by voice, CAN Talk needs permission. Allow the next screens, then say your command again.</string>
+  <!-- Spoken when the voice command answers a ringing call. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_answering" tools:ignore="MissingTranslation">Answering the call</string>
+  <!-- Spoken when the voice command declines a ringing call. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_declining" tools:ignore="MissingTranslation">Call declined</string>
+  <!-- Spoken when the voice command ends the ongoing call. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_hanging_up" tools:ignore="MissingTranslation">Call ended</string>
+  <!-- Spoken when the user asks to end or decline a call but there is none. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_no_call" tools:ignore="MissingTranslation">There is no call to end</string>
+  <!-- Spoken on Android 8, where ending a call by voice is not possible. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_needs_newer_android" tools:ignore="MissingTranslation">Ending calls by voice needs Android 9 or later</string>
+  <!-- Spoken when Android refuses to place, answer or end a call. [CHAR_LIMIT=NONE] -->
+  <string name="voice_commands_call_failed" tools:ignore="MissingTranslation">Could not complete the call</string>
 </resources>

@@ -86,6 +86,12 @@
     <!-- Granted by the user with adb, for the speakerphone setting. -->
     <uses-permission android:name="android.permission.MANAGE_ONGOING_CALLS" />
 
+    <!-- Optional voice calling: dial numbers, find contacts, and handle phone calls. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
     <!-- Protects the settings export with this app variant's own signature permission. -->
     <permission
         android:name="${migrationPermission}"

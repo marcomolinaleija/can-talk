@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Spanish translations are provided; other locales use these default labels. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+  <string name="on_device_ai_model_note_recommended">Recommended. Best answers for its size.</string>
+  <string name="on_device_ai_model_note_better_answers">Better answers, slower. Needs a phone with a lot of memory.</string>
+  <string name="on_device_ai_model_note_very_large">Very large. For phones with 16 GB of memory or more.</string>
+  <string name="on_device_ai_model_note_tiny_short_answers">Tiny and fast. Short answers.</string>
+  <string name="on_device_ai_model_note_small_fast">Small and fast.</string>
+  <string name="on_device_ai_model_note_tiny_fast">Tiny and fast.</string>
+  <string name="on_device_ai_model_note_medium">Medium size.</string>
+  <string name="on_device_ai_model_note_large_slow">Larger and slower.</string>
+  <string name="on_device_ai_model_note_small_fast_apple">Small and fast. Apple research licence.</string>
+  <string name="on_device_ai_model_note_ocr">Made for reading text in images, not for describing them.</string>
+  <string name="on_device_ai_license_custom">Custom licence</string>
+  <string name="on_device_ai_license_apple">Apple research licence</string>
+</resources>

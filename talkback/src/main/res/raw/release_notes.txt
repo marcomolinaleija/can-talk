@@ -1,4 +1,7 @@
-CAN Talk 1.0.5
+CAN Talk 1.0.6
 
-- Las opciones Describir pantalla y Describir imagen vuelven a aparecer en el menú durante las llamadas normales y de WhatsApp, incluso con el teléfono bloqueado.
-- Se corrigen posibles repeticiones de palabras al borrar una letra y seguir escribiendo con el teclado braille sin abreviar.
+- Se añaden comandos de voz en español para llamar a contactos o números, iniciar llamadas con altavoz, contestar, rechazar y colgar. Las llamadas salientes requieren confirmación y, si coinciden varios contactos, puedes elegir por número.
+- Se corrigen las descargas de modelos de IA local que fallaban cuando cambiaban los archivos del proveedor. Cada descarga utiliza ahora una revisión fija y conserva la comprobación de integridad.
+- La selección automática de IA local elige modelos más pequeños en teléfonos con menos memoria, sin cambiar el modelo que hayas elegido manualmente.
+- Si la IA local no puede responder por falta de memoria, la descripción de imagen o pantalla incluye el motivo del fallo.
+- Se completan las traducciones al español de la configuración de IA local, las descripciones de los modelos y las etiquetas de licencia.

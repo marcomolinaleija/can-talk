@@ -54,6 +54,8 @@ class GeminiFailure(
     QUOTA,
     /** Google's servers are overloaded or had an internal error. */
     BUSY,
+    /** The on-device model could not answer; [message] contains the reason to speak. */
+    ON_DEVICE,
     /** Anything else. */
     OTHER,
   }
@@ -72,6 +74,7 @@ class GeminiFailure(
 
   /** What to tell the user. */
   fun userMessage(context: Context): String {
+    if (kind == Kind.ON_DEVICE) return message
     if (groq) return groqMessage(context)
     val prefs = com.google.android.accessibility.utils.SharedPreferencesUtils.getSharedPreferences(context)
     val isChatGpt = ChatGptAuthManager.isChatGptActive(prefs)
@@ -100,6 +103,7 @@ class GeminiFailure(
           context.getString(R.string.gemini_error_busy)
         }
       }
+      Kind.ON_DEVICE -> message
       Kind.OTHER -> {
         val shortMessage = firstSentence(message)
         when {
@@ -129,7 +133,7 @@ class GeminiFailure(
     Kind.API_KEY -> R.string.groq_error_api_key
     Kind.QUOTA -> R.string.groq_error_quota
     Kind.BUSY -> R.string.groq_error_busy
-    Kind.OTHER -> R.string.groq_error_response
+    Kind.ON_DEVICE, Kind.OTHER -> R.string.groq_error_response
     })
   }
 
@@ -149,6 +153,11 @@ class GeminiFailure(
     /** A failure on the phone, such as an answer that could not be read. */
     @JvmStatic
     fun other(message: String): GeminiFailure = GeminiFailure(Kind.OTHER, message = message)
+
+    /** Keeps a local failure's explanation as part of the image or screen description. */
+    @JvmStatic
+    fun onDevice(spokenMessage: String): GeminiFailure =
+      GeminiFailure(Kind.ON_DEVICE, message = spokenMessage)
 
     /** Reads the failure from the error Volley reports for a request. */
     @JvmStatic

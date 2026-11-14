@@ -92,11 +92,11 @@
     <!-- Entry that imports a model file from storage. [CHAR LIMIT=60] -->
     <string name="pref_on_device_ai_import">Use a model file from storage</string>
     <!-- Summary of the import entry. [CHAR LIMIT=NONE] -->
-    <string name="pref_on_device_ai_import_summary">Pick a Gemma 4 litertlm file that you already downloaded.</string>
+    <string name="pref_on_device_ai_import_summary">Choose a compatible .litertlm file that you have already downloaded.</string>
     <!-- Confirmation that a model file was installed. [CHAR LIMIT=60] -->
     <string name="on_device_ai_import_done">Model installed</string>
     <!-- Message when the picked file is not a known model. [CHAR LIMIT=NONE] -->
-    <string name="on_device_ai_import_failed">That file is not a supported Gemma 4 model file.</string>
+    <string name="on_device_ai_import_failed">This file does not match a supported model in the catalog.</string>
 
     <!-- Entry that sets how long to wait for an answer. [CHAR LIMIT=40] -->
     <string name="pref_on_device_ai_timeout">Time limit for answers</string>

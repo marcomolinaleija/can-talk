@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="on_device_ai_model_note_recommended">Recomendado. Ofrece las mejores respuestas para su tamaño.</string>
+  <string name="on_device_ai_model_note_better_answers">Ofrece mejores respuestas, pero es más lento. Requiere un teléfono con mucha memoria.</string>
+  <string name="on_device_ai_model_note_very_large">Muy grande. Para teléfonos con 16 GB de memoria o más.</string>
+  <string name="on_device_ai_model_note_tiny_short_answers">Muy pequeño y rápido. Ofrece respuestas breves.</string>
+  <string name="on_device_ai_model_note_small_fast">Pequeño y rápido.</string>
+  <string name="on_device_ai_model_note_tiny_fast">Muy pequeño y rápido.</string>
+  <string name="on_device_ai_model_note_medium">Tamaño mediano.</string>
+  <string name="on_device_ai_model_note_large_slow">Más grande y más lento.</string>
+  <string name="on_device_ai_model_note_small_fast_apple">Pequeño y rápido. Licencia de investigación de Apple.</string>
+  <string name="on_device_ai_model_note_ocr">Diseñado para leer el texto de las imágenes, en lugar de describirlas.</string>
+  <string name="on_device_ai_license_custom">Licencia específica del modelo</string>
+  <string name="on_device_ai_license_apple">Licencia de investigación de Apple</string>
+</resources>

@@ -314,7 +314,13 @@ class OnDeviceAiFragment : TalkbackBaseFragment() {
       listOfNotNull(
         getString(R.string.on_device_ai_tag_downloaded).takeIf { manager.store.isInstalled(model) },
         getString(R.string.on_device_ai_tag_experimental).takeIf { model.experimental },
-        model.license.takeIf { it != "Apache-2.0" },
+        model.license.takeIf { it != "Apache-2.0" }?.let { license ->
+          when (license) {
+            "Custom licence" -> getString(R.string.on_device_ai_license_custom)
+            "Apple research licence" -> getString(R.string.on_device_ai_license_apple)
+            else -> license
+          }
+        },
       )
     val tagText = if (tags.isEmpty()) "" else " (${tags.joinToString(", ")})"
     val memory =
@@ -328,7 +334,7 @@ class OnDeviceAiFragment : TalkbackBaseFragment() {
       model.name,
       sizeLabel(model),
       tagText,
-      model.note,
+      getString(model.note),
       memory,
     )
   }

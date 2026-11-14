@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="voice_commands_help_call">Llama a [contacto] o llama al [número de teléfono]</string>
+  <string name="voice_commands_help_call_description">CAN Talk anuncia a quién vas a llamar y pide que digas «sí» para confirmar. Añade «con altavoz» para iniciar la llamada con altavoz. Si coinciden varios contactos, elige uno por número</string>
+  <string name="voice_commands_help_call_control">Contesta la llamada, rechaza la llamada o cuelga</string>
+  <string name="voice_commands_help_call_control_description">También puedes decir «contestar», «rechazar» o «termina la llamada». CAN Talk solicita los permisos de teléfono y contactos cuando los necesita. Después de autorizarlos, repite el comando. Rechazar y colgar requieren Android 9 o posterior</string>
+  <string name="voice_commands_call_confirm">¿Quieres llamar a %1$s? Di «sí» para confirmar</string>
+  <string name="voice_commands_call_confirm_speaker">¿Quieres llamar a %1$s con altavoz? Di «sí» para confirmar</string>
+  <string name="voice_commands_call_calling">Llamando a %1$s</string>
+  <string name="voice_commands_call_cancelled">Llamada cancelada</string>
+  <string name="voice_commands_call_contact_not_found">No encontré a %1$s en tus contactos</string>
+  <plurals name="voice_commands_call_choose">
+    <item quantity="one">Encontré %1$d contacto que coincide con %2$s. %3$s Di su número para elegirlo</item>
+    <item quantity="many">Encontré %1$d contactos que coinciden con %2$s. %3$s Di el número de una opción</item>
+    <item quantity="other">Encontré %1$d contactos que coinciden con %2$s. %3$s Di el número de una opción</item>
+  </plurals>
+  <string name="voice_commands_call_choose_item">%1$d, %2$s.</string>
+  <string name="voice_commands_call_permission_needed">CAN Talk necesita permiso para esta acción. Autoriza los permisos solicitados y repite el comando</string>
+  <string name="voice_commands_call_answering">Intentando contestar la llamada</string>
+  <string name="voice_commands_call_declining">Llamada rechazada</string>
+  <string name="voice_commands_call_hanging_up">Llamada finalizada</string>
+  <string name="voice_commands_call_no_call">No hay ninguna llamada que finalizar</string>
+  <string name="voice_commands_call_needs_newer_android">Rechazar o finalizar llamadas por voz requiere Android 9 o posterior</string>
+  <string name="voice_commands_call_failed">No se pudo completar la acción de llamada</string>
+</resources>
