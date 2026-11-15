@@ -23,6 +23,7 @@ import android.media.SoundPool
 import android.os.Handler
 import android.os.Looper
 import com.google.android.accessibility.braille.common.BrailleUserPreferences
+import com.google.android.accessibility.utils.output.CallSpeechVolumeController
 import com.google.android.accessibility.utils.output.FailoverTextToSpeech
 import com.google.android.accessibility.utils.output.FeedbackController
 import com.google.android.accessibility.utils.output.ThemeSounds
@@ -54,6 +55,7 @@ object BrailleImeTypingSounds {
   private val failed = mutableSetOf<Int>()
   private var pendingPreview: Key? = null
   private var boost: TypingSoundBoost<LowLatencyAudio.Clip>? = null
+  private var callSoundVolume: CallSpeechVolumeController? = null
   private val boostWorker by lazy {
     ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, LinkedBlockingQueue<Runnable>()) {
       Thread(it, "Braille typing sound preload")
@@ -120,6 +122,8 @@ object BrailleImeTypingSounds {
   @JvmStatic
   @Synchronized
   fun release() {
+    callSoundVolume?.shutdown()
+    callSoundVolume = null
     boost?.clear()
     boost = null
     pool?.release()
@@ -139,7 +143,9 @@ object BrailleImeTypingSounds {
     if (!BrailleUserPreferences.readTypingSounds(context)) {
       return
     }
-    val volume = TypingSoundSettings.volume(context)
+    val baseVolume = TypingSoundSettings.volume(context)
+    if (baseVolume <= 0f) return
+    val volume = adjustCallVolume(context, baseVolume)
     if (volume <= 0f) return
     if (volume > 1f) {
       prepare(context)
@@ -162,6 +168,42 @@ object BrailleImeTypingSounds {
       return
     }
     systemEffect(context, key, volume)
+  }
+
+  internal fun adjustCallVolume(context: Context, normalVolume: Float): Float {
+    val audioManager = context.getSystemService(AudioManager::class.java) ?: return normalVolume
+    val mode = try {
+      audioManager.mode
+    } catch (_: RuntimeException) {
+      AudioManager.MODE_NORMAL
+    }
+    val inCall = mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION
+    if (!inCall) {
+      return normalVolume
+    }
+    val controller = callSoundVolume ?: CallSpeechVolumeController(context.applicationContext).also {
+      callSoundVolume = it
+    }
+    val stream = if (FailoverTextToSpeech.shouldUseAccessibilityStream(context)) {
+      AudioManager.STREAM_ACCESSIBILITY
+    } else {
+      AudioManager.STREAM_MUSIC
+    }
+    if (controller.isEnabled) {
+      return controller.adjust(normalVolume, stream)
+    }
+    val callIndex = try {
+      audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL)
+    } catch (_: RuntimeException) {
+      1
+    }
+    val maxCallIndex = try {
+      audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL).coerceAtLeast(1)
+    } catch (_: RuntimeException) {
+      1
+    }
+    val callRatio = (callIndex.toFloat() / maxCallIndex).coerceIn(0.1f, 1f)
+    return (normalVolume * 0.25f * callRatio).coerceIn(0.01f, 1f)
   }
 
   private fun systemEffect(context: Context, key: Key, volume: Float) {

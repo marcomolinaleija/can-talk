@@ -1,7 +1,5 @@
-CAN Talk 1.0.6
+CAN Talk 1.0.7
 
-- Se añaden comandos de voz en español para llamar a contactos o números, iniciar llamadas con altavoz, contestar, rechazar y colgar. Las llamadas salientes requieren confirmación y, si coinciden varios contactos, puedes elegir por número.
-- Se corrigen las descargas de modelos de IA local que fallaban cuando cambiaban los archivos del proveedor. Cada descarga utiliza ahora una revisión fija y conserva la comprobación de integridad.
-- La selección automática de IA local elige modelos más pequeños en teléfonos con menos memoria, sin cambiar el modelo que hayas elegido manualmente.
-- Si la IA local no puede responder por falta de memoria, la descripción de imagen o pantalla incluye el motivo del fallo.
-- Se completan las traducciones al español de la configuración de IA local, las descripciones de los modelos y las etiquetas de licencia.
+- En el teclado braille, dentro de la búsqueda de emojis, ahora puedes añadir o quitar el emoji seleccionado de tus favoritos pulsando directamente los puntos 3 y 6.
+- Se corrige el volumen de los sonidos de escritura del teclado braille durante llamadas: ahora se atenúan adecuadamente para proteger tu audición y su nivel se ajusta en tiempo real con las teclas de volumen de la llamada.
+- Se corrige la configuración de sonidos del teclado braille: el interruptor para seguir el volumen del lector y el control deslizante de volumen guardan y aplican los cambios de manera inmediata.

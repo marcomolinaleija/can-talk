@@ -30,11 +30,30 @@ object TypingSoundPreferences {
         true
       }
     }
-    fragment.findPreference<SwitchPreferenceCompat>(TypingSoundSettings.FOLLOW_KEY)?.isChecked =
-      TypingSoundSettings.prefs(context).getBoolean(TypingSoundSettings.FOLLOW_KEY, true)
-    fragment.findPreference<SeekBarPreference>(TypingSoundSettings.VOLUME_KEY)?.value =
-      TypingSoundSettings.prefs(context).getInt(TypingSoundSettings.VOLUME_KEY, 50)
+    fragment.findPreference<SwitchPreferenceCompat>(TypingSoundSettings.FOLLOW_KEY)?.apply {
+      isChecked =
+        TypingSoundSettings.prefs(context).getBoolean(TypingSoundSettings.FOLLOW_KEY, true)
+      setOnPreferenceChangeListener { _, newValue ->
+        val follow = newValue as Boolean
+        TypingSoundSettings.prefs(context).edit()
+          .putBoolean(TypingSoundSettings.FOLLOW_KEY, follow).apply()
+        fragment.findPreference<SeekBarPreference>(TypingSoundSettings.VOLUME_KEY)?.isEnabled =
+          BrailleUserPreferences.readTypingSounds(context) && !follow
+        BrailleImeTypingSounds.prepare(context)
+        true
+      }
+    }
+    fragment.findPreference<SeekBarPreference>(TypingSoundSettings.VOLUME_KEY)?.apply {
+      value = TypingSoundSettings.prefs(context).getInt(TypingSoundSettings.VOLUME_KEY, 50)
         .coerceIn(0, TypingSoundSettings.MAX_VOLUME_PERCENT)
+      setOnPreferenceChangeListener { _, newValue ->
+        val percent = (newValue as Int).coerceIn(0, TypingSoundSettings.MAX_VOLUME_PERCENT)
+        TypingSoundSettings.prefs(context).edit()
+          .putInt(TypingSoundSettings.VOLUME_KEY, percent).apply()
+        BrailleImeTypingSounds.prepare(context)
+        true
+      }
+    }
     fragment.findPreference<Preference>("pref_brailleime_sound_preview")
       ?.setOnPreferenceClickListener {
         BrailleImeTypingSounds.play(context, BrailleImeTypingSounds.Key.CHARACTER, true)

@@ -69,6 +69,10 @@ public final class CallSpeechVolumeController {
     }
   }
 
+  public boolean isEnabled() {
+    return enabled;
+  }
+
   private void readSettings() {
     boolean newEnabled = prefs.getBoolean(ENABLED_KEY, false);
     if (newEnabled != enabled) {

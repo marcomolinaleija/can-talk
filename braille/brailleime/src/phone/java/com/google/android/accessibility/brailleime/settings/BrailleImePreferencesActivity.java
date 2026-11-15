@@ -121,6 +121,7 @@ public class BrailleImePreferencesActivity extends PreferencesActivity {
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+      getPreferenceManager().setStorageDeviceProtected();
       getPreferenceManager()
           .setSharedPreferencesName(BrailleUserPreferences.BRAILLE_SHARED_PREFS_FILENAME);
       PreferenceSettingsUtils.addPreferencesFromResource(this, R.xml.brailleime_preferences);

@@ -339,6 +339,10 @@ public class EmojiManager {
     }
 
     if (isSearchMode) {
+      if (brailleChar.equals(CHAR_TOGGLE_FAVORITE) && getSelectedSearchItem() != null) {
+        toggleFavorite();
+        return true;
+      }
       searchAppend(brailleChar);
       return true;
     }
@@ -520,11 +524,21 @@ public class EmojiManager {
   }
 
   public void toggleFavorite() {
-    ensureFavoritesLoaded();
-    String emoji = getSelectedEmoji();
+    String emoji = isSearchModeActive() ? getSelectedSearchEmoji() : getSelectedEmoji();
     if (emoji == null) {
       return;
     }
+    toggleFavoriteForEmoji(emoji);
+  }
+
+  @Nullable
+  public String getSelectedSearchEmoji() {
+    EmojiItem item = getSelectedSearchItem();
+    return item != null ? item.emoji : null;
+  }
+
+  public void toggleFavoriteForEmoji(@NonNull String emoji) {
+    ensureFavoritesLoaded();
     if (favorites.contains(emoji)) {
       favorites.remove(emoji);
       saveFavorites();
