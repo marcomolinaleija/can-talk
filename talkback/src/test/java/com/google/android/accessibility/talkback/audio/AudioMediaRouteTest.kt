@@ -66,6 +66,27 @@ class AudioMediaRouteTest {
   }
 
   @Test
+  fun aConnectedHeadset_playsAsMedia_whileThePhoneBrieflyHoldsMedia() {
+    val speaker = Endpoint(TYPE_BUILTIN_SPEAKER, "", "Phone")
+    assertTrue(playsAsMedia(callProfile, listOf(speaker), listOf(speaker, callProfile, mediaProfile)))
+    assertTrue(playsAsMedia(callProfile, emptyList(), listOf(callProfile, mediaProfile)))
+  }
+
+  @Test
+  fun aConnectedHeadset_keepsTheCallRoute_whenMediaPlaysOnAnotherExternalOutput() {
+    val otherHeadset = Endpoint(TYPE_BLUETOOTH_A2DP, "11:22:33:44:55:66", "Speaker")
+    assertFalse(
+      playsAsMedia(callProfile, listOf(otherHeadset), listOf(callProfile, mediaProfile, otherHeadset))
+    )
+  }
+
+  @Test
+  fun aHeadsetWithoutMediaProfile_keepsTheCallRoute() {
+    val speaker = Endpoint(TYPE_BUILTIN_SPEAKER, "", "Phone")
+    assertFalse(playsAsMedia(callProfile, listOf(speaker), listOf(speaker, callProfile)))
+  }
+
+  @Test
   fun wiredHeadphones_keepTheirRoute() {
     val wired = Endpoint(TYPE_WIRED_HEADPHONES, "", "Headphones")
     assertFalse(playsAsMedia(wired, listOf(wired)))

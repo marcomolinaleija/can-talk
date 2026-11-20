@@ -103,6 +103,8 @@ class AudioDeviceRouter @JvmOverloads constructor(
   // communication route is left alone. That route would switch the headset into call mode, with
   // narrowband sound and noise filtering, for every app's audio (#316).
   @Volatile private var usesMediaRoute = false
+  // A headset announces its call profile before its media one, so the call route waits this long.
+  private var lastBluetoothAddedMs = Long.MIN_VALUE / 2
   private var otherPlaybackCount = 0
   private val playbackCallback =
     object : AudioManager.AudioPlaybackCallback() {
@@ -192,6 +194,9 @@ class AudioDeviceRouter @JvmOverloads constructor(
     val callback =
       object : AudioDeviceCallback() {
         override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+          if (addedDevices.orEmpty().any { it.type in BLUETOOTH_TYPES }) {
+            lastBluetoothAddedMs = SystemClock.uptimeMillis()
+          }
           Log.i(TAG, "Audio devices added, updating routing for target: $currentTarget")
           LogUtils.d(TAG, "Audio devices added, updating routing for target: %s", currentTarget)
           applyRouting()
@@ -279,29 +284,48 @@ class AudioDeviceRouter @JvmOverloads constructor(
       isRoutingActive = true
       return
     }
+    if (isSettling(device)) {
+      // Its media profile may still be on the way. A later re-assertion pass decides.
+      Log.i(TAG, "${device.productName} just connected, waiting before the call route")
+      stopKeepAlive()
+      clearDeviceRouting(am)
+      return
+    }
     startKeepAlive(device)
     setDeviceRouting(am, device, forceSpeakerOn = false)
   }
 
-  /** Whether [device] is Bluetooth and Android plays media on it. */
+  /** Whether [device] is a headset's call profile that connected too recently to be used. */
+  private fun isSettling(device: AudioDeviceInfo): Boolean =
+    device.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO &&
+      SystemClock.uptimeMillis() - lastBluetoothAddedMs < BLUETOOTH_SETTLE_MS
+
+  /**
+   * Whether [device] is Bluetooth and Android plays media on it, or would as soon as its media
+   * profile settles. The call profile is only used when media clearly plays on another external
+   * output, because opening it suspends the headset's media and drops Backtalk to the speaker
+   * whenever the call link fails to come up.
+   */
   private fun playsAsMedia(am: AudioManager, device: AudioDeviceInfo): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
-    val media =
-      try {
+    return try {
+      val connected = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS).map(::endpointOf)
+      val media =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
           // Where media plays now. The communication route doesn't change it.
           am.getAudioDevicesForAttributes(
-            AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build()
-          )
+              AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build()
+            )
+            .map(::endpointOf)
         } else {
           // Android 12 can't say, so any connected Bluetooth media output counts.
-          am.getDevices(AudioManager.GET_DEVICES_OUTPUTS).toList()
+          connected
         }
-      } catch (e: Exception) {
-        Log.w(TAG, "Couldn't find where media plays", e)
-        return false
-      }
-    return playsAsMedia(endpointOf(device), media.map(::endpointOf))
+      playsAsMedia(endpointOf(device), media, connected)
+    } catch (e: Exception) {
+      Log.w(TAG, "Couldn't find where media plays", e)
+      false
+    }
   }
 
   /**
@@ -341,6 +365,13 @@ class AudioDeviceRouter @JvmOverloads constructor(
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
       val targetDevice = getTargetAudioDevice()
+      if (targetDevice != null &&
+          effectiveTarget !is AudioTarget.PhoneSpeaker &&
+          (playsAsMedia(am, targetDevice) || isSettling(targetDevice))) {
+        // The media route, or the wait for it, is chosen in one place.
+        applyRouting()
+        return
+      }
       if (targetDevice == null) {
         // The chosen device is not available (yet). Drop our request instead of leaving a stale
         // route behind; the device callback re-applies it when the device shows up.
@@ -525,6 +556,12 @@ class AudioDeviceRouter @JvmOverloads constructor(
     if (usesMediaRoute) return
     val am = audioManager ?: return
     val targetDevice = getTargetAudioDevice()
+    if (targetDevice != null &&
+        effectiveTarget !is AudioTarget.PhoneSpeaker &&
+        (isSettling(targetDevice) || playsAsMedia(am, targetDevice))) {
+      // Our own clearing while the media route settles must not reopen the call route.
+      return
+    }
     if (targetDevice != null && (device == null || device.id != targetDevice.id)) {
       Log.i(
         TAG,
@@ -789,6 +826,8 @@ class AudioDeviceRouter @JvmOverloads constructor(
     private const val TAG = "AudioDeviceRouter"
     // Gaps between re-assertion passes, covering slow Bluetooth profile switches.
     private val REASSERTION_DELAYS_MS = longArrayOf(150L, 300L, 500L, 800L, 1200L, 2000L)
+    // Shorter than the re-assertion passes above, so the last pass still routes after it.
+    private const val BLUETOOTH_SETTLE_MS = 3000L
 
     @Volatile
     @JvmStatic
@@ -822,21 +861,37 @@ class AudioDeviceRouter @JvmOverloads constructor(
     @VisibleForTesting
     @JvmStatic
     fun playsAsMedia(target: Endpoint, media: List<Endpoint>): Boolean =
-      target.type in BLUETOOTH_TYPES &&
-        media.any {
-          it.type in BLUETOOTH_TYPES &&
-            it.type != AudioDeviceInfo.TYPE_BLUETOOTH_SCO &&
-            if (target.address.isNotEmpty() && it.address.isNotEmpty()) {
-              it.address.equals(target.address, ignoreCase = true)
-            } else {
-              it.name.isNotEmpty() && it.name.equals(target.name, ignoreCase = true)
-            }
-        }
+      target.type in BLUETOOTH_TYPES && media.any { isMediaProfileOf(target, it) }
 
-    /** Checks whether an [AudioDeviceInfo] represents an external device. */
-    fun isExternalDevice(device: AudioDeviceInfo): Boolean {
-      if (!device.isSink) return false
-      return when (device.type) {
+    /**
+     * Like the above, but also while [target]'s media profile is [connected] and media plays on no
+     * other external output: while the headset is still connecting, or while Android briefly
+     * reports the phone as the media output, such as when another sound starts or stops.
+     */
+    @VisibleForTesting
+    @JvmStatic
+    fun playsAsMedia(target: Endpoint, media: List<Endpoint>, connected: List<Endpoint>): Boolean {
+      if (playsAsMedia(target, media)) return true
+      return target.type in BLUETOOTH_TYPES &&
+        connected.any { isMediaProfileOf(target, it) } &&
+        media.none { it.type in EXTERNAL_TYPES && !isSameDevice(target, it) }
+    }
+
+    /** Whether [other] is [target]'s physical device over a Bluetooth media profile. */
+    private fun isMediaProfileOf(target: Endpoint, other: Endpoint): Boolean =
+      other.type in BLUETOOTH_TYPES &&
+        other.type != AudioDeviceInfo.TYPE_BLUETOOTH_SCO &&
+        isSameDevice(target, other)
+
+    private fun isSameDevice(target: Endpoint, other: Endpoint): Boolean =
+      if (target.address.isNotEmpty() && other.address.isNotEmpty()) {
+        other.address.equals(target.address, ignoreCase = true)
+      } else {
+        other.name.isNotEmpty() && other.name.equals(target.name, ignoreCase = true)
+      }
+
+    private val EXTERNAL_TYPES =
+      setOf(
         AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
         AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
         AudioDeviceInfo.TYPE_BLE_HEADSET,
@@ -846,10 +901,12 @@ class AudioDeviceRouter @JvmOverloads constructor(
         AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
         AudioDeviceInfo.TYPE_USB_HEADSET,
         AudioDeviceInfo.TYPE_USB_DEVICE,
-        AudioDeviceInfo.TYPE_HEARING_AID -> true
-        else -> false
-      }
-    }
+        AudioDeviceInfo.TYPE_HEARING_AID,
+      )
+
+    /** Checks whether an [AudioDeviceInfo] represents an external device. */
+    fun isExternalDevice(device: AudioDeviceInfo): Boolean =
+      device.isSink && device.type in EXTERNAL_TYPES
 
     /** Returns human-readable display name for an [AudioDeviceInfo]. */
     fun getDeviceDisplayName(device: AudioDeviceInfo, context: Context): String {
