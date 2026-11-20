@@ -26,6 +26,26 @@ class DirectTouchSettingsTest {
   private val prefs = FakeSharedPreferences()
 
   @Test
+  fun keyboardSelectionUsesExistingAppSettingAndMasterSwitch() {
+    assertFalse(DirectTouchSettings.isKeyboardEnabled(prefs, "abk", "self"))
+    DirectTouchSettings.setAppEnabled(prefs, "abk", true)
+    assertTrue(DirectTouchSettings.isKeyboardEnabled(prefs, "abk", "self"))
+    assertFalse(DirectTouchSettings.isDirectTyping(prefs, "abk"))
+    DirectTouchSettings.setMasterEnabled(prefs, false)
+    assertFalse(DirectTouchSettings.isKeyboardEnabled(prefs, "abk", "self"))
+    DirectTouchSettings.setMasterEnabled(prefs, true)
+    DirectTouchSettings.setAppEnabled(prefs, "abk", false)
+    assertFalse(DirectTouchSettings.isKeyboardEnabled(prefs, "abk", "self"))
+  }
+
+  @Test
+  fun missingRootAndIntegratedKeyboardNeverOptIn() {
+    DirectTouchSettings.setAppEnabled(prefs, "self", true)
+    assertFalse(DirectTouchSettings.isKeyboardEnabled(prefs, "self", "self"))
+    assertFalse(DirectTouchSettings.isKeyboardEnabled(prefs, null, "self"))
+  }
+
+  @Test
   fun defaults() {
     assertTrue(DirectTouchSettings.isMasterEnabled(prefs))
     assertTrue(DirectTouchSettings.isSpeechEnabled(prefs))

@@ -21,7 +21,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
@@ -154,12 +154,16 @@ class DirectTouchFragment : TalkbackBaseFragment() {
     executor.execute {
       val pm = appContext.packageManager
       val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+      val keyboards =
+        appContext.getSystemService(InputMethodManager::class.java)?.enabledInputMethodList.orEmpty()
       val entries =
-        pm
-          .queryIntentActivities(launcher, 0)
-          .map { it.activityInfo.packageName to it.loadLabel(pm).toString() }
-          .distinctBy { it.first }
-          .filter { (pkg, _) -> pkg != appContext.packageName }
+        DirectTouchApps.candidates(
+          pm.queryIntentActivities(launcher, 0).map {
+            it.activityInfo.packageName to it.loadLabel(pm).toString()
+          },
+          keyboards.map { it.packageName to it.loadLabel(pm).toString() },
+          appContext.packageName,
+        )
           .map { (pkg, label) -> AppEntry(pkg, label, DirectTouchSettings.isAppEnabled(prefs, pkg)) }
       val sorted = DirectTouchApps.sort(entries)
       view?.post {

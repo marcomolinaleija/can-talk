@@ -74,6 +74,10 @@ object DirectTouchRegions {
     return alongBottom || alongSide
   }
 
+  /** Only these windows receive raw contacts; an empty list restores exploration everywhere. */
+  fun partialRegion(parts: List<Rect>): Region =
+    Region().also { region -> parts.forEach { region.union(it) } }
+
   /** The whole display minus the [excluded] rectangles. */
   fun passthroughRegion(displayBounds: Rect, excluded: List<Rect>): Region {
     val region = Region(displayBounds)
