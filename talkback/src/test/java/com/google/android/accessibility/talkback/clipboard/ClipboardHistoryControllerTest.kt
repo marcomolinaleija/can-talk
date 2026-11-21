@@ -221,4 +221,61 @@ class ClipboardHistoryControllerTest {
     assertTrue(spoken.last().startsWith("Historial cerrado. El campo de texto original no está disponible"))
     assertFalse(spoken.any { it.contains("Elemento pegado") })
   }
+
+  @Test fun labeledItem_speaksLabelAndOptionallyContent() {
+    store.rename("Segundo", "Correo")
+    ClipboardHistorySettings.setSpeakContentWithLabel(service, true)
+    assertTrue(controller.show())
+    action(Action.NEXT)
+    assertEquals("Correo. Segundo. 1 de 2", spoken.last())
+
+    ClipboardHistorySettings.setSpeakContentWithLabel(service, false)
+    action(Action.PREVIOUS)
+    assertEquals("Correo. 1 de 2", spoken.last())
+    ClipboardHistorySettings.setSpeakContentWithLabel(service, true)
+  }
+
+  @Test fun deleteGesture_requiresConfirmation_andRemovesEntryOnSecondSwipe() {
+    assertTrue(controller.show())
+    action(Action.NEXT)
+    assertEquals("Segundo. 1 de 2", spoken.last())
+
+    // First delete swipe asks for confirmation without removing.
+    action(Action.DELETE)
+    assertEquals("Desliza de nuevo con dos dedos hacia abajo para eliminar este elemento", spoken.last())
+    assertEquals(2, store.items().size)
+
+    // Second delete swipe confirms removal.
+    action(Action.DELETE)
+    assertEquals("Elemento eliminado. Primero. 1 de 1", spoken.last())
+    assertEquals(listOf("Primero"), store.items().map { it.text })
+  }
+
+  @Test fun searchOverlay_releasesGestureModeAndTouchRegion_andDismissesOnBack() {
+    assertTrue(controller.show())
+    assertTrue(controller.isShowing)
+    assertTrue(controller.isGestureOverlayActive)
+
+    action(Action.SEARCH)
+    assertTrue(controller.isShowing)
+    assertFalse(controller.isGestureOverlayActive)
+    assertEquals(null, service.region)
+    assertEquals("Búsqueda abierta", spoken.last())
+
+    assertTrue(controller.onKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK)))
+    assertTrue(controller.onKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK)))
+    assertFalse(controller.isShowing)
+    assertEquals("Historial cerrado", spoken.last())
+  }
+
+  @Test fun recordExternal_respectsCaptureEnabledSetting() {
+    ClipboardHistorySettings.setCaptureEnabled(service, true)
+    controller.recordExternal("Texto externo")
+    assertEquals("Texto externo", store.items().first().text)
+
+    ClipboardHistorySettings.setCaptureEnabled(service, false)
+    controller.recordExternal("Ignorado")
+    assertFalse(store.items().any { it.text == "Ignorado" })
+    ClipboardHistorySettings.setCaptureEnabled(service, true)
+  }
 }

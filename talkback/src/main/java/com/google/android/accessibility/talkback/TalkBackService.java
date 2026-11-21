@@ -1714,7 +1714,7 @@ public class TalkBackService extends AccessibilityServiceCompat
       return true;
     }
     // A modal history surface owns touches; late framework gestures must not reach the app.
-    if (clipboardHistoryController != null && clipboardHistoryController.isShowing()) {
+    if (clipboardHistoryController != null && clipboardHistoryController.isGestureOverlayActive()) {
       if (gestureId == AccessibilityService.GESTURE_2_FINGER_SWIPE_LEFT) {
         clipboardHistoryController.dismiss();
       }
@@ -1784,6 +1784,12 @@ public class TalkBackService extends AccessibilityServiceCompat
     if (brailleAppSearchController != null) brailleAppSearchController.dismiss();
     return clipboardHistoryController != null && isServiceActive() && !PauseController.isPaused()
         && clipboardHistoryController.show();
+  }
+
+  public void recordClipboardText(@Nullable CharSequence text) {
+    if (clipboardHistoryController != null) {
+      clipboardHistoryController.recordExternal(text);
+    }
   }
 
   public boolean showBrailleAppSearch() {
@@ -2711,6 +2717,9 @@ public class TalkBackService extends AccessibilityServiceCompat
 
     clipboardHistoryController = new ClipboardHistoryController(
         this, pipeline.getFeedbackReturner(), accessibilityFocusMonitor);
+    if (speechController != null) {
+      speechController.setClipboardCopyListener(this::recordClipboardText);
+    }
     brailleAppSearchController = new BrailleAppSearchController(this, pipeline.getFeedbackReturner());
     brailleWebNavigationController = new BrailleWebNavigationController(this, pipeline.getFeedbackReturner());
     brailleSuggestionsController = BrailleSuggestionsController.forService(this, pipeline.getFeedbackReturner());

@@ -226,6 +226,7 @@ public class TalkbackMenuProcessor {
       }
     }
     setSkipRefocusAndWindowAnnounce(menu, R.id.copy_last_utterance_to_clipboard, true);
+    setSkipRefocusAndWindowAnnounce(menu, R.id.append_last_utterance_to_clipboard, true);
     setSkipRefocusAndWindowAnnounce(menu, R.id.audio_ducking, true);
     setSkipRefocusAndWindowAnnounce(menu, R.id.sound_feedback, true);
     setSkipRefocusAndWindowAnnounce(menu, R.id.vibration_feedback, true);

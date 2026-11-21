@@ -76,14 +76,14 @@ class ClipboardHistoryViewTest {
     assertTrue(actions.isEmpty())
   }
 
-  private fun multi(action: Int, x: Float) {
-    val props = Array(2) { i -> MotionEvent.PointerProperties().apply {
+  private fun multi(action: Int, x: Float, yOffset: Float = 0f, count: Int = 2) {
+    val props = Array(count) { i -> MotionEvent.PointerProperties().apply {
       id = i; toolType = MotionEvent.TOOL_TYPE_FINGER
     } }
-    val coords = Array(2) { i -> MotionEvent.PointerCoords().apply {
-      this.x = x; y = 200f + i * 120; pressure = 1f; size = 1f
+    val coords = Array(count) { i -> MotionEvent.PointerCoords().apply {
+      this.x = x; y = 200f + yOffset + i * 120; pressure = 1f; size = 1f
     } }
-    val e = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, 2,
+    val e = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, count,
       props, coords, 0, 0, 1f, 1f, 0, 0, 0, 0)
     view.onTouchEvent(e)
     e.recycle()
@@ -98,5 +98,49 @@ class ClipboardHistoryViewTest {
     send(MotionEvent.ACTION_UP, 150f)
     advance(350)
     assertEquals(listOf(Action.CLOSE), actions)
+  }
+
+  @Test fun twoFingerRightOpensSearch_upOpensSettings_downDeletes() {
+    // 2 fingers right -> SEARCH
+    send(MotionEvent.ACTION_DOWN, 150f)
+    multi(MotionEvent.ACTION_POINTER_DOWN or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 150f)
+    advance(80)
+    multi(MotionEvent.ACTION_MOVE, 300f)
+    multi(MotionEvent.ACTION_POINTER_UP or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 300f)
+    send(MotionEvent.ACTION_UP, 300f)
+    advance(350)
+
+    // 2 fingers up -> SETTINGS
+    send(MotionEvent.ACTION_DOWN, 200f, 300f)
+    multi(MotionEvent.ACTION_POINTER_DOWN or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 200f, 100f)
+    advance(80)
+    multi(MotionEvent.ACTION_MOVE, 200f, -60f)
+    multi(MotionEvent.ACTION_POINTER_UP or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 200f, -60f)
+    send(MotionEvent.ACTION_UP, 200f, 140f)
+    advance(350)
+
+    // 2 fingers down -> DELETE
+    send(MotionEvent.ACTION_DOWN, 200f, 100f)
+    multi(MotionEvent.ACTION_POINTER_DOWN or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 200f, -60f)
+    advance(80)
+    multi(MotionEvent.ACTION_MOVE, 200f, 100f)
+    multi(MotionEvent.ACTION_POINTER_UP or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 200f, 100f)
+    send(MotionEvent.ACTION_UP, 200f, 300f)
+    advance(350)
+
+    assertEquals(listOf(Action.SEARCH, Action.SETTINGS, Action.DELETE), actions)
+  }
+
+  @Test fun threeFingerUpSpeaksHelp() {
+    send(MotionEvent.ACTION_DOWN, 200f, 300f)
+    multi(MotionEvent.ACTION_POINTER_DOWN or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 200f, 100f, count = 2)
+    multi(MotionEvent.ACTION_POINTER_DOWN or (2 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 200f, 100f, count = 3)
+    advance(80)
+    multi(MotionEvent.ACTION_MOVE, 200f, -80f, count = 3)
+    multi(MotionEvent.ACTION_POINTER_UP or (2 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 200f, -80f, count = 3)
+    multi(MotionEvent.ACTION_POINTER_UP or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 200f, -80f, count = 2)
+    send(MotionEvent.ACTION_UP, 200f, 120f)
+    advance(350)
+    assertEquals(listOf(Action.HELP), actions)
   }
 }

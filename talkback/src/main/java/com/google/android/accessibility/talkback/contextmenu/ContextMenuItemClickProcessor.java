@@ -96,6 +96,7 @@ public class ContextMenuItemClickProcessor {
         || (itemId == R.id.braille_web_navigation)
         || (itemId == R.id.spell_last_utterance)
         || (itemId == R.id.copy_last_utterance_to_clipboard)
+        || (itemId == R.id.append_last_utterance_to_clipboard)
         || (itemId == R.id.verbosity)
         || (itemId == R.id.audio_ducking)
         || (itemId == R.id.sound_feedback)

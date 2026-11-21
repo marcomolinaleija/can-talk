@@ -10,10 +10,13 @@ internal object BackupPreferenceTypes {
     if (store == BackupStore.READER) {
       when (key) {
         "pref_speak_nav_bar_buttons",
+        "pref_clipboard_history_capture_enabled",
+        "pref_clipboard_history_speak_content_with_label",
         "pref_on_device_ai_gpu",
         "pref_on_device_ai_short_prompts",
         "pref_on_device_ai_ignore_memory_limits" -> return TalkBackBackup.PrefType.BOOLEAN
-        "pref_on_device_ai_timeout_seconds" -> return TalkBackBackup.PrefType.INT
+        "pref_on_device_ai_timeout_seconds",
+        "pref_clipboard_history_max_entries" -> return TalkBackBackup.PrefType.INT
         "pref_chatgpt_token_expires_at" -> return TalkBackBackup.PrefType.LONG
         "pref_on_device_ai_provider",
         "pref_ai_provider",

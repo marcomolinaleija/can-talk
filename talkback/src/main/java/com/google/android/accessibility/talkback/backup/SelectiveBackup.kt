@@ -347,15 +347,19 @@ internal object SelectiveBackup {
       val history = BackupJson.parse("{\"entries\":${value.value as String}}")
       BackupJson.fields(history, setOf("entries"))
       val array = history.optJSONArray("entries") ?: throw BackupException(BackupFailure.INVALID_FORMAT)
-      if (array.length() > 100) throw BackupException(BackupFailure.INVALID_FORMAT)
+      if (array.length() > 500) throw BackupException(BackupFailure.INVALID_FORMAT)
       val seen = mutableSetOf<String>()
       var favorites = 0
       for (i in 0 until array.length()) {
         val obj = array.optJSONObject(i) ?: throw BackupException(BackupFailure.INVALID_FORMAT)
-        BackupJson.fields(obj, setOf("text", "favorite"))
+        BackupJson.fields(obj, setOf("text", "favorite"), setOf("label"))
         val text = BackupJson.string(obj, "text", 20_000)
         if (text.isBlank() || !seen.add(text) || obj.opt("favorite") !is Boolean)
           throw BackupException(BackupFailure.INVALID_FORMAT)
+        if (obj.has("label")) {
+          val label = BackupJson.string(obj, "label", 120)
+          if (label.any { it.isISOControl() }) throw BackupException(BackupFailure.INVALID_FORMAT)
+        }
         if (obj.opt("favorite") == true) favorites++
       }
       if (favorites > 50) throw BackupException(BackupFailure.INVALID_FORMAT)

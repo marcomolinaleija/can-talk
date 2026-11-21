@@ -96,5 +96,12 @@ class BackupPreferenceTypesTest {
 
     assertEquals(TalkBackBackup.PrefType.INT, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_on_device_ai_timeout_seconds"))
     assertEquals(BackupCategory.SETTINGS, BackupCategory.forKey(BackupStore.READER, "pref_on_device_ai_timeout_seconds"))
+
+    assertEquals(TalkBackBackup.PrefType.BOOLEAN, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_clipboard_history_capture_enabled"))
+    assertEquals(BackupCategory.SETTINGS, BackupCategory.forKey(BackupStore.READER, "pref_clipboard_history_capture_enabled"))
+    assertEquals(TalkBackBackup.PrefType.BOOLEAN, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_clipboard_history_speak_content_with_label"))
+    assertEquals(BackupCategory.SETTINGS, BackupCategory.forKey(BackupStore.READER, "pref_clipboard_history_speak_content_with_label"))
+    assertEquals(TalkBackBackup.PrefType.INT, BackupPreferenceTypes.expected(context, BackupStore.READER, "pref_clipboard_history_max_entries"))
+    assertEquals(BackupCategory.SETTINGS, BackupCategory.forKey(BackupStore.READER, "pref_clipboard_history_max_entries"))
   }
 }

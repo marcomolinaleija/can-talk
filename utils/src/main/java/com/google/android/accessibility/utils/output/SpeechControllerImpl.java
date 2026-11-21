@@ -309,6 +309,17 @@ public class SpeechControllerImpl implements SpeechController {
   /** Records whether should silence speech */
   private boolean sourceIsVolumeControl = false;
 
+  /** Listener notified whenever speech text is copied to the system clipboard. */
+  public interface ClipboardCopyListener {
+    void onClipboardCopied(CharSequence text);
+  }
+
+  private @Nullable ClipboardCopyListener clipboardCopyListener;
+
+  public void setClipboardCopyListener(@Nullable ClipboardCopyListener listener) {
+    this.clipboardCopyListener = listener;
+  }
+
   /** The cached inline formatting history for the last speech. */
   @VisibleForTesting @Nullable InlineFormattingHistory cachedInlineFormattingHistory = null;
 
@@ -826,6 +837,9 @@ public class SpeechControllerImpl implements SpeechController {
     ClipData clip = ClipData.newPlainText(null, copyableText);
     clipboard.setPrimaryClip(clip);
     textCopied = copyableText;
+    if (clipboardCopyListener != null) {
+      clipboardCopyListener.onClipboardCopied(copyableText);
+    }
 
     // Verify that we actually have the utterance on the clipboard
     if (FeatureSupport.supportReadClipboard()) {

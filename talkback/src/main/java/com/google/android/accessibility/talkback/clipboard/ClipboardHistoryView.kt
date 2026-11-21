@@ -15,13 +15,27 @@ import kotlin.math.abs
 /** A spoken browser: gestures work anywhere on its surface. */
 @SuppressLint("ViewConstructor", "ClickableViewAccessibility")
 class ClipboardHistoryView(context: Context, private val action: (Action) -> Unit) : TextView(context) {
-  enum class Action { PREVIOUS, NEXT, PREVIOUS_CATEGORY, NEXT_CATEGORY, COPY, PASTE, FAVORITE, CLOSE }
+  enum class Action {
+    PREVIOUS,
+    NEXT,
+    PREVIOUS_CATEGORY,
+    NEXT_CATEGORY,
+    COPY,
+    PASTE,
+    FAVORITE,
+    SEARCH,
+    SETTINGS,
+    DELETE,
+    HELP,
+    CLOSE,
+  }
+
   private var startX = 0f
   private var startY = 0f
-  private var twoX = 0f
-  private var twoY = 0f
-  private var twoEndX = 0f
-  private var twoEndY = 0f
+  private var multiX = 0f
+  private var multiY = 0f
+  private var multiEndX = 0f
+  private var multiEndY = 0f
   private var fingers = 0
   private val swipeDistance = 48f * resources.displayMetrics.density
   private val slop = ViewConfiguration.get(context).scaledTouchSlop
@@ -51,6 +65,16 @@ class ClipboardHistoryView(context: Context, private val action: (Action) -> Uni
     setPadding(padding, padding, padding, padding)
   }
 
+  private fun centroid(event: MotionEvent, count: Int): Pair<Float, Float> {
+    var sumX = 0f
+    var sumY = 0f
+    for (i in 0 until count) {
+      sumX += event.getX(i)
+      sumY += event.getY(i)
+    }
+    return (sumX / count) to (sumY / count)
+  }
+
   override fun onTouchEvent(event: MotionEvent): Boolean {
     when (event.actionMasked) {
       MotionEvent.ACTION_DOWN -> {
@@ -61,19 +85,21 @@ class ClipboardHistoryView(context: Context, private val action: (Action) -> Uni
       MotionEvent.ACTION_POINTER_DOWN -> {
         fingers = maxOf(fingers, event.pointerCount)
         cancelDetector(event)
-        if (event.pointerCount == 2) {
-          twoX = (event.getX(0) + event.getX(1)) / 2
-          twoY = (event.getY(0) + event.getY(1)) / 2
-          twoEndX = twoX
-          twoEndY = twoY
+        if (event.pointerCount == fingers && (fingers == 2 || fingers == 3)) {
+          val (cx, cy) = centroid(event, fingers)
+          multiX = cx
+          multiY = cy
+          multiEndX = cx
+          multiEndY = cy
         }
         return true
       }
       MotionEvent.ACTION_MOVE, MotionEvent.ACTION_POINTER_UP -> {
         if (fingers >= 2) {
-          if (event.pointerCount == 2) {
-            twoEndX = (event.getX(0) + event.getX(1)) / 2
-            twoEndY = (event.getY(0) + event.getY(1)) / 2
+          if (event.pointerCount == fingers && (fingers == 2 || fingers == 3)) {
+            val (cx, cy) = centroid(event, fingers)
+            multiEndX = cx
+            multiEndY = cy
           }
           return true
         }
@@ -85,8 +111,19 @@ class ClipboardHistoryView(context: Context, private val action: (Action) -> Uni
       }
       MotionEvent.ACTION_UP -> {
         if (fingers >= 2) {
-          if (fingers == 2 && twoEndX - twoX < -swipeDistance
-              && abs(twoEndX - twoX) > abs(twoEndY - twoY) * 1.2f) action(Action.CLOSE)
+          val dx = multiEndX - multiX
+          val dy = multiEndY - multiY
+          if (fingers == 2) {
+            if (abs(dx) >= swipeDistance && abs(dx) > abs(dy) * 1.2f) {
+              action(if (dx < 0) Action.CLOSE else Action.SEARCH)
+            } else if (abs(dy) >= swipeDistance && abs(dy) > abs(dx) * 1.2f) {
+              action(if (dy < 0) Action.SETTINGS else Action.DELETE)
+            }
+          } else if (fingers == 3) {
+            if (dy < -swipeDistance && abs(dy) > abs(dx) * 1.2f) {
+              action(Action.HELP)
+            }
+          }
           return true
         }
         val dx = event.x - startX

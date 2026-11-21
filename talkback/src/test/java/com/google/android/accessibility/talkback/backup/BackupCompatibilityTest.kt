@@ -107,6 +107,36 @@ class BackupCompatibilityTest {
     assertEquals("gsk_test123", list.find { it.key == "pref_groq_api_key" }?.value)
   }
 
+  @Test fun clipboardBackup_acceptsLabeledAndUnlabeledEntries_andRejectsInvalidLabels() {
+    val app = org.robolectric.RuntimeEnvironment.getApplication()
+    org.robolectric.Shadows.shadowOf(app.getSystemService(android.os.UserManager::class.java)).setUserUnlocked(true)
+    val prefs = BackupStore.CLIPBOARD.open(app)
+    prefs.edit().clear().commit()
+
+    val validJson = """[{"text":"hola@ejemplo.com","favorite":true,"label":"Correo"},{"text":"sin etiqueta","favorite":false}]"""
+    prefs.edit().putString("entries_v1", validJson).commit()
+    val captured = SelectiveBackup.capture(app, setOf(BackupCategory.CLIPBOARD_HISTORY))
+    val password = "Synthetic-test-password".toCharArray()
+    try {
+      val encoded = BackupCodec.encode(captured, password)
+      val decoded = BackupCodec.decode(encoded, password)
+      val restoredEntries = decoded.sections.getValue(BackupCategory.CLIPBOARD_HISTORY)
+        .preferences.getValue(BackupStore.CLIPBOARD)
+      assertEquals(validJson, restoredEntries.single().value)
+    } finally {
+      password.fill('\u0000')
+    }
+
+    val invalidLabelJson = """[{"text":"abc","favorite":false,"label":"bad\nline"}]"""
+    prefs.edit().putString("entries_v1", invalidLabelJson).commit()
+    try {
+      SelectiveBackup.capture(app, setOf(BackupCategory.CLIPBOARD_HISTORY))
+      fail("Expected INVALID_FORMAT for control char in label")
+    } catch (e: BackupException) {
+      assertEquals(BackupFailure.INVALID_FORMAT, e.failure)
+    }
+  }
+
   private fun assertFailure(expected: BackupFailure, json: String) {
     try {
       BackupCodec.decode(json)
