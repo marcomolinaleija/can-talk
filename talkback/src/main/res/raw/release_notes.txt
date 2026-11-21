@@ -1,5 +1,8 @@
-CAN Talk 1.0.7
+CAN Talk 1.0.8
 
-- En el teclado braille, dentro de la búsqueda de emojis, ahora puedes añadir o quitar el emoji seleccionado de tus favoritos pulsando directamente los puntos 3 y 6.
-- Se corrige el volumen de los sonidos de escritura del teclado braille durante llamadas: ahora se atenúan adecuadamente para proteger tu audición y su nivel se ajusta en tiempo real con las teclas de volumen de la llamada.
-- Se corrige la configuración de sonidos del teclado braille: el interruptor para seguir el volumen del lector y el control deslizante de volumen guardan y aplican los cambios de manera inmediata.
+- Mejoras en el historial del portapapeles: ahora puedes buscar elementos por nombre o contenido (sin distinguir mayúsculas ni acentos), renombrar tus textos guardados, editarlos, crear nuevos elementos manualmente, ver el texto completo, compartirlos, reordenarlos y eliminarlos con confirmación.
+- Nuevo apartado «Historial del portapapeles» en Ajustes > Controles, donde también puedes elegir cuántos elementos quieres guardar (de 10 a 500, con 100 por defecto), pausar o activar la captura automática, decidir si el lector lee el contenido después del nombre personalizado, guardar el texto actual del portapapeles del sistema y vaciar el historial conservando o no tus favoritos.
+- Nuevos gestos en el visor rápido del portapapeles: dos dedos a la derecha para buscar, dos dedos hacia arriba para abrir sus ajustes, dos dedos hacia abajo dos veces para eliminar el elemento actual y tres dedos hacia arriba para escuchar la ayuda.
+- Se corrige la opción «Añadir última frase pronunciada al portapapeles» en el menú de can-talk y se garantiza que las copias hechas por el propio lector se guarden en el historial incluso si el teclado braille no es el teclado predeterminado.
+- Se mejora el audio con auriculares Bluetooth cuando elegiste una salida específica: se evita que el lector pase al altavoz del teléfono o interrumpa la música al conectar los auriculares o al abrir el teclado braille.
+- El modo de toque directo ahora permite escribir correctamente con ABK y otros teclados externos.
