@@ -695,6 +695,13 @@ Los retrasos inferiores a 0.3 segundos cambiarán la acción de presionar dos ve
   <string name="title_pref_shortcut_3finger_2tap_hold">Presionar dos veces con 3 dedos y mantener</string>
   <string name="title_pref_shortcut_4finger_2tap_hold">Presionar dos veces con 4 dedos y mantener</string>
   <string name="title_pref_shortcut_3finger_1tap_hold">Mantener presionado con 3 dedos</string>
+  <string name="title_pref_shortcut_1finger_1tap_hold">Mantener presionado con 1 dedo</string>
+  <string name="title_pref_shortcut_2finger_1tap_hold">Mantener presionado con 2 dedos</string>
+  <string name="title_pref_shortcut_4finger_1tap_hold">Mantener presionado con 4 dedos</string>
+  <string name="title_pref_shortcut_up_and_hold">Deslizar hacia arriba y mantener presionado</string>
+  <string name="title_pref_shortcut_down_and_hold">Deslizar hacia abajo y mantener presionado</string>
+  <string name="title_pref_shortcut_left_and_hold">Deslizar hacia la izquierda y mantener presionado</string>
+  <string name="title_pref_shortcut_right_and_hold">Deslizar hacia la derecha y mantener presionado</string>
   <string name="title_pref_shortcut_2finger_3tap_hold">Presionar 3 veces y mantener presionado con 2 dedos</string>
   <string name="title_pref_shortcut_3finger_3tap_hold">Presionar tres veces con 3 dedos y mantener presionado</string>
   <string name="gesture_name_unknown">Gesto desconocido</string>

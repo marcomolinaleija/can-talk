@@ -27,6 +27,12 @@ public final class GestureConfiguration {
    */
   public static final int DOUBLE_TAP_TIMEOUT_MS = ViewConfiguration.getDoubleTapTimeout() - 50;
 
+  /**
+   * Hold duration in milliseconds required for prolonged single-tap-and-hold and swipe-and-hold
+   * gestures so they are not confused with quick taps, touch exploration, or normal flicks.
+   */
+  public static final int PROLONGED_HOLD_TIMEOUT_MS = 1100;
+
   // A gesture waits a bit longer than the tap gap before it completes, so a late tap still counts.
   private static final int MULTI_TAP_COMPLETION_MARGIN_MS =
       ViewConfiguration.getDoubleTapTimeout() - DOUBLE_TAP_TIMEOUT_MS;

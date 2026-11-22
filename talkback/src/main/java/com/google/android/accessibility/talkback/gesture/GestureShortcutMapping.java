@@ -16,11 +16,17 @@
 
 package com.google.android.accessibility.talkback.gesture;
 
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_2_FINGER_ROTATE_CLOCKWISE;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_2_FINGER_ROTATE_COUNTERCLOCKWISE;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_3_FINGER_QUADRUPLE_TAP;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_2_FINGER_SINGLE_TAP_AND_HOLD;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_4_FINGER_SINGLE_TAP_AND_HOLD;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_FAKED_SPLIT_TYPING;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_DOWN_AND_HOLD;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_LEFT_AND_HOLD;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_RIGHT_AND_HOLD;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_UP_AND_HOLD;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_TAP_HOLD_AND_2ND_FINGER_BACKWARD_DOUBLE_TAP;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_TAP_HOLD_AND_2ND_FINGER_FORWARD_DOUBLE_TAP;
 
@@ -125,6 +131,40 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
         RTL_GESTURE,
         R.string.pref_shortcut_left_key,
         R.string.pref_shortcut_left_default),
+    SWIPE_UP_AND_HOLD(
+        GESTURE_SWIPE_UP_AND_HOLD,
+        SINGLE_FINGER,
+        R.string.pref_shortcut_up_and_hold_key,
+        R.string.pref_shortcut_up_and_hold_default),
+    SWIPE_DOWN_AND_HOLD(
+        GESTURE_SWIPE_DOWN_AND_HOLD,
+        SINGLE_FINGER,
+        R.string.pref_shortcut_down_and_hold_key,
+        R.string.pref_shortcut_down_and_hold_default),
+    SWIPE_LEFT_AND_HOLD(
+        GESTURE_SWIPE_LEFT_AND_HOLD,
+        SINGLE_FINGER,
+        LTR_GESTURE,
+        R.string.pref_shortcut_left_and_hold_key,
+        R.string.pref_shortcut_left_and_hold_default),
+    SWIPE_LEFT_AND_HOLD_RTL(
+        GESTURE_SWIPE_LEFT_AND_HOLD,
+        SINGLE_FINGER,
+        RTL_GESTURE,
+        R.string.pref_shortcut_right_and_hold_key,
+        R.string.pref_shortcut_right_and_hold_default),
+    SWIPE_RIGHT_AND_HOLD(
+        GESTURE_SWIPE_RIGHT_AND_HOLD,
+        SINGLE_FINGER,
+        LTR_GESTURE,
+        R.string.pref_shortcut_right_and_hold_key,
+        R.string.pref_shortcut_right_and_hold_default),
+    SWIPE_RIGHT_AND_HOLD_RTL(
+        GESTURE_SWIPE_RIGHT_AND_HOLD,
+        SINGLE_FINGER,
+        RTL_GESTURE,
+        R.string.pref_shortcut_left_and_hold_key,
+        R.string.pref_shortcut_left_and_hold_default),
     SWIPE_UP_AND_DOWN(
         AccessibilityService.GESTURE_SWIPE_UP_AND_DOWN,
         SINGLE_FINGER,
@@ -200,6 +240,11 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
         R.string.pref_shortcut_left_and_up_key,
         R.string.pref_shortcut_left_and_up_default),
     // One-finger Tap
+    ONE_FINGER_SINGLE_TAP_AND_HOLD(
+        GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD,
+        SINGLE_FINGER,
+        R.string.pref_shortcut_1finger_1tap_hold_key,
+        R.string.pref_shortcut_1finger_1tap_hold_default),
     ONE_FINGER_DOUBLE_TAP(
         AccessibilityService.GESTURE_DOUBLE_TAP,
         MULTI_FINGER,
@@ -262,6 +307,11 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
         MULTI_FINGER,
         R.string.pref_shortcut_4finger_1tap_key,
         R.string.pref_shortcut_4finger_1tap_default),
+    FOUR_FINGER_SINGLE_TAP_AND_HOLD(
+        GESTURE_4_FINGER_SINGLE_TAP_AND_HOLD,
+        MULTI_FINGER,
+        R.string.pref_shortcut_4finger_1tap_hold_key,
+        R.string.pref_shortcut_4finger_1tap_hold_default),
     FOUR_FINGER_DOUBLE_TAP(
         AccessibilityService.GESTURE_4_FINGER_DOUBLE_TAP,
         MULTI_FINGER,
@@ -1190,6 +1240,18 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
           context.getString(R.string.title_pref_shortcut_2finger_rotate_clockwise);
       case GESTURE_2_FINGER_ROTATE_COUNTERCLOCKWISE ->
           context.getString(R.string.title_pref_shortcut_2finger_rotate_counterclockwise);
+      case GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD ->
+          context.getString(R.string.title_pref_shortcut_1finger_1tap_hold);
+      case GESTURE_4_FINGER_SINGLE_TAP_AND_HOLD ->
+          context.getString(R.string.title_pref_shortcut_4finger_1tap_hold);
+      case GESTURE_SWIPE_UP_AND_HOLD ->
+          context.getString(R.string.title_pref_shortcut_up_and_hold);
+      case GESTURE_SWIPE_DOWN_AND_HOLD ->
+          context.getString(R.string.title_pref_shortcut_down_and_hold);
+      case GESTURE_SWIPE_LEFT_AND_HOLD ->
+          context.getString(R.string.title_pref_shortcut_left_and_hold);
+      case GESTURE_SWIPE_RIGHT_AND_HOLD ->
+          context.getString(R.string.title_pref_shortcut_right_and_hold);
       case GESTURE_TOUCH_EXPLORATION ->
           FeatureSupport.supportGestureMotionEvents()
               ? context.getString(R.string.gesture_name_touch_explore)
@@ -1215,9 +1277,7 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
               ? context.getString(R.string.gesture_name_2finger_3tap_hold)
               : null;
       case GESTURE_2_FINGER_SINGLE_TAP_AND_HOLD ->
-          FeatureSupport.supportGestureMotionEvents()
-              ? context.getString(R.string.gesture_name_2finger_tap_hold)
-              : null;
+          context.getString(R.string.title_pref_shortcut_2finger_1tap_hold);
       case AccessibilityService.GESTURE_3_FINGER_SINGLE_TAP_AND_HOLD ->
           FeatureSupport.supportGestureMotionEvents()
               ? context.getString(R.string.gesture_name_3finger_tap_hold)

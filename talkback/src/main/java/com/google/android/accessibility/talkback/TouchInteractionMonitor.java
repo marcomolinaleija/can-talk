@@ -36,10 +36,15 @@ import static com.google.android.accessibility.talkback.PrimesController.TimerAc
 import static com.google.android.accessibility.talkback.PrimesController.TimerAction.TOUCH_EXPLORE_DELAY_TYPING_200;
 import static com.google.android.accessibility.talkback.PrimesController.TimerAction.TOUCH_EXPLORE_DELAY_TYPING_250;
 import static com.google.android.accessibility.utils.gestures.GestureAnalyticsEvent.EVENT_TAP_TO_TOUCH_EXPLORE;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_2_FINGER_ROTATE_CLOCKWISE;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_2_FINGER_ROTATE_COUNTERCLOCKWISE;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_FAKED_SPLIT_TYPING;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_FAKED_SPLIT_TYPING_AND_HOLD;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_DOWN_AND_HOLD;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_LEFT_AND_HOLD;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_RIGHT_AND_HOLD;
+import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_UP_AND_HOLD;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_TAP_UP_TOUCH_EXPLORE;
 import static com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_TOUCH_EXPLORE;
 
@@ -131,6 +136,10 @@ public class TouchInteractionMonitor
           GESTURE_SWIPE_LEFT,
           GESTURE_SWIPE_UP,
           GESTURE_SWIPE_DOWN,
+          GESTURE_SWIPE_RIGHT_AND_HOLD,
+          GESTURE_SWIPE_LEFT_AND_HOLD,
+          GESTURE_SWIPE_UP_AND_HOLD,
+          GESTURE_SWIPE_DOWN_AND_HOLD,
           GESTURE_SWIPE_LEFT_AND_RIGHT,
           GESTURE_SWIPE_LEFT_AND_UP,
           GESTURE_SWIPE_LEFT_AND_DOWN,
@@ -363,6 +372,14 @@ public class TouchInteractionMonitor
               @Override
               public boolean enableSplitTapAndHold() {
                 return FeatureFlagReader.enableSplitTapAndHold(service);
+              }
+
+              @Override
+              public boolean enableOneFingerTapAndHold() {
+                return service.shouldDetectOneFingerTapAndHold()
+                    && (!isLiftToType
+                        || service.isGestureCapturedByTraining(
+                            GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD));
               }
             },
             logger,
@@ -1059,6 +1076,12 @@ public class TouchInteractionMonitor
               GESTURE_FAKED_SPLIT_TYPING_AND_HOLD, displayId, new ArrayList<MotionEvent>()));
       // log firstDownTime with display id
       eventId = Performance.getInstance().onGestureEventReceived(displayId, null);
+    } else if (gestureId == GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD) {
+      if (!service.shouldDetectOneFingerTapAndHold()
+          || (isLiftToType && !service.isGestureCapturedByTraining(gestureId))) {
+        return;
+      }
+      dispatchGestureToMainThreadAndClear(gestureEvent);
     } else {
       dispatchGestureToMainThreadAndClear(gestureEvent);
     }
@@ -1200,6 +1223,18 @@ public class TouchInteractionMonitor
 
   @Override
   public void onGestureProcessing(int gestureId) {
+    if (gestureId == GESTURE_SWIPE_UP_AND_HOLD
+        || gestureId == GESTURE_SWIPE_DOWN_AND_HOLD
+        || gestureId == GESTURE_SWIPE_LEFT_AND_HOLD
+        || gestureId == GESTURE_SWIPE_RIGHT_AND_HOLD) {
+      // A deliberate swipe-and-hold is underway; give it a fresh window to cross the swipe
+      // threshold before touch exploration takes over.
+      if (requestTouchExplorationDelayed.isPending() && !isLiftToType) {
+        requestTouchExplorationDelayed.cancel();
+        requestTouchExplorationDelayed.post();
+      }
+      return;
+    }
     if (gestureId != GESTURE_DOUBLE_TAP) {
       return;
     }

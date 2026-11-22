@@ -2267,6 +2267,20 @@ Description: Explain that the feature is enabled for all images. [CHAR_LIMIT=NON
 
     <!-- Label for the preference that assigns an action to the "three-finger tap and hold" gesture. [CHAR_LIMIT=96] -->
     <string name="title_pref_shortcut_3finger_1tap_hold">Tap and hold with 3 fingers</string>
+    <!-- Label for the preference that assigns an action to the "one-finger tap and hold" gesture. [CHAR_LIMIT=96] -->
+    <string name="title_pref_shortcut_1finger_1tap_hold">Tap and hold with 1 finger</string>
+    <!-- Label for the preference that assigns an action to the "two-finger tap and hold" gesture. [CHAR_LIMIT=96] -->
+    <string name="title_pref_shortcut_2finger_1tap_hold">Tap and hold with 2 fingers</string>
+    <!-- Label for the preference that assigns an action to the "four-finger tap and hold" gesture. [CHAR_LIMIT=96] -->
+    <string name="title_pref_shortcut_4finger_1tap_hold">Tap and hold with 4 fingers</string>
+    <!-- Label for the preference that assigns an action to the "swipe up and hold" gesture. [CHAR_LIMIT=60] -->
+    <string name="title_pref_shortcut_up_and_hold">Swipe up and hold</string>
+    <!-- Label for the preference that assigns an action to the "swipe down and hold" gesture. [CHAR_LIMIT=60] -->
+    <string name="title_pref_shortcut_down_and_hold">Swipe down and hold</string>
+    <!-- Label for the preference that assigns an action to the "swipe left and hold" gesture. [CHAR_LIMIT=60] -->
+    <string name="title_pref_shortcut_left_and_hold">Swipe left and hold</string>
+    <!-- Label for the preference that assigns an action to the "swipe right and hold" gesture. [CHAR_LIMIT=60] -->
+    <string name="title_pref_shortcut_right_and_hold">Swipe right and hold</string>
 
     <!-- Label for the preference that assigns an action to the "two-finger triple-tap and hold" gesture. [CHAR_LIMIT=90] -->
     <string name="title_pref_shortcut_2finger_3tap_hold">Triple-tap and hold with 2 fingers</string>

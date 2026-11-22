@@ -372,7 +372,7 @@ class Swipe extends GestureMatcher {
     completeGesture(eventId, event);
   }
 
-  private static int toDirection(float dX, float dY) {
+  static int toDirection(float dX, float dY) {
     if (Math.abs(dX) > Math.abs(dY)) {
       // Horizontal
       return (dX < 0) ? LEFT : RIGHT;

@@ -273,6 +273,27 @@ public class TalkBackPreferenceFilter {
     CUSTOMIZE_GESTURE_3FINGER_QUADRUPLE_TAP(
         R.string.pref_shortcut_3finger_4tap_key,
         SHOW_IF_SERVICE_GESTURE_DETECTION | HIDDEN_ON_WATCH),
+    CUSTOMIZE_GESTURE_1FINGER_1TAP_HOLD(
+        R.string.pref_shortcut_1finger_1tap_hold_key,
+        SHOW_IF_SERVICE_GESTURE_DETECTION | HIDDEN_ON_WATCH),
+    CUSTOMIZE_GESTURE_SWIPE_UP_AND_HOLD(
+        R.string.pref_shortcut_up_and_hold_key,
+        SHOW_IF_SERVICE_GESTURE_DETECTION | HIDDEN_ON_WATCH),
+    CUSTOMIZE_GESTURE_SWIPE_DOWN_AND_HOLD(
+        R.string.pref_shortcut_down_and_hold_key,
+        SHOW_IF_SERVICE_GESTURE_DETECTION | HIDDEN_ON_WATCH),
+    CUSTOMIZE_GESTURE_SWIPE_LEFT_AND_HOLD(
+        R.string.pref_shortcut_left_and_hold_key,
+        SHOW_IF_SERVICE_GESTURE_DETECTION | HIDDEN_ON_WATCH),
+    CUSTOMIZE_GESTURE_SWIPE_RIGHT_AND_HOLD(
+        R.string.pref_shortcut_right_and_hold_key,
+        SHOW_IF_SERVICE_GESTURE_DETECTION | HIDDEN_ON_WATCH),
+    CUSTOMIZE_GESTURE_2FINGER_1TAP_HOLD(
+        R.string.pref_shortcut_2finger_1tap_hold_key,
+        SHOW_IF_SERVICE_GESTURE_DETECTION | HIDDEN_ON_WATCH),
+    CUSTOMIZE_GESTURE_4FINGER_1TAP_HOLD(
+        R.string.pref_shortcut_4finger_1tap_hold_key,
+        SHOW_IF_SERVICE_GESTURE_DETECTION | HIDDEN_ON_WATCH),
     CUSTOMIZE_GESTURE_2FINGER_ROTATE_CLOCKWISE(
         R.string.pref_shortcut_2finger_rotate_clockwise_key,
         SHOW_IF_SERVICE_GESTURE_DETECTION),

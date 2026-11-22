@@ -697,6 +697,13 @@ Si la latencia es inferior a 0,3 segundos, el gesto de tocar dos veces para acti
   <string name="title_pref_shortcut_3finger_2tap_hold">Doble toque y mantener con 3 dedos</string>
   <string name="title_pref_shortcut_4finger_2tap_hold">Doble toque y mantener con 4 dedos</string>
   <string name="title_pref_shortcut_3finger_1tap_hold">Mantener pulsado con 3 dedos</string>
+  <string name="title_pref_shortcut_1finger_1tap_hold">Mantener pulsado con 1 dedo</string>
+  <string name="title_pref_shortcut_2finger_1tap_hold">Mantener pulsado con 2 dedos</string>
+  <string name="title_pref_shortcut_4finger_1tap_hold">Mantener pulsado con 4 dedos</string>
+  <string name="title_pref_shortcut_up_and_hold">Deslizar hacia arriba y mantener pulsado</string>
+  <string name="title_pref_shortcut_down_and_hold">Deslizar hacia abajo y mantener pulsado</string>
+  <string name="title_pref_shortcut_left_and_hold">Deslizar hacia la izquierda y mantener pulsado</string>
+  <string name="title_pref_shortcut_right_and_hold">Deslizar hacia la derecha y mantener pulsado</string>
   <string name="title_pref_shortcut_2finger_3tap_hold">Triple toque y mantener pulsado con dos dedos</string>
   <string name="title_pref_shortcut_3finger_3tap_hold">Triple toque y mantener pulsado con 3 dedos</string>
   <string name="gesture_name_unknown">Gesto desconocido</string>

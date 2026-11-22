@@ -787,6 +787,11 @@ public class GestureController {
     }
   }
 
+  public boolean hasCapturedGesture(int gestureId) {
+    @Nullable Integer feedbackResId = captureGestureIdToAnnouncements.get(gestureId);
+    return feedbackResId != null && feedbackResId != UNKNOWN_ANNOUNCEMENT;
+  }
+
   private boolean gestureHandledByTraining(int gestureId, boolean isFingerprintGesture) {
     // TalkBack can ignore the gesture, which is handled by OnGestureListener.onCaptureGesture(), if
     // captured gesture list exists and the current window is training.

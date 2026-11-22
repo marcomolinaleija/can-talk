@@ -26,6 +26,8 @@ import com.google.android.accessibility.utils.Performance.EventId;
  */
 class MultiFingerMultiTapAndHold extends MultiFingerMultiTap {
 
+  private final long holdTimeoutMs;
+
   MultiFingerMultiTapAndHold(
       Context context,
       int fingers,
@@ -33,14 +35,47 @@ class MultiFingerMultiTapAndHold extends MultiFingerMultiTap {
       int gestureId,
       GestureMatcher.StateChangeListener listener,
       GestureMatcher.AnalyticsEventLogger logger) {
+    this(
+        context,
+        fingers,
+        taps,
+        taps == 1
+            ? GestureConfiguration.PROLONGED_HOLD_TIMEOUT_MS
+            : android.view.ViewConfiguration.getLongPressTimeout(),
+        gestureId,
+        listener,
+        logger);
+  }
+
+  MultiFingerMultiTapAndHold(
+      Context context,
+      int fingers,
+      int taps,
+      long holdTimeoutMs,
+      int gestureId,
+      GestureMatcher.StateChangeListener listener,
+      GestureMatcher.AnalyticsEventLogger logger) {
     super(context, fingers, taps, gestureId, listener, logger);
+    this.holdTimeoutMs = holdTimeoutMs;
   }
 
   @Override
   protected void onPointerDown(EventId eventId, MotionEvent event) {
     super.onPointerDown(eventId, event);
-    if (isTargetFingerCountReached && completedTapCount + 1 == mTargetTapCount) {
-      completeAfterLongPressTimeout(eventId, event);
+    if (isTargetFingerCountReached
+        && completedTapCount + 1 == mTargetTapCount
+        && getState() != STATE_GESTURE_CANCELED) {
+      completeAfter(holdTimeoutMs, eventId, event);
+    }
+  }
+
+  @Override
+  protected void onPointerUp(EventId eventId, MotionEvent event) {
+    if (completedTapCount + 1 == mTargetTapCount) {
+      // Lifting any finger before the hold timeout expires cancels the hold gesture.
+      cancelGesture(event);
+    } else {
+      super.onPointerUp(eventId, event);
     }
   }
 

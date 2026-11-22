@@ -1771,6 +1771,33 @@ public class TalkBackService extends AccessibilityServiceCompat
     return gestureShortcutMapping;
   }
 
+  /**
+   * Returns whether one-finger single tap and prolonged hold should be detected: either the user
+   * explicitly assigned an action to it, or the active training/practice page captures it.
+   */
+  public boolean shouldDetectOneFingerTapAndHold() {
+    if (isGestureCapturedByTraining(
+        com.google.android.accessibility.utils.gestures.GestureManifold
+            .GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD)) {
+      return true;
+    }
+    if (gestureShortcutMapping == null) {
+      return false;
+    }
+    String action =
+        gestureShortcutMapping.getActionKeyFromGestureId(
+            com.google.android.accessibility.utils.gestures.GestureManifold
+                .GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD);
+    return !TextUtils.isEmpty(action)
+        && !TextUtils.equals(action, getString(R.string.shortcut_value_unassigned))
+        && !TextUtils.equals(action, getString(R.string.shortcut_value_unsupported));
+  }
+
+  /** Returns whether the active training/practice page captures {@code gestureId}. */
+  public boolean isGestureCapturedByTraining(int gestureId) {
+    return gestureController != null && gestureController.hasCapturedGesture(gestureId);
+  }
+
   public SpeechControllerImpl getSpeechController() {
     if (speechController == null) {
       throw new IllegalStateException("mSpeechController has not been initialized");

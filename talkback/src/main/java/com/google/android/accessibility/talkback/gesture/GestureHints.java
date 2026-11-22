@@ -60,6 +60,10 @@ public final class GestureHints {
           AccessibilityService.GESTURE_SWIPE_RIGHT_AND_LEFT;
       case AccessibilityService.GESTURE_SWIPE_RIGHT_AND_LEFT ->
           AccessibilityService.GESTURE_SWIPE_LEFT_AND_RIGHT;
+      case com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_LEFT_AND_HOLD ->
+          com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_RIGHT_AND_HOLD;
+      case com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_RIGHT_AND_HOLD ->
+          com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_LEFT_AND_HOLD;
       default -> gestureId;
     };
   }

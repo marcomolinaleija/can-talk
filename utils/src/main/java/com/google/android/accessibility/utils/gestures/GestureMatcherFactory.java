@@ -88,6 +88,8 @@ class GestureMatcherFactory {
   /** List of the gestures. */
   private enum GestureMatchConfig {
     // Start with double tap.
+    MAPPER_GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD(
+        GestureManifold.GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD, 1, 1, true, NONE, NONE),
     MAPPER_GESTURE_DOUBLE_TAP(GESTURE_DOUBLE_TAP, 1, 2, NONE, NONE),
     MAPPER_GESTURE_DOUBLE_TAP_AND_HOLD(GESTURE_DOUBLE_TAP_AND_HOLD, 1, 2, true, NONE, NONE),
     // Second-finger tap.
@@ -100,6 +102,15 @@ class GestureMatcherFactory {
     MAPPER_GESTURE_SWIPE_LEFT(GESTURE_SWIPE_LEFT, 1, 0, LEFT, NONE),
     MAPPER_GESTURE_SWIPE_UP(GESTURE_SWIPE_UP, 1, 0, UP, NONE),
     MAPPER_GESTURE_SWIPE_DOWN(GESTURE_SWIPE_DOWN, 1, 0, DOWN, NONE),
+    // One-direction swipes and prolonged hold.
+    MAPPER_GESTURE_SWIPE_RIGHT_AND_HOLD(
+        GestureManifold.GESTURE_SWIPE_RIGHT_AND_HOLD, 1, 0, true, RIGHT, NONE),
+    MAPPER_GESTURE_SWIPE_LEFT_AND_HOLD(
+        GestureManifold.GESTURE_SWIPE_LEFT_AND_HOLD, 1, 0, true, LEFT, NONE),
+    MAPPER_GESTURE_SWIPE_UP_AND_HOLD(
+        GestureManifold.GESTURE_SWIPE_UP_AND_HOLD, 1, 0, true, UP, NONE),
+    MAPPER_GESTURE_SWIPE_DOWN_AND_HOLD(
+        GestureManifold.GESTURE_SWIPE_DOWN_AND_HOLD, 1, 0, true, DOWN, NONE),
     // Two-direction swipes.
     MAPPER_GESTURE_SWIPE_LEFT_AND_RIGHT(GESTURE_SWIPE_LEFT_AND_RIGHT, 1, 0, LEFT, RIGHT),
     MAPPER_GESTURE_SWIPE_LEFT_AND_UP(GESTURE_SWIPE_LEFT_AND_UP, 1, 0, LEFT, UP),
@@ -138,6 +149,8 @@ class GestureMatcherFactory {
         GESTURE_3_FINGER_TRIPLE_TAP_AND_HOLD, 3, 3, true, NONE, NONE),
     // Four-finger taps.
     MAPPER_GESTURE_4_FINGER_SINGLE_TAP(GESTURE_4_FINGER_SINGLE_TAP, 4, 1, NONE, NONE),
+    MAPPER_GESTURE_4_FINGER_SINGLE_TAP_AND_HOLD(
+        GestureManifold.GESTURE_4_FINGER_SINGLE_TAP_AND_HOLD, 4, 1, true, NONE, NONE),
     MAPPER_GESTURE_4_FINGER_DOUBLE_TAP(GESTURE_4_FINGER_DOUBLE_TAP, 4, 2, NONE, NONE),
     MAPPER_GESTURE_4_FINGER_DOUBLE_TAP_AND_HOLD(
         GESTURE_4_FINGER_DOUBLE_TAP_AND_HOLD, 4, 2, true, NONE, NONE),
@@ -249,7 +262,14 @@ class GestureMatcherFactory {
     if (gestureMatchConfig.finger == 1) {
       // swipe
       if (gestureMatchConfig.tap == 0) {
-        if (gestureMatchConfig.direction2 == NONE) {
+        if (gestureMatchConfig.isHold && gestureMatchConfig.direction2 == NONE) {
+          return new SwipeAndHold(
+              context,
+              gestureMatchConfig.direction1,
+              gestureMatchConfig.gestureId,
+              listener,
+              logger);
+        } else if (gestureMatchConfig.direction2 == NONE) {
           return new Swipe(
               context,
               gestureMatchConfig.direction1,
@@ -270,7 +290,10 @@ class GestureMatcherFactory {
       }
       // single-tap and hold
       if ((gestureMatchConfig.tap == 1) && gestureMatchConfig.isHold) {
-        if (gestureMatchConfig.gestureId == GestureManifold.GESTURE_FAKED_SPLIT_TYPING) {
+        if (gestureMatchConfig.gestureId == GestureManifold.GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD) {
+          return new SingleFingerTapAndHold(
+              context, gestureMatchConfig.gestureId, listener, configResolver, logger);
+        } else if (gestureMatchConfig.gestureId == GestureManifold.GESTURE_FAKED_SPLIT_TYPING) {
           return new SecondFingerTap(
               context, gestureMatchConfig.tap, gestureMatchConfig.gestureId, listener, logger);
         } else if (configResolver.enableSplitTapAndHold()
@@ -316,18 +339,13 @@ class GestureMatcherFactory {
       }
       // multi-taps and hold
       if (gestureMatchConfig.isHold) {
-        // Two-finger single tap and hold is special gesture for TalkBack mis-triggering recovery
-        // feature.
-        return gestureMatchConfig.finger == 2 && gestureMatchConfig.tap == 1
-            ? new TwoFingerSingleTapAndLongHold(
-                context, gestureMatchConfig.gestureId, listener, logger)
-            : new MultiFingerMultiTapAndHold(
-                context,
-                gestureMatchConfig.finger,
-                gestureMatchConfig.tap,
-                gestureMatchConfig.gestureId,
-                listener,
-                logger);
+        return new MultiFingerMultiTapAndHold(
+            context,
+            gestureMatchConfig.finger,
+            gestureMatchConfig.tap,
+            gestureMatchConfig.gestureId,
+            listener,
+            logger);
       } else {
         // multi-taps without hold
         return new MultiFingerMultiTap(

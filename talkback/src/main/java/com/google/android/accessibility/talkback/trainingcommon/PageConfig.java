@@ -1140,6 +1140,16 @@ public abstract class PageConfig {
           AccessibilityService.GESTURE_SWIPE_UP, ANNOUNCE_REAL_ACTION);
       this.captureGestureIdToAnnouncements.put(
           AccessibilityService.GESTURE_SWIPE_DOWN, ANNOUNCE_REAL_ACTION);
+      this.captureGestureIdToAnnouncements.put(
+          GestureManifold.GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD, ANNOUNCE_REAL_ACTION);
+      this.captureGestureIdToAnnouncements.put(
+          GestureManifold.GESTURE_SWIPE_UP_AND_HOLD, ANNOUNCE_REAL_ACTION);
+      this.captureGestureIdToAnnouncements.put(
+          GestureManifold.GESTURE_SWIPE_DOWN_AND_HOLD, ANNOUNCE_REAL_ACTION);
+      this.captureGestureIdToAnnouncements.put(
+          GestureManifold.GESTURE_SWIPE_LEFT_AND_HOLD, ANNOUNCE_REAL_ACTION);
+      this.captureGestureIdToAnnouncements.put(
+          GestureManifold.GESTURE_SWIPE_RIGHT_AND_HOLD, ANNOUNCE_REAL_ACTION);
 
       // 1 finger back-and-forth.
       this.captureGestureIdToAnnouncements.put(
@@ -1173,6 +1183,8 @@ public abstract class PageConfig {
       this.captureGestureIdToAnnouncements.put(
           AccessibilityService.GESTURE_2_FINGER_SINGLE_TAP, ANNOUNCE_REAL_ACTION);
       this.captureGestureIdToAnnouncements.put(
+          GestureManifold.GESTURE_2_FINGER_SINGLE_TAP_AND_HOLD, ANNOUNCE_REAL_ACTION);
+      this.captureGestureIdToAnnouncements.put(
           AccessibilityService.GESTURE_2_FINGER_DOUBLE_TAP, ANNOUNCE_REAL_ACTION);
       this.captureGestureIdToAnnouncements.put(
           AccessibilityService.GESTURE_2_FINGER_DOUBLE_TAP_AND_HOLD, ANNOUNCE_REAL_ACTION);
@@ -1190,6 +1202,8 @@ public abstract class PageConfig {
       // 3 fingers.
       this.captureGestureIdToAnnouncements.put(
           AccessibilityService.GESTURE_3_FINGER_SINGLE_TAP, ANNOUNCE_REAL_ACTION);
+      this.captureGestureIdToAnnouncements.put(
+          AccessibilityService.GESTURE_3_FINGER_SINGLE_TAP_AND_HOLD, ANNOUNCE_REAL_ACTION);
       this.captureGestureIdToAnnouncements.put(
           AccessibilityService.GESTURE_3_FINGER_DOUBLE_TAP, ANNOUNCE_REAL_ACTION);
       this.captureGestureIdToAnnouncements.put(
@@ -1210,6 +1224,8 @@ public abstract class PageConfig {
       // 4 fingers.
       this.captureGestureIdToAnnouncements.put(
           AccessibilityService.GESTURE_4_FINGER_SINGLE_TAP, ANNOUNCE_REAL_ACTION);
+      this.captureGestureIdToAnnouncements.put(
+          GestureManifold.GESTURE_4_FINGER_SINGLE_TAP_AND_HOLD, ANNOUNCE_REAL_ACTION);
       this.captureGestureIdToAnnouncements.put(
           AccessibilityService.GESTURE_4_FINGER_DOUBLE_TAP, ANNOUNCE_REAL_ACTION);
       this.captureGestureIdToAnnouncements.put(

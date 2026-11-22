@@ -324,6 +324,16 @@ public class AccessibilityServiceCompatUtils {
       case GestureManifold.GESTURE_2_FINGER_ROTATE_COUNTERCLOCKWISE ->
           "GESTURE_2_FINGER_ROTATE_COUNTERCLOCKWISE";
       case GestureManifold.GESTURE_3_FINGER_QUADRUPLE_TAP -> "GESTURE_3_FINGER_QUADRUPLE_TAP";
+      case GestureManifold.GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD ->
+          "GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD";
+      case GestureManifold.GESTURE_2_FINGER_SINGLE_TAP_AND_HOLD ->
+          "GESTURE_2_FINGER_SINGLE_TAP_AND_HOLD";
+      case GestureManifold.GESTURE_4_FINGER_SINGLE_TAP_AND_HOLD ->
+          "GESTURE_4_FINGER_SINGLE_TAP_AND_HOLD";
+      case GestureManifold.GESTURE_SWIPE_UP_AND_HOLD -> "GESTURE_SWIPE_UP_AND_HOLD";
+      case GestureManifold.GESTURE_SWIPE_DOWN_AND_HOLD -> "GESTURE_SWIPE_DOWN_AND_HOLD";
+      case GestureManifold.GESTURE_SWIPE_LEFT_AND_HOLD -> "GESTURE_SWIPE_LEFT_AND_HOLD";
+      case GestureManifold.GESTURE_SWIPE_RIGHT_AND_HOLD -> "GESTURE_SWIPE_RIGHT_AND_HOLD";
       default -> "(unhandled " + gestureId + ")";
     };
   }
