@@ -107,6 +107,36 @@
     <!-- Used to offer to uninstall Backtalk under its old app ID. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
+    <!-- Held by an app that asks CAN Talk to speak text. Named after the app ID. -->
+    <permission
+        android:name="${applicationId}.permission.SPEAK"
+        android:label="@string/permission_speak_label"
+        android:description="@string/permission_speak_description"
+        android:protectionLevel="normal" />
+    <!-- Declared by an app that asks to speak while the device is locked. -->
+    <permission
+        android:name="${applicationId}.permission.SPEAK_WHEN_LOCKED"
+        android:label="@string/permission_speak_when_locked_label"
+        android:description="@string/permission_speak_when_locked_description"
+        android:protectionLevel="normal" />
+    <!-- Held by an app that can provide a braille display for CAN Talk. -->
+    <permission
+        android:name="${applicationId}.permission.BRAILLE_DISPLAY"
+        android:label="@string/permission_braille_display_label"
+        android:description="@string/permission_braille_display_description"
+        android:protectionLevel="normal" />
+    <!-- Required by a braille display app's service, so that only CAN Talk can bind it. -->
+    <permission
+        android:name="${applicationId}.permission.BIND_BRAILLE_DISPLAY"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="${applicationId}.permission.BIND_BRAILLE_DISPLAY" />
+    <!-- Held by an app that chooses where it gets direct touch while it runs. -->
+    <permission
+        android:name="${applicationId}.permission.DIRECT_TOUCH"
+        android:label="@string/permission_direct_touch_label"
+        android:description="@string/permission_direct_touch_description"
+        android:protectionLevel="normal" />
+
     <application
         android:supportsRtl="true">
 
@@ -443,6 +473,36 @@
                 <action android:name="fyi.quin.backtalk.action.HAND_OVER" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name="com.google.android.accessibility.talkback.speechcontrol.SpeechControlReceiver"
+            android:exported="true"
+            android:permission="${applicationId}.permission.SPEAK">
+            <intent-filter>
+                <action android:name="fyi.quin.backtalk.action.SPEAK" />
+                <action android:name="fyi.quin.backtalk.action.STOP_SPEECH" />
+            </intent-filter>
+        </receiver>
+        <!-- Saves the user's answer from the notification that asks whether an app may speak. -->
+        <receiver
+            android:name="com.google.android.accessibility.talkback.speechcontrol.SpeechControlApproval$AnswerReceiver"
+            android:exported="false" />
+        <service
+            android:name="com.google.android.accessibility.talkback.speechcontrol.SpeechControlService"
+            android:exported="true"
+            android:permission="${applicationId}.permission.SPEAK">
+            <intent-filter>
+                <action android:name="fyi.quin.backtalk.action.SPEECH_CONTROL" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="com.google.android.accessibility.talkback.directtouch.DirectTouchService"
+            android:exported="true"
+            android:permission="${applicationId}.permission.DIRECT_TOUCH">
+            <intent-filter>
+                <action android:name="fyi.quin.backtalk.action.DIRECT_TOUCH" />
+            </intent-filter>
+        </service>
 
         <receiver
             android:name="com.google.android.libraries.appdoctor.AppDoctorReceiver"

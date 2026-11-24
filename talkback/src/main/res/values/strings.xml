@@ -4311,4 +4311,46 @@ Do not use any markdown in your response."</string>
   <string name="title_pref_restore_focus_on_back">Restore focus when going back</string>
   <!-- Summary of the phone Advanced Settings switch. Back means returning to the previous app screen or browser page. [CHAR LIMIT=NONE] -->
   <string name="summary_pref_restore_focus_on_back">Return to the last focused item when going back to a screen.</string>
+
+  <!-- External Speech, Braille Display and Direct Touch APIs -->
+  <!-- Title of the setting that lets other apps speak through CAN Talk. [CHAR LIMIT=NONE] -->
+  <string name="title_pref_speech_control">Let other apps speak</string>
+  <!-- Summary of that setting. [CHAR LIMIT=NONE] -->
+  <string name="summary_pref_speech_control">Apps that you allow can say text in your CAN Talk voice. While the device is locked, only apps that you also allow while locked can speak.</string>
+  <!-- Title of the setting that plays a sound before each thing another app says through CAN Talk. [CHAR LIMIT=NONE] -->
+  <string name="title_pref_speech_control_sound">Play a sound before other apps speak</string>
+  <!-- Heading of the list of apps that asked to speak through CAN Talk. [CHAR LIMIT=NONE] -->
+  <string name="speech_control_apps_category">Apps</string>
+  <!-- Shown in that list before any app has asked to speak. [CHAR LIMIT=NONE] -->
+  <string name="speech_control_no_apps">No apps have asked to speak yet.</string>
+  <!-- Title of the notification that asks whether an app may speak through CAN Talk. The app's name is filled in. [CHAR LIMIT=NONE] -->
+  <string name="speech_control_ask_title">Allow <xliff:g id="app" example="Tasker">%1$s</xliff:g> to speak through CAN Talk?</string>
+  <!-- Text of that notification. [CHAR LIMIT=NONE] -->
+  <string name="speech_control_ask_text">It can say text in your CAN Talk voice. You can change this under Settings, Text-to-speech settings, Let other apps speak.</string>
+  <!-- Button in that notification that lets the app speak. [CHAR LIMIT=30] -->
+  <string name="speech_control_allow">Allow</string>
+  <!-- Button in that notification that stops the app from speaking. [CHAR LIMIT=30] -->
+  <string name="speech_control_deny">Don\'t allow</string>
+  <!-- In the list of apps that asked to speak through CAN Talk, the switch that lets an app also speak while the device is locked. The app's name is filled in. [CHAR LIMIT=NONE] -->
+  <string name="speech_control_locked_app"><xliff:g id="app" example="Tasker">%1$s</xliff:g> while the device is locked</string>
+  <!-- Title of the notification that asks whether an app may speak through CAN Talk while the device is locked. The app's name is filled in. [CHAR LIMIT=NONE] -->
+  <string name="speech_control_ask_locked_title">Allow <xliff:g id="app" example="Tasker">%1$s</xliff:g> to speak through CAN Talk while the device is locked?</string>
+  <!-- Text of that notification. [CHAR LIMIT=NONE] -->
+  <string name="speech_control_ask_locked_text">It can say text in your CAN Talk voice while the device is locked. Allow needs the device unlocked. You can change this under Settings, Text-to-speech settings, Let other apps speak.</string>
+  <!-- Name of the permission that apps ask for to speak through CAN Talk, shown in the app's permission list. [CHAR LIMIT=NONE] -->
+  <string name="permission_speak_label">speak through CAN Talk</string>
+  <!-- Description of that permission. [CHAR LIMIT=NONE] -->
+  <string name="permission_speak_description">Lets the app ask to say text in your CAN Talk voice. CAN Talk asks you before the app can speak.</string>
+  <!-- Name of the permission that apps ask for to speak through CAN Talk while the device is locked, shown in the app's permission list. [CHAR LIMIT=NONE] -->
+  <string name="permission_speak_when_locked_label">speak through CAN Talk while the device is locked</string>
+  <!-- Description of that permission. [CHAR LIMIT=NONE] -->
+  <string name="permission_speak_when_locked_description">Lets the app ask to say text in your CAN Talk voice while the device is locked. CAN Talk asks you separately before it can.</string>
+  <!-- Name of the permission that an app needs to ask to be a braille display for CAN Talk, shown in the app's permission list. [CHAR LIMIT=NONE] -->
+  <string name="permission_braille_display_label">ask to be a braille display for CAN Talk</string>
+  <!-- Description of that permission. [CHAR LIMIT=NONE] -->
+  <string name="permission_braille_display_description">Lets the app ask to be a braille display for CAN Talk. If you allow it in CAN Talk, it can read everything on the screen and control your device. CAN Talk asks you first.</string>
+  <!-- Name of the permission that apps ask for to choose where they get direct touch in CAN Talk, shown in the app's permission list. [CHAR LIMIT=NONE] -->
+  <string name="permission_direct_touch_label">choose where CAN Talk gives the app direct touch</string>
+  <!-- Description of that permission. [CHAR LIMIT=NONE] -->
+  <string name="permission_direct_touch_description">Lets the app turn CAN Talk direct touch on or off for parts of its screen while it is in front. You can turn direct touch off for the app in CAN Talk settings.</string>
 </resources>

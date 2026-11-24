@@ -235,6 +235,8 @@ import com.google.android.accessibility.talkback.soundthemes.SoundThemes;
 import com.google.android.accessibility.talkback.soundthemes.ThemeFeedback;
 import com.google.android.accessibility.talkback.speech.SpeechCacheController;
 import com.google.android.accessibility.talkback.speechbubble.DisableTalkBackDialog;
+import com.google.android.accessibility.talkback.speechcontrol.KeyboardSpeech;
+import com.google.android.accessibility.talkback.speechcontrol.SpeechControl;
 import com.google.android.accessibility.talkback.migration.AppIdHandOver;
 import com.google.android.accessibility.talkback.status.StatusReader;
 import com.google.android.accessibility.talkback.training.OnboardingInitiator;
@@ -1008,6 +1010,7 @@ public class TalkBackService extends AccessibilityServiceCompat
       directTouchController.shutdown();
       directTouchController = null;
     }
+    SpeechControl.detach();
 
     if (audioDeviceRouter != null) {
       audioDeviceRouter.shutdown();
@@ -2883,6 +2886,7 @@ public class TalkBackService extends AccessibilityServiceCompat
           BrailleImeForTalkBack brailleIme = getBrailleImeForTalkBack();
           return brailleIme == null ? OptionalInt.empty() : brailleIme.getOnScreenKeyboardEcho();
         });
+    textEventFilter.setOnScreenKeyboardEchoSuppressor(() -> KeyboardSpeech.isTypingSpoken(this));
     textEventInterpreter =
         new TextEventInterpreter(
             this,
@@ -2928,6 +2932,9 @@ public class TalkBackService extends AccessibilityServiceCompat
       windowEventInterpreter.addListener(directTouchController);
       ringerModeAndScreenMonitor.addScreenChangedListener(directTouchController);
       displayMonitor.addDisplayStateChangedListener(directTouchController);
+    }
+    if (pipeline != null && speechController != null) {
+      SpeechControl.attach(this, pipeline.getFeedbackReturner(), speechController);
     }
 
     addEventListener(new ProcessorGestureVibrator(pipeline.getFeedbackReturner()));

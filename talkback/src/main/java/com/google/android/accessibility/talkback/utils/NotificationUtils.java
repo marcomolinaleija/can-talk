@@ -29,6 +29,7 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import com.google.android.accessibility.talkback.R;
 import com.google.android.accessibility.talkback.permission.PermissionUtils;
@@ -139,5 +140,10 @@ public class NotificationUtils {
 
     return ContextCompat.checkSelfPermission(context, permission.POST_NOTIFICATIONS)
         == PackageManager.PERMISSION_GRANTED;
+  }
+
+  /** Whether notifications are enabled for the app in system settings. */
+  public static boolean canShowNotifications(Context context) {
+    return NotificationManagerCompat.from(context).areNotificationsEnabled();
   }
 }

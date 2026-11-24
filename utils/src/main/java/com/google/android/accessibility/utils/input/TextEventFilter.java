@@ -35,6 +35,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.OptionalInt;
+import java.util.function.BooleanSupplier;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
@@ -102,6 +103,7 @@ public class TextEventFilter {
   private @Nullable VoiceActionDelegate voiceActionDelegate;
   private @Nullable VoiceDictationDelegate voiceDictationDelegate;
   private @Nullable BrailleKeyboardEchoReader brailleKeyboardEchoReader;
+  private @Nullable BooleanSupplier onScreenKeyboardEchoSuppressor;
 
   private final TextEventHistory textEventHistory;
   private long lastKeyEventTime = -1;
@@ -143,6 +145,14 @@ public class TextEventFilter {
 
   public void setBrailleKeyboardEchoReader(@Nullable BrailleKeyboardEchoReader reader) {
     brailleKeyboardEchoReader = reader;
+  }
+
+  /**
+   * Suppresses echo of on-screen keyboard typing while {@code suppressor} returns true. Physical
+   * keyboard and braille typing are still echoed.
+   */
+  public void setOnScreenKeyboardEchoSuppressor(@Nullable BooleanSupplier suppressor) {
+    onScreenKeyboardEchoSuppressor = suppressor;
   }
 
   public void setLastKeyEventTime(long time) {
@@ -223,6 +233,10 @@ public class TextEventFilter {
             LogUtils.d(TAG, "Drop TYPE_VIEW_TEXT_CHANGED event: Voice recognition is active.");
             return;
           }
+          if (isTypingSpokenByKeyboard(event.getEventTime())) {
+            LogUtils.d(TAG, "Drop text change: the keyboard says what is typed with it.");
+            return;
+          }
         }
         // Text input selection change
       }
@@ -255,6 +269,11 @@ public class TextEventFilter {
               && voiceActionDelegate.isVoiceRecognitionActive()) {
             LogUtils.d(
                 TAG, "Drop TYPE_VIEW_TEXT_SELECTION_CHANGED event: Voice recognition is active.");
+            return;
+          }
+          if (eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED
+              && isTypingSpokenByKeyboard(event.getEventTime())) {
+            LogUtils.d(TAG, "Drop text selection change: the keyboard says what is typed with it.");
             return;
           }
         }
@@ -342,6 +361,15 @@ public class TextEventFilter {
     return false;
   }
 
+  /** Whether a text change at this time was typed on an on-screen keyboard that speaks it. */
+  private boolean isTypingSpokenByKeyboard(long textEventTime) {
+    return onScreenKeyboardEchoSuppressor != null
+        && getKeyboardType(textEventTime) == KeyboardType.ON_SCREEN
+        && (brailleKeyboardEchoReader == null
+            || brailleKeyboardEchoReader.readBrailleKeyboardEcho().isEmpty())
+        && onScreenKeyboardEchoSuppressor.getAsBoolean();
+  }
+
   /** Returns the braille keyboard's echo while it is in use, or else the on-screen keyboard's. */
   @KeyboardEchoType
   private int readOnScreenEcho() {
@@ -350,6 +378,9 @@ public class TextEventFilter {
       if (brailleEcho.isPresent()) {
         return brailleEcho.getAsInt();
       }
+    }
+    if (onScreenKeyboardEchoSuppressor != null && onScreenKeyboardEchoSuppressor.getAsBoolean()) {
+      return PREF_ECHO_NONE;
     }
     return onScreenKeyboardEcho;
   }

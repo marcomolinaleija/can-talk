@@ -318,4 +318,15 @@
   <string name="popup_message_history_consent_dialog_msg">Esto almacenará algunos mensajes, como notificaciones y alarmas, en can-talk. Puedes cambiar este ajuste en cualquier momento.</string>
   <string name="popup_message_history_consent_dialog_positive_btn">Activar</string>
   <string name="popup_message_history_consent_dialog_negative_btn">No, gracias</string>
+  <string name="external_display_channel">Pantallas braille de otras aplicaciones</string>
+  <string name="external_display_ask_title">¿Permitir que <xliff:g id="app" example="Notetaker">%1$s</xliff:g> sea una pantalla braille para CAN Talk?</string>
+  <string name="external_display_ask_text">CAN Talk no la usará hasta que la autorices.</string>
+  <string name="external_display_warning"><xliff:g id="app" example="Notetaker">%1$s</xliff:g> podrá leer todo lo que CAN Talk muestre en braille, que puede ser cualquier contenido en pantalla, incluidos mensajes y lo que escribes. También podrá controlar tu dispositivo como lo haces con una pantalla braille: escribir, abrir aplicaciones y ejecutar cualquier comando de CAN Talk. Autoriza solo aplicaciones de confianza.</string>
+  <string name="external_display_allow">Permitir</string>
+  <string name="external_display_deny">No permitir</string>
+  <string name="external_display_in_use_title"><xliff:g id="app" example="Notetaker">%1$s</xliff:g> es tu pantalla braille</string>
+  <string name="external_display_in_use_text">Mientras CAN Talk la usa, <xliff:g id="app" example="Notetaker">%1$s</xliff:g> puede leer la pantalla y controlar el dispositivo.</string>
+  <string name="external_displays_title">Pantallas de otras aplicaciones</string>
+  <string name="external_displays_summary">Las aplicaciones que autorices pueden ser pantallas braille para CAN Talk. Una aplicación que actúa como pantalla braille puede leer la pantalla y controlar el dispositivo.</string>
+  <string name="external_displays_none">Ninguna aplicación puede actuar como pantalla braille.</string>
 </resources>

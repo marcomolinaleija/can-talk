@@ -36,6 +36,9 @@ def translationInstantKey = System.getenv('CANTALK_TRANSLATION_INSTANT_KEY') ?: 
 android {
     namespace = "com.google.android.accessibility.talkback"
     testOptions.unitTests.includeAndroidResources = true
+    buildFeatures {
+        aidl = true
+    }
     defaultConfig {
         buildConfigField("String", "APPLICATION_ID", '"' + talkbackApplicationId + '"')
         buildConfigField("String", "GEMINI_API_KEY", '"' + geminiApiKey + '"')

@@ -54,4 +54,8 @@
       android:key="@string/pref_speech_pitch_seekbar_key_int"
       android:persistent="false"
       android:title="@string/title_pref_speech_pitch" />
+  <com.google.android.accessibility.material.preference.AccessibilitySuitePreference
+      android:fragment="com.google.android.accessibility.talkback.speechcontrol.SpeechControlFragment"
+      android:key="pref_speech_control_screen"
+      android:title="@string/title_pref_speech_control" />
 </PreferenceScreen>

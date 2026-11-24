@@ -12,3 +12,10 @@
 
 # LiteRT-LM's native library calls back into its Java classes by name, and it has no rules.
 -keep class com.google.ai.edge.litertlm.** { *; }
+
+# External app AIDL interfaces (Speech, Braille Display, Direct Touch APIs).
+-keep class fyi.quin.backtalk.** { *; }
+# ExternalBrailleDisplays resolves BrailleInputEvent.CMD_* constants by reflection.
+-keep class com.google.android.accessibility.braille.brltty.BrailleInputEvent {
+    public static final int CMD_*;
+}

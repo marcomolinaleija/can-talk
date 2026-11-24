@@ -1496,4 +1496,26 @@ No uses Markdown en tu respuesta.</string>
   <string name="backup_error_commit_failed">No se pudieron guardar las preferencias en el almacenamiento</string>
   <string name="backup_error_io">No se pudo leer el archivo de copia de seguridad</string>
 
+  <!-- API de voz y permisos externos -->
+  <string name="title_pref_speech_control">Permitir que otras aplicaciones hablen</string>
+  <string name="summary_pref_speech_control">Las aplicaciones que autorices pueden decir texto con tu voz de CAN Talk. Con el dispositivo bloqueado, solo podrán hablar las aplicaciones que también autorices cuando esté bloqueado.</string>
+  <string name="title_pref_speech_control_sound">Reproducir un sonido antes de que hablen otras aplicaciones</string>
+  <string name="speech_control_apps_category">Aplicaciones</string>
+  <string name="speech_control_no_apps">Ninguna aplicación ha solicitado hablar todavía.</string>
+  <string name="speech_control_ask_title">¿Permitir que <xliff:g id="app" example="Tasker">%1$s</xliff:g> hable a través de CAN Talk?</string>
+  <string name="speech_control_ask_text">Podrá decir texto con tu voz de CAN Talk. Puedes cambiarlo en Ajustes, Configuración de texto a voz, Permitir que otras aplicaciones hablen.</string>
+  <string name="speech_control_allow">Permitir</string>
+  <string name="speech_control_deny">No permitir</string>
+  <string name="speech_control_locked_app"><xliff:g id="app" example="Tasker">%1$s</xliff:g> con el dispositivo bloqueado</string>
+  <string name="speech_control_ask_locked_title">¿Permitir que <xliff:g id="app" example="Tasker">%1$s</xliff:g> hable a través de CAN Talk con el dispositivo bloqueado?</string>
+  <string name="speech_control_ask_locked_text">Podrá decir texto con tu voz de CAN Talk mientras el dispositivo esté bloqueado. Para permitirlo hay que desbloquear el dispositivo. Puedes cambiarlo en Ajustes, Configuración de texto a voz, Permitir que otras aplicaciones hablen.</string>
+  <string name="permission_speak_label">hablar a través de CAN Talk</string>
+  <string name="permission_speak_description">Permite que la aplicación solicite decir texto con tu voz de CAN Talk. CAN Talk te preguntará antes de que pueda hablar.</string>
+  <string name="permission_speak_when_locked_label">hablar a través de CAN Talk con el dispositivo bloqueado</string>
+  <string name="permission_speak_when_locked_description">Permite que la aplicación solicite decir texto con tu voz de CAN Talk mientras el dispositivo está bloqueado. CAN Talk te lo preguntará por separado antes de permitirlo.</string>
+  <string name="permission_braille_display_label">solicitar ser pantalla braille para CAN Talk</string>
+  <string name="permission_braille_display_description">Permite que la aplicación solicite ser una pantalla braille para CAN Talk. Si la autorizas en CAN Talk, podrá leer todo lo que aparece en pantalla y controlar el dispositivo. CAN Talk te preguntará primero.</string>
+  <string name="permission_direct_touch_label">elegir dónde CAN Talk da toque directo a la aplicación</string>
+  <string name="permission_direct_touch_description">Permite que la aplicación active o desactive el toque directo de CAN Talk en partes de su pantalla mientras está en primer plano. Puedes desactivar el toque directo para la aplicación en los ajustes de CAN Talk.</string>
+
 </resources>

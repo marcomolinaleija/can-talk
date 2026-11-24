@@ -94,6 +94,8 @@ object DirectTouchSettings {
     prefs.edit().putBoolean(PREF_TYPING_PREFIX + pkg, enabled).apply()
   }
 
+  fun isSeen(prefs: SharedPreferences, pkg: String): Boolean = pkg in stringSet(prefs, PREF_SEEN)
+
   /**
    * Records that [pkg] has been seen. The first time, an app that [declaresCapability] is turned
    * on. Later calls change nothing, so an app the user turned off stays off.
