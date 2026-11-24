@@ -20,6 +20,9 @@ import android.accessibilityservice.AccessibilityGestureEvent
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityService.GESTURE_DOUBLE_TAP
 import android.accessibilityservice.AccessibilityService.GESTURE_SWIPE_RIGHT
+import android.accessibilityservice.AccessibilityService.GESTURE_SWIPE_UP
+import android.accessibilityservice.AccessibilityService.GESTURE_SWIPE_UP_AND_DOWN
+import android.accessibilityservice.AccessibilityService.GESTURE_SWIPE_UP_AND_RIGHT
 import android.accessibilityservice.AccessibilityService.GestureResultCallback
 import android.accessibilityservice.GestureDescription
 import android.accessibilityservice.TouchInteractionController
@@ -32,6 +35,7 @@ import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.util.TypedValue
 import android.view.Display
 import android.view.InputDevice
 import android.view.KeyCharacterMap
@@ -45,6 +49,8 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import com.google.android.accessibility.talkback.actor.DirectClick
 import com.google.android.accessibility.talkback.analytics.TalkBackAnalytics
 import com.google.android.accessibility.utils.SharedPreferencesUtils
+import com.google.android.accessibility.utils.gestures.GestureConfiguration
+import com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_UP_AND_HOLD
 import java.time.Duration
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -72,6 +78,7 @@ class TouchInteractionMonitorTest {
   class RecordingService : TalkBackService() {
     val gestures = mutableListOf<Int>()
     val threads = mutableSetOf<Thread>()
+    val enabledSwipeAndHoldGestures = mutableSetOf<Int>()
 
     override fun onGesture(accessibilityGestureEvent: AccessibilityGestureEvent): Boolean {
       threads.add(Thread.currentThread())
@@ -82,6 +89,9 @@ class TouchInteractionMonitorTest {
     override fun onGestureDetectionStarted() {
       threads.add(Thread.currentThread())
     }
+
+    override fun shouldDetectSwipeAndHold(gestureId: Int): Boolean =
+      gestureId in enabledSwipeAndHoldGestures
   }
 
   /** Records the threads that ask the controller for touch exploration. */
@@ -454,5 +464,144 @@ class TouchInteractionMonitorTest {
     assertTrue(TouchInteractionMonitor.isFingerDown())
     assertFalse(monitor.isReadyForDirectClick())
     assertEquals(listOf<GestureDescription>(), pressGestures)
+  }
+
+  private fun oneCmPx(): Float =
+    TypedValue.applyDimension(
+      TypedValue.COMPLEX_UNIT_MM,
+      10f,
+      service.resources.displayMetrics,
+    )
+
+  private fun swipeConfirmPx(): Float {
+    val touchSlop = ViewConfiguration.get(service).scaledTouchSlop
+    return maxOf(touchSlop * 2.5f, oneCmPx() * 0.45f)
+  }
+
+  @Test
+  fun compactSwipeUpAndHoldFromNearTopConfirmsAtShortHoldTimeout() {
+    service.enabledSwipeAndHoldGestures.add(GESTURE_SWIPE_UP_AND_HOLD)
+    val confirmPx = swipeConfirmPx() + 6f
+    val startY = 80f
+
+    stateChangeAt(STATE_TOUCH_INTERACTING, 0)
+    touchAt(ACTION_DOWN, 200f, startY, 0)
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx * 0.45f, 40)
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx, 100)
+
+    runUntil(100 + GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS - 30L)
+    assertEquals(listOf<Int>(), service.gestures)
+    assertEquals(listOf<Thread>(), reporter.requests)
+
+    runUntil(100 + GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS + 20L)
+    assertEquals(listOf(GESTURE_SWIPE_UP_AND_HOLD), service.gestures)
+    assertEquals(listOf<Thread>(), reporter.requests)
+  }
+
+  @Test
+  fun swipeUpAndHoldWithInitialDiagonalRollAndCurvedHoldArcStillMatches() {
+    service.enabledSwipeAndHoldGestures.add(GESTURE_SWIPE_UP_AND_HOLD)
+    val touchSlop = ViewConfiguration.get(service).scaledTouchSlop
+    val confirmPx = swipeConfirmPx() + 8f
+    val cmPx = oneCmPx()
+    val startX = 200f
+    val startY = 400f
+
+    stateChangeAt(STATE_TOUCH_INTERACTING, 0)
+    touchAt(ACTION_DOWN, startX, startY, 0)
+    // Initial thumb roll slightly steeper horizontally than 45 degrees before straightening up.
+    touchAt(ACTION_MOVE, startX + touchSlop * 1.4f, startY - touchSlop * 1.1f, 40)
+    touchAt(ACTION_MOVE, startX + touchSlop * 1.6f, startY - confirmPx, 110)
+    // Natural curved thumb deceleration arc while holding: continues up and slightly right.
+    touchAt(ACTION_MOVE, startX + cmPx * 0.55f, startY - confirmPx - cmPx * 0.65f, 180)
+
+    runUntil(180 + GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS + 30L)
+    assertEquals(listOf(GESTURE_SWIPE_UP_AND_HOLD), service.gestures)
+    assertEquals(listOf<Thread>(), reporter.requests)
+  }
+
+  @Test
+  fun quickSwipeUpAndTwoDirectionSwipesDoNotTriggerSwipeAndHold() {
+    service.enabledSwipeAndHoldGestures.add(GESTURE_SWIPE_UP_AND_HOLD)
+    val cmPx = oneCmPx()
+
+    // 1. Quick swipe up
+    stateChangeAt(STATE_TOUCH_INTERACTING, 0)
+    touchAt(ACTION_DOWN, 200f, 500f, 0)
+    for (step in 1..4) {
+      touchAt(ACTION_MOVE, 200f, 500f - cmPx * 0.4f * step, 15L * step)
+    }
+    touchAt(ACTION_UP, 200f, 500f - cmPx * 1.6f, 80)
+    stateChangeAt(STATE_CLEAR, 85)
+    runUntil(200)
+
+    // 2. L-swipe (up and right)
+    stateChangeAt(STATE_TOUCH_INTERACTING, 300)
+    touchAt(ACTION_DOWN, 200f, 500f, 300)
+    for (step in 1..3) {
+      touchAt(ACTION_MOVE, 200f, 500f - cmPx * 0.5f * step, 300L + 15 * step)
+    }
+    for (step in 1..3) {
+      touchAt(ACTION_MOVE, 200f + cmPx * 0.5f * step, 500f - cmPx * 1.5f, 345L + 15 * step)
+    }
+    touchAt(ACTION_UP, 200f + cmPx * 1.5f, 500f - cmPx * 1.5f, 410)
+    stateChangeAt(STATE_CLEAR, 415)
+    runUntil(500)
+
+    // 3. Back-and-forth (up and down)
+    stateChangeAt(STATE_TOUCH_INTERACTING, 600)
+    touchAt(ACTION_DOWN, 200f, 500f, 600)
+    for (step in 1..3) {
+      touchAt(ACTION_MOVE, 200f, 500f - cmPx * 0.5f * step, 600L + 15 * step)
+    }
+    for (step in 1..3) {
+      touchAt(ACTION_MOVE, 200f, 500f - cmPx * 1.5f + cmPx * 0.5f * step, 645L + 15 * step)
+    }
+    touchAt(ACTION_UP, 200f, 500f, 710)
+    stateChangeAt(STATE_CLEAR, 715)
+    runUntil(1400)
+
+    assertEquals(
+      listOf(GESTURE_SWIPE_UP, GESTURE_SWIPE_UP_AND_RIGHT, GESTURE_SWIPE_UP_AND_DOWN),
+      service.gestures,
+    )
+  }
+
+  @Test
+  fun deliberateSwipeUpAndHoldStillSucceedsWithShortTouchFocusDelay() {
+    service.enabledSwipeAndHoldGestures.add(GESTURE_SWIPE_UP_AND_HOLD)
+    val prefs = SharedPreferencesUtils.getSharedPreferences(service)
+    prefs.edit().putString(service.getString(R.string.pref_touch_focus_time_out_key), "100").commit()
+    runUntil(5)
+
+    val touchSlop = ViewConfiguration.get(service).scaledTouchSlop
+    val confirmPx = swipeConfirmPx() + 6f
+    val startY = 400f
+
+    stateChangeAt(STATE_TOUCH_INTERACTING, 10)
+    touchAt(ACTION_DOWN, 200f, startY, 10)
+    // Early upward movement before the 50ms touch focus timeout expires extends the window.
+    touchAt(ACTION_MOVE, 200f, startY - touchSlop * 2f, 35)
+    // Finish reaching confirmation distance slowly (~220ms after down).
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx, 230)
+
+    runUntil(230 + GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS + 30L)
+    assertEquals(listOf(GESTURE_SWIPE_UP_AND_HOLD), service.gestures)
+    assertEquals(listOf<Thread>(), reporter.requests)
+  }
+
+  @Test
+  fun unassignedSwipeUpAndHoldDoesNotFireOrBlockTouchExploration() {
+    // enabledSwipeAndHoldGestures is empty -> all SwipeAndHold gestures are unassigned.
+    val confirmPx = swipeConfirmPx() + 6f
+    val startY = 400f
+
+    stateChangeAt(STATE_TOUCH_INTERACTING, 0)
+    touchAt(ACTION_DOWN, 200f, startY, 0)
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx, 100)
+    runUntil(100 + GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS + 200L)
+
+    assertEquals(listOf<Int>(), service.gestures)
+    assertEquals(listOf(mainThread), reporter.requests)
   }
 }

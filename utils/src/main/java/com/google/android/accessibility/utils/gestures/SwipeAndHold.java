@@ -28,10 +28,11 @@ import android.view.ViewConfiguration;
 import androidx.annotation.RequiresApi;
 import com.google.android.accessibility.utils.Performance.EventId;
 import com.google.android.accessibility.utils.R;
+import com.google.android.accessibility.utils.gestures.GestureManifold.GestureConfigProvider;
 
 /**
  * Matches a one-finger swipe in a single direction followed by keeping the finger held stationary
- * for {@link GestureConfiguration#PROLONGED_HOLD_TIMEOUT_MS}. Lifting early cancels this matcher so
+ * for {@link GestureConfiguration#SWIPE_AND_HOLD_TIMEOUT_MS}. Lifting early cancels this matcher so
  * normal flicks and two-direction swipes continue to work unchanged.
  */
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -42,9 +43,10 @@ class SwipeAndHold extends GestureMatcher {
   private static final int MIN_START_THRESHOLD_MS = 400;
 
   private final int direction;
+  private final GestureConfigProvider configProvider;
   private float gestureDetectionThresholdPixels;
+  private float processingPixels;
   private float swipeConfirmPixels;
-  private float directionCheckPixels;
   private int maxStartThreshold;
   private float holdSlop;
   private float cancelDirectionSlop;
@@ -62,9 +64,11 @@ class SwipeAndHold extends GestureMatcher {
       int direction,
       int gesture,
       GestureMatcher.StateChangeListener listener,
+      GestureConfigProvider configProvider,
       GestureMatcher.AnalyticsEventLogger logger) {
     super(gesture, new Handler(context.getMainLooper()), listener, logger);
     this.direction = direction;
+    this.configProvider = configProvider;
     initializeParameters(context);
     clear();
   }
@@ -81,10 +85,10 @@ class SwipeAndHold extends GestureMatcher {
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, MM_PER_CM, displayMetrics)
             * gestureConfirmDistanceCm;
     int touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-    swipeConfirmPixels = Math.max(touchSlop * 3.0f, gestureDetectionThresholdPixels * 0.75f);
-    directionCheckPixels = Math.max(touchSlop * 2.5f, gestureDetectionThresholdPixels * 0.45f);
-    holdSlop = Math.max(touchSlop * 2.5f, gestureDetectionThresholdPixels * 0.6f);
-    cancelDirectionSlop = Math.max(holdSlop, gestureDetectionThresholdPixels);
+    processingPixels = touchSlop * 1.5f;
+    swipeConfirmPixels = Math.max(touchSlop * 2.5f, gestureDetectionThresholdPixels * 0.45f);
+    holdSlop = Math.max(touchSlop * 2.5f, gestureDetectionThresholdPixels * 0.50f);
+    cancelDirectionSlop = Math.max(holdSlop, gestureDetectionThresholdPixels * 0.85f);
   }
 
   @Override
@@ -106,6 +110,10 @@ class SwipeAndHold extends GestureMatcher {
 
   @Override
   protected void onDown(EventId eventId, MotionEvent event) {
+    if (!configProvider.enableSwipeAndHold(getGestureId())) {
+      cancelGesture(event);
+      return;
+    }
     if (Float.isNaN(baseX) && Float.isNaN(baseY)) {
       baseX = event.getX();
       baseY = event.getY();
@@ -141,40 +149,52 @@ class SwipeAndHold extends GestureMatcher {
         holdAnchorX = x;
         holdAnchorY = y;
         startGesture(event);
-        completeAfter(GestureConfiguration.PROLONGED_HOLD_TIMEOUT_MS, eventId, event);
+        completeAfter(GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS, eventId, event);
         return;
       }
 
-      if (moveDelta >= directionCheckPixels) {
-        if (Swipe.toDirection(dx, dy) != direction) {
-          cancelGesture(event);
-          return;
-        }
-        if (!processingNotified) {
-          processingNotified = true;
-          processGesture(eventId, event);
-        }
+      if (!processingNotified
+          && moveDelta >= processingPixels
+          && projectAlong(dx, dy) >= processingPixels * 0.5f) {
+        processingNotified = true;
+        processGesture(eventId, event);
       }
       return;
     }
 
     // Swipe confirmed: keep the hold timer running while the finger stays near holdAnchor,
-    // restart the hold timer if the finger continues moving further in the same direction, and
-    // cancel if the user makes a deliberate second leg in another direction (L-shape/back-forth).
+    // advance the anchor and restart the timer if moving forward along direction (allowing natural
+    // thumb curvature), and cancel on deliberate reversals or perpendicular L-turns.
     final float holdDx = x - holdAnchorX;
     final float holdDy = y - holdAnchorY;
-    final double holdDelta = Math.hypot(holdDx, holdDy);
-    if (holdDelta <= holdSlop) {
-      return;
-    }
-    final int moveDirection = Swipe.toDirection(holdDx, holdDy);
-    if (moveDirection == direction) {
+    final float along = projectAlong(holdDx, holdDy);
+    final float cross = projectCross(holdDx, holdDy);
+    if (along > holdSlop && along >= cross * 0.75f) {
       holdAnchorX = x;
       holdAnchorY = y;
-      completeAfter(GestureConfiguration.PROLONGED_HOLD_TIMEOUT_MS, eventId, event);
-    } else if (holdDelta >= cancelDirectionSlop) {
+      completeAfter(GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS, eventId, event);
+    } else if (along <= -cancelDirectionSlop
+        || (cross >= cancelDirectionSlop && cross > Math.max(0f, along) * 1.25f)) {
       cancelGesture(event);
     }
+  }
+
+  private float projectAlong(float dx, float dy) {
+    return switch (direction) {
+      case Swipe.UP -> -dy;
+      case Swipe.DOWN -> dy;
+      case Swipe.LEFT -> -dx;
+      case Swipe.RIGHT -> dx;
+      default -> 0f;
+    };
+  }
+
+  private float projectCross(float dx, float dy) {
+    return switch (direction) {
+      case Swipe.UP, Swipe.DOWN -> Math.abs(dx);
+      case Swipe.LEFT, Swipe.RIGHT -> Math.abs(dy);
+      default -> 0f;
+    };
   }
 
   @Override

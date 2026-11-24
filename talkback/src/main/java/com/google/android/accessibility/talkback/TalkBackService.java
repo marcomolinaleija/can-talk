@@ -1784,18 +1784,27 @@ public class TalkBackService extends AccessibilityServiceCompat
    * explicitly assigned an action to it, or the active training/practice page captures it.
    */
   public boolean shouldDetectOneFingerTapAndHold() {
-    if (isGestureCapturedByTraining(
+    return isGestureAssignedOrCaptured(
         com.google.android.accessibility.utils.gestures.GestureManifold
-            .GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD)) {
+            .GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD);
+  }
+
+  /**
+   * Returns whether the given one-finger swipe-and-hold gesture should be detected: either the user
+   * explicitly assigned an action to it, or the active training/practice page captures it.
+   */
+  public boolean shouldDetectSwipeAndHold(int gestureId) {
+    return isGestureAssignedOrCaptured(gestureId);
+  }
+
+  private boolean isGestureAssignedOrCaptured(int gestureId) {
+    if (isGestureCapturedByTraining(gestureId)) {
       return true;
     }
     if (gestureShortcutMapping == null) {
       return false;
     }
-    String action =
-        gestureShortcutMapping.getActionKeyFromGestureId(
-            com.google.android.accessibility.utils.gestures.GestureManifold
-                .GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD);
+    String action = gestureShortcutMapping.getActionKeyFromGestureId(gestureId);
     return !TextUtils.isEmpty(action)
         && !TextUtils.equals(action, getString(R.string.shortcut_value_unassigned))
         && !TextUtils.equals(action, getString(R.string.shortcut_value_unsupported));

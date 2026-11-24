@@ -33,6 +33,13 @@ public final class GestureConfiguration {
    */
   public static final int PROLONGED_HOLD_TIMEOUT_MS = 1100;
 
+  /**
+   * Hold duration in milliseconds after a confirmed 1-finger swipe stops. Exceeds {@link Swipe}'s
+   * continuation timeout (350 ms) so L-shaped and back-and-forth swipes cancel before firing, while
+   * feeling as responsive as a standard long press.
+   */
+  public static final int SWIPE_AND_HOLD_TIMEOUT_MS = 450;
+
   // A gesture waits a bit longer than the tap gap before it completes, so a late tap still counts.
   private static final int MULTI_TAP_COMPLETION_MARGIN_MS =
       ViewConfiguration.getDoubleTapTimeout() - DOUBLE_TAP_TIMEOUT_MS;

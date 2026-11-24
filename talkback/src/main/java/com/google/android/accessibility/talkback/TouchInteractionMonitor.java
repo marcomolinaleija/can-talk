@@ -127,6 +127,7 @@ public class TouchInteractionMonitor
 
   // Queue size to hold the most recent change requests of controller state.
   private static final int MAX_CHANGE_REQUEST_SIZE = 5;
+  private static final int SWIPE_HOLD_PROCESSING_MIN_DELAY_MS = 250;
 
   private static final ImmutableSet<Integer> TOUCH_EXPLORE_GATE =
       ImmutableSet.of(
@@ -222,6 +223,7 @@ public class TouchInteractionMonitor
   private boolean keepMonitorTouchExplore = true;
   // To record any 1-finger gestures are still trying to match.
   private final Set<Integer> touchExploreGate = new HashSet<>(32);
+  private boolean swipeHoldProcessingExtended = false;
   // To enable the MotionEvent log, issue the following command.
   // adb shell setprop log.tag.MotionEventLog VERBOSE
   // and re-enable TalkBack
@@ -380,6 +382,11 @@ public class TouchInteractionMonitor
                     && (!isLiftToType
                         || service.isGestureCapturedByTraining(
                             GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD));
+              }
+
+              @Override
+              public boolean enableSwipeAndHold(int gestureId) {
+                return service.shouldDetectSwipeAndHold(gestureId);
               }
             },
             logger,
@@ -755,6 +762,7 @@ public class TouchInteractionMonitor
     requestTouchExplorationDelayed.cancel();
     queuedMotionEvents.clear();
     touchExploreGate.addAll(TOUCH_EXPLORE_GATE);
+    swipeHoldProcessingExtended = false;
     keepMonitorTouchExplore = true;
     waitFirstMotionEvent = false;
     if (eventId != null) {
@@ -1082,6 +1090,11 @@ public class TouchInteractionMonitor
         return;
       }
       dispatchGestureToMainThreadAndClear(gestureEvent);
+    } else if (isSwipeAndHoldGesture(gestureId)) {
+      if (!service.shouldDetectSwipeAndHold(gestureId)) {
+        return;
+      }
+      dispatchGestureToMainThreadAndClear(gestureEvent);
     } else {
       dispatchGestureToMainThreadAndClear(gestureEvent);
     }
@@ -1221,17 +1234,24 @@ public class TouchInteractionMonitor
     }
   }
 
-  @Override
-  public void onGestureProcessing(int gestureId) {
-    if (gestureId == GESTURE_SWIPE_UP_AND_HOLD
+  private static boolean isSwipeAndHoldGesture(int gestureId) {
+    return gestureId == GESTURE_SWIPE_UP_AND_HOLD
         || gestureId == GESTURE_SWIPE_DOWN_AND_HOLD
         || gestureId == GESTURE_SWIPE_LEFT_AND_HOLD
-        || gestureId == GESTURE_SWIPE_RIGHT_AND_HOLD) {
+        || gestureId == GESTURE_SWIPE_RIGHT_AND_HOLD;
+  }
+
+  @Override
+  public void onGestureProcessing(int gestureId) {
+    if (isSwipeAndHoldGesture(gestureId)) {
       // A deliberate swipe-and-hold is underway; give it a fresh window to cross the swipe
       // threshold before touch exploration takes over.
-      if (requestTouchExplorationDelayed.isPending() && !isLiftToType) {
+      if (!swipeHoldProcessingExtended
+          && requestTouchExplorationDelayed.isPending()
+          && !isLiftToType) {
+        swipeHoldProcessingExtended = true;
         requestTouchExplorationDelayed.cancel();
-        requestTouchExplorationDelayed.post();
+        requestTouchExplorationDelayed.postAtLeast(SWIPE_HOLD_PROCESSING_MIN_DELAY_MS);
       }
       return;
     }
@@ -1416,6 +1436,14 @@ public class TouchInteractionMonitor
     }
 
     public void post(int remaining) {
+      postInternal(remaining, 0);
+    }
+
+    public void postAtLeast(int minDelayMs) {
+      postInternal(0, minDelayMs);
+    }
+
+    private void postInternal(int remaining, int minDelayMs) {
       postTime = SystemClock.uptimeMillis();
       if (typingFocusTimeout || touchFocusTimeout) {
         if (isLiftToType) {
@@ -1457,6 +1485,9 @@ public class TouchInteractionMonitor
         } else {
           timerAction = TOUCH_EXPLORE_DELAY_250;
         }
+      }
+      if (minDelayMs > 0) {
+        actualDelay = Math.max(actualDelay, minDelayMs);
       }
       mainHandler.postDelayed(this, actualDelay);
     }

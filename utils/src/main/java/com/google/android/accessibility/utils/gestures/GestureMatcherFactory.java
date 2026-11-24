@@ -268,6 +268,7 @@ class GestureMatcherFactory {
               gestureMatchConfig.direction1,
               gestureMatchConfig.gestureId,
               listener,
+              configResolver,
               logger);
         } else if (gestureMatchConfig.direction2 == NONE) {
           return new Swipe(

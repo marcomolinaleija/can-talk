@@ -108,6 +108,10 @@ public class GestureManifold implements GestureMatcher.StateChangeListener {
     default boolean enableOneFingerTapAndHold() {
       return false;
     }
+
+    default boolean enableSwipeAndHold(int gestureId) {
+      return true;
+    }
   }
 
   public GestureManifold(
