@@ -1,8 +1,7 @@
-CAN Talk 1.0.8
+CAN Talk 1.0.9
 
-- Mejoras en el historial del portapapeles: ahora puedes buscar elementos por nombre o contenido (sin distinguir mayúsculas ni acentos), renombrar tus textos guardados, editarlos, crear nuevos elementos manualmente, ver el texto completo, compartirlos, reordenarlos y eliminarlos con confirmación.
-- Nuevo apartado «Historial del portapapeles» en Ajustes > Controles, donde también puedes elegir cuántos elementos quieres guardar (de 10 a 500, con 100 por defecto), pausar o activar la captura automática, decidir si el lector lee el contenido después del nombre personalizado, guardar el texto actual del portapapeles del sistema y vaciar el historial conservando o no tus favoritos.
-- Nuevos gestos en el visor rápido del portapapeles: dos dedos a la derecha para buscar, dos dedos hacia arriba para abrir sus ajustes, dos dedos hacia abajo dos veces para eliminar el elemento actual y tres dedos hacia arriba para escuchar la ayuda.
-- Se corrige la opción «Añadir última frase pronunciada al portapapeles» en el menú de can-talk y se garantiza que las copias hechas por el propio lector se guarden en el historial incluso si el teclado braille no es el teclado predeterminado.
-- Se mejora el audio con auriculares Bluetooth cuando elegiste una salida específica: se evita que el lector pase al altavoz del teléfono o interrumpa la música al conectar los auriculares o al abrir el teclado braille.
-- El modo de toque directo ahora permite escribir correctamente con ABK y otros teclados externos.
+- Nuevo sistema de macros en Ajustes > Controles y en el menú de CAN Talk: crea, edita, graba pasos (incluido desde Configuración rápida), importa o exporta automatizaciones con condiciones, bucles, controles del dispositivo, acciones por aplicación, accesos directos en la pantalla de inicio y asignación a gestos o al menú de Acciones.
+- Nuevos gestos personalizables en Ajustes > Personalizar gestos: «Mantener pulsado» con 1, 2 y 4 dedos, y «Deslizar hacia arriba, abajo, izquierda o derecha y mantener pulsado», todos disponibles también en la práctica de gestos.
+- Mejor reconocimiento y respuesta del deslizamiento con retención: ahora requiere menos tiempo de espera tras detener el dedo, funciona con recorridos más cortos desde cualquier zona o borde de la pantalla, tolera el arco natural del pulgar y evita interferir con la exploración táctil cuando una dirección no tiene acción asignada.
+- Nuevas APIs externas con aprobación del usuario: «Permitir que otras aplicaciones hablen» en Configuración de texto a voz (con sonido previo opcional y permiso independiente con la pantalla bloqueada), «Pantallas de otras aplicaciones» en ajustes de pantalla braille y control de zonas de toque directo por aplicación.
+- Se corrige el enlace al servicio externo de control de voz para que las aplicaciones puedan solicitar permiso de habla correctamente.
