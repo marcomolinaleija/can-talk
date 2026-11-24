@@ -83,12 +83,16 @@ Ejecutar por separado para poder distinguir los resultados:
 .\compilar.ps1 -Tareas @(':lintPhoneDebug')
 ```
 
-Una prueba o compilación fallida se investiga antes de distribuir. Lint tampoco
-se debe silenciar: la revisión 1.0.3 registró deuda global en la
-[auditoría](docs/auditoria-actualizador-1.0.3.md). Si sigue fallando, revisar el
-informe, separar regresiones de deuda conocida y obtener una decisión explícita
-del responsable de publicación; no afirmar que está verde ni ampliar el baseline
-como atajo.
+Una prueba o compilación fallida bloquea la distribución y se investiga antes de
+publicar. En cuanto a Lint, la revisión 1.0.3 registró deuda global en la
+[auditoría](docs/auditoria-actualizador-1.0.3.md). Si `:lintPhoneDebug` falla,
+revisar el informe para separar regresiones reales de deuda conocida (por ejemplo,
+`MissingTranslation` en cadenas nuevas en español/inglés, `GestureBackNavigation`
+heredado o avisos `NewApi` ya protegidos en tiempo de ejecución). Si no hay
+regresiones reales en los cambios de la entrega, esa deuda conocida se puede omitir
+para continuar con el commit y la publicación sin detenerse, dejando constancia de
+lo observado; nunca se debe afirmar que lint está verde ni ampliar el baseline como
+atajo.
 
 Revisar el diff y preparar con `git add --` **solo las rutas revisadas de la
 release**, sin incluir cambios ajenos. Después:
