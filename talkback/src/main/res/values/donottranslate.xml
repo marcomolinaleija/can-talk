@@ -20,6 +20,7 @@
     <!-- Must match SpeechControl.PREF_ENABLED. -->
     <string name="pref_speech_control_key" translatable="false">pref_speech_control</string>
     <string name="pref_clipboard_history_key" translatable="false">pref_clipboard_history</string>
+    <string name="pref_macros_key" translatable="false">pref_macros_screen</string>
     <string name="pref_check_for_updates_key" translatable="false">pref_check_for_updates</string>
     <string name="pref_auto_update_check_key" translatable="false">pref_auto_update_check</string>
     <string name="pref_backup_restore_key" translatable="false">pref_backup_restore</string>
@@ -2012,6 +2013,8 @@
   <string name="pref_show_pause_confirmation_dialog">pref_show_pause_confirmation_dialog</string>
   <string name="pref_show_context_menu_pause_backtalk_setting_key" translatable="false">pref_pause_backtalk_menu_setting_key</string>
   <bool name="pref_show_context_menu_pause_backtalk_default">true</bool>
+  <string name="pref_show_context_menu_macros_setting_key" translatable="false">pref_macros_menu_setting_key</string>
+  <bool name="pref_show_context_menu_macros_default">true</bool>
   <string name="pref_resume_backtalk_key" translatable="false">pref_resume_talkback</string>
   <string name="resume_screen_keyguard" translatable="false">KEYGUARD</string>
   <string name="resume_screen_on" translatable="false">SCREEN_ON</string>

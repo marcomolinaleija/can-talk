@@ -46,8 +46,10 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.accessibility.talkback.R;
 import com.google.android.accessibility.talkback.compositor.GestureShortcutProvider;
 import com.google.android.accessibility.talkback.flags.FeatureFlagReader;
+import com.google.android.accessibility.talkback.macros.Macros;
 import com.google.android.accessibility.talkback.preference.PreferencesActivityUtils;
 import com.google.android.accessibility.utils.FeatureSupport;
+import com.google.android.accessibility.utils.SharedPreferencesUtils;
 import com.google.android.accessibility.utils.FormFactorUtils;
 import com.google.android.accessibility.utils.Logger;
 import com.google.android.accessibility.utils.SharedPreferencesUtils;
@@ -1098,6 +1100,17 @@ public class GestureShortcutMapping implements GestureShortcutProvider {
     @Nullable String navigationLabel = NavigationGestureActions.label(context, actionKeyString);
     if (navigationLabel != null) {
       return navigationLabel;
+    }
+    @Nullable String openAppLabel = OpenAppActions.label(context, actionKeyString);
+    if (openAppLabel != null) {
+      return openAppLabel;
+    }
+    @Nullable
+    String macroLabel =
+        Macros.label(
+            context, SharedPreferencesUtils.getSharedPreferences(context), actionKeyString);
+    if (macroLabel != null) {
+      return macroLabel;
     }
     return context.getString(R.string.shortcut_unassigned);
   }

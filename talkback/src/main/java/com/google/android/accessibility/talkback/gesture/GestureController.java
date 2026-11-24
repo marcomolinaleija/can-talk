@@ -102,6 +102,9 @@ import com.google.android.accessibility.talkback.focusmanagement.NavigationTarge
 import com.google.android.accessibility.talkback.focusmanagement.interpreter.ScreenStateMonitor;
 import com.google.android.accessibility.talkback.gesture.GestureShortcutMapping.TalkbackAction;
 import com.google.android.accessibility.talkback.interpreters.AccessibilityFocusInterpreter;
+import com.google.android.accessibility.talkback.macros.MacroRecorder;
+import com.google.android.accessibility.talkback.macros.MacroRunner;
+import com.google.android.accessibility.talkback.macros.Macros;
 import com.google.android.accessibility.talkback.menurules.RuleTextFormatting;
 import com.google.android.accessibility.talkback.monitor.BatteryMonitor;
 import com.google.android.accessibility.talkback.monitor.VolumeMonitor;
@@ -253,6 +256,7 @@ public class GestureController {
 
   public void performAction(String action, EventId eventId) {
     Performance.getInstance().onPerformAction(eventId, action);
+    MacroRecorder.onCommand(service, action);
     TalkbackAction actionEvent = gestureShortcutMapping.getActionEvent(action);
     if (actionEvent != null) {
       analytics.onShortcutActionEvent(actionEvent);
@@ -301,6 +305,10 @@ public class GestureController {
               pipeline,
               actorState.getDirectionNavigation().hasNavigableWebContent(),
               eventId);
+    } else if (OpenAppActions.isAction(action)) {
+      result = OpenAppActions.open(service, action);
+    } else if (Macros.isCommand(action)) {
+      result = MacroRunner.runCommand(action);
     } else if (action.equals(service.getString(R.string.shortcut_value_scroll_back))) {
       result = pipeline.returnFeedback(eventId, Feedback.focusDirection(PREVIOUS_PAGE));
     } else if (action.equals(service.getString(R.string.shortcut_value_scroll_forward))) {

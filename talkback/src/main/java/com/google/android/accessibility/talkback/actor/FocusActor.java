@@ -43,6 +43,7 @@ import com.google.android.accessibility.talkback.TalkBackService.GestureDetectio
 import com.google.android.accessibility.talkback.UserInterface.UserInputEventListener;
 import com.google.android.accessibility.talkback.WebActor;
 import com.google.android.accessibility.talkback.actor.helper.FocusActorHelper;
+import com.google.android.accessibility.talkback.macros.MacroRecorder;
 import com.google.android.accessibility.talkback.compositor.GlobalVariables;
 import com.google.android.accessibility.talkback.contextmenu.ListMenuManager;
 import com.google.android.accessibility.talkback.focusmanagement.AccessibilityFocusMonitor;
@@ -200,11 +201,12 @@ public class FocusActor implements UserInputEventListener {
       return true;
     }
 
-    if (touchIfDirect
-        && directClick != null
-        && isDirectClickOn()
-        && directClick.click(node, eventId)) {
-      return true;
+    if (touchIfDirect && directClick != null && isDirectClickOn()) {
+      MacroRecorder.onNodeActivating(node, false);
+      if (directClick.click(node, eventId)) {
+        MacroRecorder.onNodeActivated(node, false);
+        return true;
+      }
     }
     return clickUsually(node, eventId);
   }
@@ -223,17 +225,23 @@ public class FocusActor implements UserInputEventListener {
         && pipeline.returnFeedback(eventId, Feedback.nodeAction(node, ACTION_CLICK.getId()))) {
       return true;
     }
+    MacroRecorder.onNodeActivating(node, false);
     if (gestureDetectionState.gestureDetector()) {
       TouchInteractionController controller =
           service.getTouchInteractionController(
               AccessibilityWindowInfoUtils.getDisplayId(node.getWindow()));
       if (controller != null) {
         controller.performClick();
+        MacroRecorder.onNodeActivated(node, false);
         return true;
       }
     }
     // When none of the preceding conditions are met, the last resort is simulating click event.
-    return simulateClickOnNode(service, node);
+    boolean simulated = simulateClickOnNode(service, node);
+    if (simulated) {
+      MacroRecorder.onNodeActivated(node, false);
+    }
+    return simulated;
   }
 
   public boolean doubleClickCurrentFocus(EventId eventId) {

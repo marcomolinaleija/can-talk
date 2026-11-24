@@ -34,6 +34,7 @@ import com.google.android.accessibility.talkback.actor.gemini.GeminiConfiguratio
 import com.google.android.accessibility.talkback.flags.FeatureFlagReader;
 import com.google.android.accessibility.talkback.gesture.GestureShortcutMapping;
 import com.google.android.accessibility.talkback.gesture.NavigationGestureActions;
+import com.google.android.accessibility.talkback.macros.Macros;
 import com.google.android.accessibility.talkback.utils.TalkbackFeatureSupport;
 import com.google.android.accessibility.utils.FeatureSupport;
 import com.google.android.accessibility.utils.FormFactorUtils;
@@ -114,6 +115,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
 
   /** Returns all supported actions. */
   public ActionItem[] getActionItems() {
+    populateActionItems();
     return items.toArray(new ActionItem[items.size()]);
   }
 
@@ -158,6 +160,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
     if (!isEnabled() && summaryWhenDisabled != null) {
       return summaryWhenDisabled;
     }
+    populateActionItems();
     String value = getCurrentValue();
     Optional<ActionItem> item =
         items.stream().filter((s) -> TextUtils.equals(s.value, value)).findFirst();
@@ -169,22 +172,28 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
   }
 
   private void populateActionItems() {
+    items = collectActionItems(getContext());
+  }
+
+  /** Collects all selectable actions grouped by category, including saved macros. */
+  public static ImmutableList<ActionItem> collectActionItems(Context context) {
     ImmutableList.Builder<ActionItem> builder = ImmutableList.builder();
     builder.add(
         new ActionItem(
-            getContext().getResources().getString(R.string.shortcut_unassigned),
-            getContext().getResources().getString(R.string.shortcut_value_unassigned),
+            context.getResources().getString(R.string.shortcut_unassigned),
+            context.getResources().getString(R.string.shortcut_value_unassigned),
             TYPE_ACTION_ITEM));
-    addActionItemsToList(builder, createBasicNavigation());
+    addActionItemsToList(builder, createBasicNavigation(context));
     for (NavigationGestureActions.Category category : NavigationGestureActions.CATEGORIES) {
-      addActionItemsToList(builder, createNavigationCategory(category));
+      addActionItemsToList(builder, createNavigationCategory(context, category));
     }
-    addActionItemsToList(builder, createSystemActions());
-    addActionItemsToList(builder, createReadingControl());
-    addActionItemsToList(builder, createMenuControl());
-    addActionItemsToList(builder, createTextEditing());
-    addActionItemsToList(builder, createSpecialFeatures());
-    items = builder.build();
+    addActionItemsToList(builder, createSystemActions(context));
+    addActionItemsToList(builder, createReadingControl(context));
+    addActionItemsToList(builder, createMenuControl(context));
+    addActionItemsToList(builder, createTextEditing(context));
+    addActionItemsToList(builder, createSpecialFeatures(context));
+    addActionItemsToList(builder, createMacros(context));
+    return builder.build();
   }
 
   private static void addActionItemsToList(
@@ -196,13 +205,14 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
     builder.addAll(items);
   }
 
-  private ImmutableList<ActionItem> createBasicNavigation() {
+  private static ImmutableList<ActionItem> createBasicNavigation(Context context) {
     ImmutableList.Builder<ActionItem> builder =
         createActionListBuilder(
+            context,
             R.string.shortcut_title_basic_navigation,
             R.array.shortcut_basic_navigation,
             R.array.shortcut_value_basic_navigation);
-    Resources resources = getContext().getResources();
+    Resources resources = context.getResources();
 
     // TODO: Remove scroll left/right/up/down once 2-finger pass through is ready.
     if (FeatureSupport.isMultiFingerGestureSupported() && !FormFactorUtils.isAndroidWear()) {
@@ -228,7 +238,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    if (FeatureFlagReader.enableTableNavigation(getContext())) {
+    if (FeatureFlagReader.enableTableNavigation(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_row_up),
@@ -251,7 +261,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    if (FeatureFlagReader.enableDoubleClickKeyboard(getContext())) {
+    if (FeatureFlagReader.enableDoubleClickKeyboard(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_perform_double_click_action),
@@ -262,11 +272,11 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
     return builder.build();
   }
 
-  private ImmutableList<ActionItem> createNavigationCategory(
-      NavigationGestureActions.Category category) {
+  private static ImmutableList<ActionItem> createNavigationCategory(
+      Context context, NavigationGestureActions.Category category) {
     ImmutableList.Builder<ActionItem> builder =
-        createActionListBuilder(category.getTitleRes(), 0, 0);
-    Resources resources = getContext().getResources();
+        createActionListBuilder(context, category.getTitleRes(), 0, 0);
+    Resources resources = context.getResources();
     for (NavigationGestureActions.Action action : category.getActions()) {
       builder.add(
           new ActionItem(
@@ -275,13 +285,14 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
     return builder.build();
   }
 
-  private ImmutableList<ActionItem> createSystemActions() {
+  private static ImmutableList<ActionItem> createSystemActions(Context context) {
     ImmutableList.Builder<ActionItem> builder =
         createActionListBuilder(
+            context,
             R.string.shortcut_title_system_actions,
             R.array.shortcut_system_actions,
             R.array.shortcut_value_system_actions);
-    Resources resources = getContext().getResources();
+    Resources resources = context.getResources();
     if (FeatureSupport.supportPassthrough()
         && !FormFactorUtils.isAndroidWear() && !FormFactorUtils.isAndroidTv()) {
       builder.add(new ActionItem(resources.getString(R.string.braille_app_search_title),
@@ -289,7 +300,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
       builder.add(new ActionItem(resources.getString(R.string.braille_web_title),
           resources.getString(R.string.shortcut_value_braille_web_navigation), TYPE_ACTION_ITEM));
     }
-    if (FeatureSupport.supportGetSystemActions(getContext())) {
+    if (FeatureSupport.supportGetSystemActions(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_all_apps),
@@ -309,22 +320,23 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
     return builder.build();
   }
 
-  private ImmutableList<ActionItem> createReadingControl() {
+  private static ImmutableList<ActionItem> createReadingControl(Context context) {
     ImmutableList.Builder<ActionItem> builder =
         createActionListBuilder(
+            context,
             R.string.shortcut_title_reading_control,
             R.array.shortcut_reading_control,
             R.array.shortcut_value_reading_control);
-    if (FeatureFlagReader.enableTextFormattingInline(getContext())) {
-      Resources resources = getContext().getResources();
+    if (FeatureFlagReader.enableTextFormattingInline(context)) {
+      Resources resources = context.getResources();
       builder.add(
           new ActionItem(
               resources.getString(R.string.title_switch_text_formatting),
               resources.getString(R.string.shortcut_value_control_text_formatting),
               TYPE_ACTION_ITEM));
     }
-    if (FeatureFlagReader.enableTextFormattingSummary(getContext())) {
-      Resources resources = getContext().getResources();
+    if (FeatureFlagReader.enableTextFormattingSummary(context)) {
+      Resources resources = context.getResources();
       builder.add(
           new ActionItem(
               resources.getString(R.string.title_text_formatting_menu),
@@ -334,21 +346,23 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
     return builder.build();
   }
 
-  private ImmutableList<ActionItem> createMenuControl() {
+  private static ImmutableList<ActionItem> createMenuControl(Context context) {
     return createActionListBuilder(
+            context,
             R.string.shortcut_title_menu_control,
             R.array.shortcut_menu_control,
             R.array.shortcut_value_menu_control)
         .build();
   }
 
-  private ImmutableList<ActionItem> createTextEditing() {
+  private static ImmutableList<ActionItem> createTextEditing(Context context) {
     ImmutableList.Builder<ActionItem> builder =
         createActionListBuilder(
+            context,
             R.string.shortcut_title_text_editing,
             R.array.shortcut_text_editing,
             R.array.shortcut_value_text_editing);
-    Resources resources = getContext().getResources();
+    Resources resources = context.getResources();
     if (!FormFactorUtils.isAndroidWear() && !FormFactorUtils.isAndroidTv()) {
       if (FeatureSupport.supportPassthrough()) {
         builder.add(new ActionItem(resources.getString(R.string.clipboard_history_title),
@@ -369,10 +383,10 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
     return builder.build();
   }
 
-  private ImmutableList<ActionItem> createSpecialFeatures() {
+  private static ImmutableList<ActionItem> createSpecialFeatures(Context context) {
     ImmutableList.Builder<ActionItem> builder =
-        createActionListBuilder(R.string.shortcut_title_special_features, 0, 0);
-    Resources resources = getContext().getResources();
+        createActionListBuilder(context, R.string.shortcut_title_special_features, 0, 0);
+    Resources resources = context.getResources();
 
     if (FeatureSupport.supportMediaControls()) {
       // Due to the PH flag should controls the default 2-fingers double tap actions as well but the
@@ -383,13 +397,13 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
       builder.add(
           new ActionItem(
               resources.getString(
-                  FeatureFlagReader.enableVoiceDictationShortcut(getContext())
+                  FeatureFlagReader.enableVoiceDictationShortcut(context)
                       ? R.string.shortcut_media_control_or_voice_input
                       : R.string.shortcut_media_control),
               resources.getString(R.string.shortcut_value_media_control_or_voice_input),
               TYPE_ACTION_ITEM));
 
-      if (FeatureFlagReader.enableVoiceDictationShortcut(getContext())) {
+      if (FeatureFlagReader.enableVoiceDictationShortcut(context)) {
         builder.add(
             new ActionItem(
                 resources.getString(R.string.shortcut_media_control),
@@ -398,7 +412,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
       }
     }
 
-    if (FeatureFlagReader.enableVoiceDictationShortcut(getContext())) {
+    if (FeatureFlagReader.enableVoiceDictationShortcut(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_voice_input),
@@ -459,7 +473,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    SharedPreferences preferences = SharedPreferencesUtils.getSharedPreferences(getContext());
+    SharedPreferences preferences = SharedPreferencesUtils.getSharedPreferences(context);
     if (preferences.getBoolean(resources.getString(R.string.pref_tree_debug_key), false)) {
       builder.add(
           new ActionItem(
@@ -482,7 +496,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
             resources.getString(R.string.shortcut_value_show_custom_actions),
             TYPE_ACTION_ITEM));
 
-    if (FeatureSupport.supportBrailleDisplay(getContext())) {
+    if (FeatureSupport.supportBrailleDisplay(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_braille_display_settings),
@@ -507,7 +521,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    if (FeatureFlagReader.enableAnnounceBatteryState(getContext())) {
+    if (FeatureFlagReader.enableAnnounceBatteryState(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_announce_battery_state),
@@ -521,7 +535,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
             resources.getString(R.string.shortcut_value_announce_status),
             TYPE_ACTION_ITEM));
 
-    if (FeatureFlagReader.enableAnnounceCurrentTimeAndDate(getContext())) {
+    if (FeatureFlagReader.enableAnnounceCurrentTimeAndDate(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_announce_current_time_and_date),
@@ -529,7 +543,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    if (FeatureFlagReader.enableAnnounceCurrentTitle(getContext())) {
+    if (FeatureFlagReader.enableAnnounceCurrentTitle(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_announce_current_title),
@@ -537,7 +551,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    if (FeatureFlagReader.enableAnnouncePhoneticPronunciation(getContext())) {
+    if (FeatureFlagReader.enableAnnouncePhoneticPronunciation(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_announce_phonetic_pronunciation),
@@ -545,7 +559,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    if (FeatureFlagReader.enableSpeechPitchKeyboard(getContext())) {
+    if (FeatureFlagReader.enableSpeechPitchKeyboard(context)) {
       builder
           .add(
               new ActionItem(
@@ -559,7 +573,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
                   TYPE_ACTION_ITEM));
     }
 
-    if (FeatureFlagReader.enableSpeechRateKeyboard(getContext())) {
+    if (FeatureFlagReader.enableSpeechRateKeyboard(context)) {
       builder
           .add(
               new ActionItem(
@@ -581,7 +595,7 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    if (GestureReporter.ENABLED && SettingsUtils.allowLinksOutOfSettings(getContext())) {
+    if (GestureReporter.ENABLED && SettingsUtils.allowLinksOutOfSettings(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_report_gesture),
@@ -589,8 +603,8 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    if (FeatureSupport.supportBrailleDisplay(getContext())
-        && FeatureFlagReader.useGestureBrailleDisplayOnOff(getContext())) {
+    if (FeatureSupport.supportBrailleDisplay(context)
+        && FeatureFlagReader.useGestureBrailleDisplayOnOff(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.shortcut_toggle_braille_display),
@@ -598,13 +612,13 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
               TYPE_ACTION_ITEM));
     }
 
-    if (ImageCaptioner.supportsImageCaption(getContext())) {
+    if (ImageCaptioner.supportsImageCaption(context)) {
       builder.add(
           new ActionItem(
               resources.getString(R.string.title_image_caption),
               resources.getString(R.string.shortcut_value_describe_image),
               TYPE_ACTION_ITEM));
-      if (GeminiConfiguration.screenOverviewEnabled(getContext())) {
+      if (GeminiConfiguration.screenOverviewEnabled(context)) {
         builder.add(
             new ActionItem(
                 resources.getString(R.string.title_summarize_view),
@@ -616,10 +630,31 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
     return builder.build();
   }
 
-  private ImmutableList.Builder<ActionItem> createActionListBuilder(
-      int titleId, int shortcutId, int valueId) {
+  private static ImmutableList<ActionItem> createMacros(Context context) {
+    ImmutableList.Builder<ActionItem> builder =
+        createActionListBuilder(context, R.string.title_pref_macros, 0, 0);
+    SharedPreferences prefs = SharedPreferencesUtils.getSharedPreferences(context);
+    for (Macros.Macro macro : Macros.read(prefs)) {
+      builder.add(
+          new ActionItem(macro.getName(), Macros.commandOf(macro.getId()), TYPE_ACTION_ITEM));
+    }
+    builder.add(
+        new ActionItem(
+            context.getString(R.string.macro_record_new),
+            Macros.RECORD_COMMAND,
+            TYPE_ACTION_ITEM));
+    builder.add(
+        new ActionItem(
+            context.getString(R.string.shortcut_stop_macro),
+            Macros.STOP_COMMAND,
+            TYPE_ACTION_ITEM));
+    return builder.build();
+  }
+
+  private static ImmutableList.Builder<ActionItem> createActionListBuilder(
+      Context context, int titleId, int shortcutId, int valueId) {
     ImmutableList.Builder<ActionItem> builder = ImmutableList.builder();
-    Resources resources = getContext().getResources();
+    Resources resources = context.getResources();
     builder.add(new ActionItem(resources.getString(titleId), TYPE_TITLE));
     if (shortcutId != 0) {
       builder.addAll(
@@ -663,6 +698,18 @@ public final class GestureListPreference extends AccessibilitySuiteDialogPrefere
       this.text = text;
       this.value = value;
       this.viewType = viewType;
+    }
+
+    public String getText() {
+      return text;
+    }
+
+    public String getValue() {
+      return value;
+    }
+
+    public boolean isTitle() {
+      return viewType == TYPE_TITLE;
     }
 
     @Override

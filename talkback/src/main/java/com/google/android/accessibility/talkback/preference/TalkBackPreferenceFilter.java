@@ -195,6 +195,9 @@ public class TalkBackPreferenceFilter {
     // A TV has no touchscreen for direct touch, and no gesture for the status readout.
     DIRECT_TOUCH(R.string.pref_direct_touch_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
     CLIPBOARD_HISTORY(R.string.pref_clipboard_history_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
+    MACROS(R.string.pref_macros_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
+    CUSTOMIZE_TALKBACK_MENU_MACROS(
+        R.string.pref_show_context_menu_macros_setting_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
     BACKUP_RESTORE(R.string.pref_backup_restore_key, HIDDEN_ON_WATCH | HIDDEN_ON_TV),
     STATUS_READOUT(R.string.pref_status_readout_key, HIDDEN_ON_TV),
     RESTORE_FOCUS(

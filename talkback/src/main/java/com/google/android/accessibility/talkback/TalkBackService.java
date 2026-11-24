@@ -217,6 +217,8 @@ import com.google.android.accessibility.talkback.labeling.CustomLabelManager;
 import com.google.android.accessibility.talkback.labeling.StoragelessLabelManager;
 import com.google.android.accessibility.talkback.labeling.TalkBackLabelManager;
 import com.google.android.accessibility.talkback.logging.EventLatencyLogger;
+import com.google.android.accessibility.talkback.macros.MacroRecorder;
+import com.google.android.accessibility.talkback.macros.MacroRunner;
 import com.google.android.accessibility.talkback.menurules.NodeMenuRuleCreator;
 import com.google.android.accessibility.talkback.menurules.NodeMenuRuleProcessor;
 import com.google.android.accessibility.talkback.monitor.BatteryMonitor;
@@ -1010,6 +1012,8 @@ public class TalkBackService extends AccessibilityServiceCompat
       directTouchController.shutdown();
       directTouchController = null;
     }
+    MacroRunner.stop();
+    MacroRecorder.stop(this);
     SpeechControl.detach();
 
     if (audioDeviceRouter != null) {
@@ -1178,6 +1182,7 @@ public class TalkBackService extends AccessibilityServiceCompat
     int eventType = event.getEventType();
     TraversalTreeCache.onAccessibilityEvent(event);
     PreparedFocusSpeech.onAccessibilityEvent(event);
+    MacroRecorder.onAccessibilityEvent(this, event);
     if (directTouchController != null) {
       directTouchController.onAccessibilityEvent(event);
     }
@@ -1888,6 +1893,14 @@ public class TalkBackService extends AccessibilityServiceCompat
   /** Returns the actor state. */
   public ActorState getActorState() {
     return pipeline.getActorState();
+  }
+
+  public boolean performCommand(String action) {
+    if (gestureController == null || TextUtils.isEmpty(action)) {
+      return false;
+    }
+    gestureController.performAction(action, EVENT_ID_UNTRACKED);
+    return true;
   }
 
   public TalkBackLabelManager getLabelManager() {
@@ -4744,7 +4757,7 @@ public class TalkBackService extends AccessibilityServiceCompat
     displayIdToTouchInteractionMonitors.clear();
   }
 
-  protected Pipeline.@Nullable FeedbackReturner getFeedbackReturner() {
+  public Pipeline.@Nullable FeedbackReturner getFeedbackReturner() {
     if (pipeline != null) {
       return pipeline.getFeedbackReturner();
     }

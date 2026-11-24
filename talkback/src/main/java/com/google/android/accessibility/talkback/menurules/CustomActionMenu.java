@@ -32,14 +32,18 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Accessibilit
 import com.google.android.accessibility.talkback.Feedback;
 import com.google.android.accessibility.talkback.Pipeline;
 import com.google.android.accessibility.talkback.R;
+import com.google.android.accessibility.talkback.TalkBackService;
 import com.google.android.accessibility.talkback.analytics.TalkBackAnalytics;
 import com.google.android.accessibility.talkback.contextmenu.AbstractOnContextMenuItemClickListener;
 import com.google.android.accessibility.talkback.contextmenu.ContextMenu;
 import com.google.android.accessibility.talkback.contextmenu.ContextMenuItem;
 import com.google.android.accessibility.talkback.contextmenu.ContextMenuItem.DeferredType;
+import com.google.android.accessibility.talkback.macros.MacroRunner;
+import com.google.android.accessibility.talkback.macros.Macros;
 import com.google.android.accessibility.utils.AccessibilityNodeInfoUtils;
 import com.google.android.accessibility.utils.FeatureSupport;
 import com.google.android.accessibility.utils.Performance.EventId;
+import com.google.android.accessibility.utils.SharedPreferencesUtils;
 import com.google.android.libraries.accessibility.utils.log.LogUtils;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -49,6 +53,10 @@ import java.util.Set;
 /** Adds custom actions to the talkback context menu. */
 public class CustomActionMenu implements NodeMenu {
   public static final int CUSTOM_ACTION_GROUP_ID = 1;
+  private static final int MACRO_ACTION_ID = 0x5a000000;
+  /** Macros with a Show in Actions only when condition, which select Actions automatically. */
+  private static final int CONDITIONED_MACRO_ACTION_ID = 0x59000000;
+  private static final int MAX_MACRO_ITEMS = 0x10000;
   private static final String TAG = "CustomActionMenu";
   private final Pipeline.FeedbackReturner pipeline;
   TalkBackAnalytics analytics;
@@ -60,7 +68,32 @@ public class CustomActionMenu implements NodeMenu {
 
   @Override
   public boolean accept(Context context, AccessibilityNodeInfoCompat node) {
-    return acceptCustomActionMenu(node);
+    return acceptCustomActionMenu(node) || !macrosOf(context, node).isEmpty();
+  }
+
+  /**
+   * The user's macros listed in the Actions menu of {@code node}'s app, without those whose
+   * Actions condition isn't met now.
+   */
+  private static List<Macros.Macro> macrosOf(Context context, AccessibilityNodeInfoCompat node) {
+    List<Macros.Macro> macros =
+        Macros.inActionsOf(
+            SharedPreferencesUtils.getSharedPreferences(context), node.getPackageName());
+    TalkBackService service = TalkBackService.getInstance();
+    if (macros.isEmpty() || service == null) {
+      return macros;
+    }
+    return MacroRunner.shownInActions(service, node, macros);
+  }
+
+  /**
+   * Whether {@code item} runs one of the user's macros without a Show in Actions only when
+   * condition, which every item of an app can list. Macros with a condition aren't counted.
+   */
+  public static boolean isMacroItem(ContextMenuItem item) {
+    return item.getGroupId() == CUSTOM_ACTION_GROUP_ID
+        && item.getItemId() >= MACRO_ACTION_ID
+        && item.getItemId() < MACRO_ACTION_ID + MAX_MACRO_ITEMS;
   }
 
   private static boolean acceptCustomActionMenu(AccessibilityNodeInfoCompat node) {
@@ -76,7 +109,35 @@ public class CustomActionMenu implements NodeMenu {
     if (acceptCustomActionMenu(node)) {
       populateCustomMenuItemsForNode(context, node, customItems, includeAncestors, visitedNodes);
     }
+    addMacroItems(context, node, customItems);
     return customItems;
+  }
+
+  /** Adds the user's macros for the node's app, and for all apps, that are shown in Actions. */
+  private static void addMacroItems(
+      Context context, AccessibilityNodeInfoCompat node, List<ContextMenuItem> menu) {
+    List<Macros.Macro> macros = macrosOf(context, node);
+    for (int i = 0; i < macros.size() && i < MAX_MACRO_ITEMS; i++) {
+      Macros.Macro macro = macros.get(i);
+      String id = macro.getId();
+      int base =
+          macro.getActionsCondition().getClauses().isEmpty()
+              ? MACRO_ACTION_ID
+              : CONDITIONED_MACRO_ACTION_ID;
+      ContextMenuItem item =
+          ContextMenu.createMenuItem(
+              context, CUSTOM_ACTION_GROUP_ID, base + i, Menu.NONE, macro.getName());
+      item.setOnMenuItemClickListener(
+          clicked -> {
+            MacroRunner.run(id, /* sayNotMet= */ true);
+            return true;
+          });
+      item.setDeferredType(DeferredType.WINDOWS_STABLE);
+      item.setSkipRefocusEvents(true);
+      item.setSkipWindowEvents(true);
+      item.setCheckable(false);
+      menu.add(item);
+    }
   }
 
   /**

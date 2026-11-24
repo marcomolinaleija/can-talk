@@ -33,6 +33,9 @@ import com.google.android.accessibility.talkback.actor.DimScreenActor;
 import com.google.android.accessibility.talkback.actor.gemini.GeminiConfiguration;
 import com.google.android.accessibility.talkback.contextmenu.ContextMenuItem.DeferredType;
 import com.google.android.accessibility.talkback.flags.FeatureFlagReader;
+import com.google.android.accessibility.talkback.macros.MacroRecorder;
+import com.google.android.accessibility.talkback.macros.MacroRunner;
+import com.google.android.accessibility.talkback.macros.Macros;
 import com.google.android.accessibility.talkback.menurules.NodeMenuRuleProcessor;
 import com.google.android.accessibility.utils.FeatureSupport;
 import com.google.android.accessibility.utils.FormFactorUtils;
@@ -43,6 +46,7 @@ import com.google.android.accessibility.utils.output.FeedbackItem;
 import com.google.android.accessibility.utils.output.SpeechController.SpeakOptions;
 import com.google.android.libraries.accessibility.utils.log.LogUtils;
 import java.util.Arrays;
+import java.util.List;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /** Configure dynamic menu items on the talkback context menu. */
@@ -124,6 +128,8 @@ public class TalkbackMenuProcessor {
     // Custom Action
     addItemOrSubMenuForCurrentNode(
         menu, R.id.custom_action_menu, R.string.title_custom_action, ORDER_ACTIONS);
+    // Macros
+    addMacrosMenu(menu, prefs);
     // Page Navigation
     addItemOrSubMenuForCurrentNode(
         menu, R.id.viewpager_menu, R.string.title_viewpager_controls, ORDER_PAGE_NAVIGATION);
@@ -644,6 +650,85 @@ public class TalkbackMenuProcessor {
             /* title= */ service.getString(R.string.system_actions));
     if (!WindowNavigationMenuProcessor.prepareWindowSubMenu(service, subMenu, pipeline)) {
       menu.removeItem(R.id.window_menu);
+    }
+  }
+
+  private void addMacrosMenu(ContextMenu menu, SharedPreferences prefs) {
+    menu.removeItem(R.id.macros_menu);
+    if (FormFactorUtils.isAndroidWear()
+        || FormFactorUtils.isAndroidTv()
+        || !showMenuItem(
+            R.string.pref_show_context_menu_macros_setting_key,
+            R.bool.pref_show_context_menu_macros_default)) {
+      return;
+    }
+    ListSubMenu subMenu =
+        menu.addSubMenu(
+            /* groupId= */ 0,
+            R.id.macros_menu,
+            ORDER_ACTIONS,
+            service.getString(R.string.title_pref_macros));
+    subMenu.setDefaultListener(menu.getDefaultListener());
+    subMenu.getItem().setOnMenuItemClickListener(menu.getDefaultListener());
+
+    String currentPkg =
+        currentNode != null && currentNode.getPackageName() != null
+            ? currentNode.getPackageName().toString()
+            : null;
+    if (MacroRunner.runningId() != null || MacroRecorder.isRecording()) {
+      ContextMenuItem stopItem =
+          ContextMenu.createMenuItem(
+              service,
+              R.id.group_macros,
+              R.id.macro_stop_menu,
+              Menu.NONE,
+              service.getString(R.string.shortcut_stop_macro));
+      stopItem.setOnMenuItemClickListener(
+          clicked -> {
+            MacroRunner.runCommand(Macros.STOP_COMMAND);
+            return true;
+          });
+      stopItem.setDeferredType(DeferredType.WINDOWS_STABLE);
+      stopItem.setSkipRefocusEvents(true);
+      stopItem.setSkipWindowEvents(true);
+      subMenu.add(stopItem);
+    }
+
+    ContextMenuItem recordItem =
+        ContextMenu.createMenuItem(
+            service,
+            R.id.group_macros,
+            R.id.macro_record_menu,
+            Menu.NONE,
+            service.getString(R.string.macro_record_new));
+    recordItem.setOnMenuItemClickListener(
+        clicked -> {
+          MacroRunner.runCommand(Macros.RECORD_COMMAND);
+          return true;
+        });
+    recordItem.setDeferredType(DeferredType.WINDOWS_STABLE);
+    recordItem.setSkipRefocusEvents(true);
+    recordItem.setSkipWindowEvents(true);
+    subMenu.add(recordItem);
+
+    List<Macros.Macro> all = Macros.read(prefs);
+    for (Macros.Macro macro : all) {
+      if (macro.getApp() != null && !macro.getApp().equals(currentPkg)) {
+        continue;
+      }
+      String id = macro.getId();
+      ContextMenuItem item =
+          ContextMenu.createMenuItem(
+              service, R.id.group_macros, Menu.NONE, Menu.NONE, macro.getName());
+      item.setOnMenuItemClickListener(
+          clicked -> {
+            MacroRunner.run(id, /* sayNotMet= */ true);
+            return true;
+          });
+      item.setDeferredType(DeferredType.WINDOWS_STABLE);
+      item.setSkipRefocusEvents(true);
+      item.setSkipWindowEvents(true);
+      subMenu.add(item);
     }
   }
 

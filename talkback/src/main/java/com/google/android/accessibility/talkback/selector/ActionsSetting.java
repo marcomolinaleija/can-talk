@@ -21,11 +21,14 @@ import static com.google.android.accessibility.talkback.selector.SelectorControl
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
+import com.google.android.accessibility.talkback.contextmenu.ContextMenuItem;
 import com.google.android.accessibility.talkback.focusmanagement.AccessibilityFocusMonitor;
+import com.google.android.accessibility.talkback.menurules.CustomActionMenu;
 import com.google.android.accessibility.talkback.menurules.NodeMenuRuleCreator;
 import com.google.android.accessibility.talkback.menurules.NodeMenuRuleCreator.MenuRules;
 import com.google.android.accessibility.utils.Role;
 import com.google.android.accessibility.utils.SharedPreferencesUtils;
+import java.util.List;
 
 /**
  * Contextual setting for node with custom actions.
@@ -69,7 +72,7 @@ public class ActionsSetting implements SelectorController.ContextualSetting {
   public boolean shouldActivateSetting(Context context, AccessibilityNodeInfoCompat node) {
     // For better editing experience, keeps the setting of Reading Controls when navigating to an
     // edit text.
-    if (Role.getRole(node) == Role.ROLE_EDIT_TEXT) {
+    if (node == null || Role.getRole(node) == Role.ROLE_EDIT_TEXT) {
       return false;
     }
 
@@ -77,6 +80,22 @@ public class ActionsSetting implements SelectorController.ContextualSetting {
       return false;
     }
 
-    return isNodeSupportSetting(context, node);
+    SharedPreferences prefs = SharedPreferencesUtils.getSharedPreferences(context);
+    boolean settingEnabled =
+        prefs.getBoolean(
+            context.getString(ACTIONS.prefKeyResId),
+            context.getResources().getBoolean(ACTIONS.defaultValueResId));
+    if (!settingEnabled) {
+      return false;
+    }
+
+    List<ContextMenuItem> actions =
+        nodeMenuCreator.getNodeMenuByRule(MenuRules.RULE_CUSTOM_ACTION, context, node, true);
+    for (ContextMenuItem action : actions) {
+      if (!CustomActionMenu.isMacroItem(action)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

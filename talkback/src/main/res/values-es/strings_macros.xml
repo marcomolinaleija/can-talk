@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="title_pref_macros">Macros</string>
+    <string name="shortcut_stop_macro">Detener macro</string>
+    <string name="macro_add">Añadir macro</string>
+    <string name="macro_run_now">Ejecutar ahora</string>
+    <string name="macro_add_step">Añadir paso</string>
+    <string name="macro_add_at_end">Al final</string>
+    <string name="macro_add_at_start">Al principio</string>
+    <string name="macro_add_after">Después del paso <xliff:g id="step" example="2">%1$d</xliff:g>: <xliff:g id="name" example="If App in front: Chrome">%2$s</xliff:g></string>
+    <string name="macro_steps">Pasos</string>
+    <string name="macro_no_steps">Sin pasos</string>
+    <string name="macro_delete">Eliminar macro</string>
+    <string name="macro_delete_confirm">¿Eliminar <xliff:g id="name" example="Send message">%1$s</xliff:g>?</string>
+    <string name="macro_step_command">Ejecutar comando</string>
+    <string name="macro_step_wait">Esperar</string>
+    <string name="macro_step_tap">Tocar elemento</string>
+    <string name="macro_step_focus">Enfocar elemento</string>
+    <string name="macro_step_speak_item">Decir elemento</string>
+    <string name="macro_step_speak_text">Decir texto</string>
+    <string name="macro_step_type">Escribir texto</string>
+    <string name="macro_step_tap_value">Tocar <xliff:g id="label" example="Send">%1$s</xliff:g></string>
+    <string name="macro_step_focus_value">Enfocar <xliff:g id="label" example="Send">%1$s</xliff:g></string>
+    <string name="macro_step_speak_item_value">Decir <xliff:g id="label" example="Send">%1$s</xliff:g></string>
+    <string name="macro_step_speak_text_value">Decir <xliff:g id="text" example="Done">%1$s</xliff:g></string>
+    <string name="macro_step_type_value">Escribir <xliff:g id="text" example="On my way">%1$s</xliff:g></string>
+    <string name="macro_step_replace_value">Reemplazar texto por <xliff:g id="text" example="On my way">%1$s</xliff:g></string>
+    <plurals name="macro_step_wait_seconds">
+        <item quantity="one">Esperar <xliff:g id="count" example="1">%d</xliff:g> segundo</item>
+        <item quantity="other">Esperar <xliff:g id="count" example="1">%d</xliff:g> segundos</item>
+    </plurals>
+    <plurals name="macro_step_wait_milliseconds">
+        <item quantity="one">Esperar <xliff:g id="count" example="1">%d</xliff:g> milisegundo</item>
+        <item quantity="other">Esperar <xliff:g id="count" example="1">%d</xliff:g> milisegundos</item>
+    </plurals>
+    <string name="macro_step_unavailable">No disponible</string>
+    <string name="macro_seconds">Segundos</string>
+    <string name="macro_invalid_seconds">Introduce un número de segundos hasta <xliff:g id="max" example="600">%1$d</xliff:g></string>
+    <string name="macro_tap_label">Texto del elemento</string>
+    <string name="macro_tap_timeout">Segundos de espera del elemento</string>
+    <string name="macro_text">Texto</string>
+    <string name="macro_replace_text">Reemplazar texto del campo</string>
+    <string name="macro_item_not_found">Macro detenida. No encontrado: <xliff:g id="label" example="Send">%1$s</xliff:g></string>
+    <string name="macro_step_failed">Macro detenida. Error: <xliff:g id="step" example="Open Gmail">%1$s</xliff:g></string>
+    <string name="macro_step_wait_until">Esperar hasta que</string>
+    <string name="macro_step_if">Si</string>
+    <string name="macro_step_else_if">Si no, si</string>
+    <string name="macro_step_else">Si no</string>
+    <string name="macro_step_end_if">Fin del si</string>
+    <string name="macro_step_repeat">Repetir</string>
+    <string name="macro_step_repeat_while">Repetir mientras</string>
+    <string name="macro_step_end_repeat">Fin de repetir</string>
+    <string name="macro_step_exit_loop">Salir del bucle</string>
+    <string name="macro_step_if_value">Si <xliff:g id="condition" example="Keyboard shown">%1$s</xliff:g></string>
+    <string name="macro_step_else_if_value">Si no, si <xliff:g id="condition" example="Keyboard shown">%1$s</xliff:g></string>
+    <string name="macro_step_repeat_while_value">Repetir mientras <xliff:g id="condition" example="Item on screen: Load more">%1$s</xliff:g></string>
+    <string name="macro_step_wait_until_value">Esperar hasta que <xliff:g id="condition" example="Item on screen: Send">%1$s</xliff:g></string>
+    <plurals name="macro_step_repeat_value">
+        <item quantity="one">Repetir <xliff:g id="count" example="1">%d</xliff:g> vez</item>
+        <item quantity="other">Repetir <xliff:g id="count" example="1">%d</xliff:g> veces</item>
+    </plurals>
+    <string name="macro_times">Veces</string>
+    <string name="macro_invalid_times">Introduce un número del 1 al <xliff:g id="max" example="1000">%1$d</xliff:g></string>
+    <string name="macro_run_only_when">Ejecutar solo cuando</string>
+    <string name="macro_always">Siempre</string>
+    <string name="macro_no_tests">Sin pruebas</string>
+    <string name="macro_add_test">Añadir prueba</string>
+    <string name="macro_tests">Pruebas</string>
+    <string name="macro_choose_test">Prueba</string>
+    <string name="macro_test_item">Elemento en pantalla</string>
+    <string name="macro_test_focused">Elemento enfocado</string>
+    <string name="macro_test_app">Aplicación en primer plano</string>
+    <string name="macro_test_keyboard">Teclado visible</string>
+    <string name="macro_test_keyboard_hidden">Teclado oculto</string>
+    <string name="macro_test_locked">Pantalla bloqueada</string>
+    <string name="macro_test_unlocked">Pantalla desbloqueada</string>
+    <string name="macro_test_item_value">Elemento en pantalla: <xliff:g id="item" example="Send">%1$s</xliff:g></string>
+    <string name="macro_test_no_item_value">Sin elemento en pantalla: <xliff:g id="item" example="Send">%1$s</xliff:g></string>
+    <string name="macro_test_focused_value">Elemento enfocado: <xliff:g id="item" example="Editable">%1$s</xliff:g></string>
+    <string name="macro_test_not_focused_value">Elemento enfocado distinto de: <xliff:g id="item" example="Editable">%1$s</xliff:g></string>
+    <string name="macro_test_app_value">Aplicación en primer plano: <xliff:g id="app" example="WhatsApp">%1$s</xliff:g></string>
+    <string name="macro_test_not_app_value">Aplicación no en primer plano: <xliff:g id="app" example="WhatsApp">%1$s</xliff:g></string>
+    <string name="macro_test_label_kind"><xliff:g id="label" example="Send">%1$s</xliff:g>, <xliff:g id="kind" example="Clickable">%2$s</xliff:g></string>
+    <string name="macro_join_and"><xliff:g id="first" example="Keyboard shown">%1$s</xliff:g> y <xliff:g id="second" example="Focused item: Editable">%2$s</xliff:g></string>
+    <string name="macro_join_or"><xliff:g id="first" example="Keyboard shown">%1$s</xliff:g>, o <xliff:g id="second" example="Screen locked">%2$s</xliff:g></string>
+    <string name="macro_regex">Expresión regular</string>
+    <string name="macro_invalid_regex">No es una expresión regular utilizable. Los grupos repetidos no pueden contener repetición ni |.</string>
+    <string name="macro_match_in">Buscar en</string>
+    <string name="macro_field_any">Cualquier texto</string>
+    <string name="macro_field_text">Texto</string>
+    <string name="macro_field_description">Descripción</string>
+    <string name="macro_field_hint">Sugerencia</string>
+    <string name="macro_field_state">Estado</string>
+    <string name="macro_field_id">ID de recurso</string>
+    <string name="macro_field_value"><xliff:g id="label" example="send">%1$s</xliff:g> (<xliff:g id="field" example="Resource ID">%2$s</xliff:g>)</string>
+    <string name="macro_field_regex_value"><xliff:g id="pattern" example="^Reply">%1$s</xliff:g> (<xliff:g id="field" example="Description">%2$s</xliff:g>, expresión regular)</string>
+    <string name="macro_regex_value"><xliff:g id="pattern" example="Reply.*Anna">%1$s</xliff:g> (expresión regular)</string>
+    <string name="macro_test_label_optional">Texto del elemento (opcional)</string>
+    <string name="macro_item_kind">Tipo de elemento</string>
+    <string name="macro_kind_any">Cualquier tipo</string>
+    <string name="macro_kind_clickable">Se puede tocar</string>
+    <string name="macro_kind_long_clickable">Se puede mantener pulsado</string>
+    <string name="macro_kind_editable">Editable</string>
+    <string name="macro_kind_scrollable">Desplazable</string>
+    <string name="macro_kind_adjustable">Ajustable</string>
+    <string name="macro_kind_checkable">Marcable</string>
+    <string name="macro_kind_checked">Marcado</string>
+    <string name="macro_kind_selected">Seleccionado</string>
+    <string name="macro_kind_heading">Encabezado</string>
+    <string name="macro_kind_enabled">Activado</string>
+    <string name="macro_change_to">Cambiar a: <xliff:g id="test" example="Keyboard hidden">%1$s</xliff:g></string>
+    <string name="macro_join_with_and">Unir con y</string>
+    <string name="macro_join_with_or">Unir con o</string>
+    <string name="macro_clause_and">y <xliff:g id="test" example="Keyboard shown">%1$s</xliff:g></string>
+    <string name="macro_clause_or">o <xliff:g id="test" example="Screen locked">%1$s</xliff:g></string>
+    <string name="macro_wait_timeout">Segundos de espera</string>
+    <string name="macro_add_step_after">Añadir paso después de</string>
+    <string name="macro_problem">Paso <xliff:g id="step" example="3">%1$d</xliff:g>: <xliff:g id="problem" example="If without End if">%2$s</xliff:g></string>
+    <string name="macro_problem_no_if">Si no, si; Si no; o Fin del si sin Si</string>
+    <string name="macro_problem_after_else">Si no, si o Si no después de Si no</string>
+    <string name="macro_problem_no_repeat">Fin de repetir sin Repetir</string>
+    <string name="macro_problem_no_end_if">Si sin Fin del si</string>
+    <string name="macro_problem_no_end_repeat">Repetir sin Fin de repetir</string>
+    <string name="macro_problem_exit">Salir del bucle fuera de una repetición</string>
+    <string name="macro_stopped_problem">Macro detenida. Paso <xliff:g id="step" example="3">%1$d</xliff:g>: <xliff:g id="problem" example="If without End if">%2$s</xliff:g></string>
+    <string name="macro_stopped_repeats">Macro detenida. Repetida <xliff:g id="count" example="1000">%1$d</xliff:g> veces: <xliff:g id="step" example="Repeat while Item on screen: Load more">%2$s</xliff:g></string>
+    <string name="macro_stopped_timeout">Macro detenida. Tiempo agotado: <xliff:g id="step" example="Wait until Item on screen: Send">%1$s</xliff:g></string>
+    <string name="macro_not_met">Macro no ejecutada. Ejecutar solo cuando: no se cumple</string>
+    <string name="macro_step_more">Más pasos</string>
+    <string name="macro_do_play_sound">Reproducir sonido</string>
+    <string name="macro_do_vibrate">Vibrar</string>
+    <string name="macro_do_play_tone">Reproducir tono</string>
+    <string name="macro_do_copy_text">Copiar texto</string>
+    <string name="macro_do_open_link">Abrir enlace</string>
+    <string name="macro_do_open_settings">Abrir página de ajustes</string>
+    <string name="macro_do_share_text">Compartir texto</string>
+    <string name="macro_do_set_volume">Establecer volumen</string>
+    <string name="macro_do_set_ringer">Establecer modo de timbre</string>
+    <string name="macro_do_press_keys">Pulsar teclas</string>
+    <string name="macro_do_show_message">Mostrar mensaje</string>
+    <string name="macro_do_set_value">Establecer valor</string>
+    <string name="macro_do_fetch">Descargar enlace</string>
+    <string name="macro_do_translate">Traducir texto</string>
+    <string name="macro_do_value">%1$s: %2$s</string>
+    <string name="macro_do_into_value">%1$s: %2$s, en %3$s</string>
+    <string name="macro_do_vibrate_value">Vibrar %1$d ms</string>
+    <string name="macro_do_play_tone_value">Reproducir tono %1$d Hz</string>
+    <string name="macro_do_set_volume_value">Establecer volumen de %1$s al %2$d%%</string>
+    <string name="macro_do_link_hint">Dirección</string>
+    <string name="macro_do_keys_hint">Teclas, como tab enter</string>
+    <string name="macro_number_range">Introduce de %1$d a %2$d</string>
+    <string name="macro_value_name">Nombre del valor</string>
+    <string name="macro_value_name_invalid">Usa letras, dígitos, puntos, guiones o guiones bajos</string>
+    <string name="macro_test_value">Valor</string>
+    <string name="macro_test_value_label">Contiene (vacío: cualquier valor)</string>
+    <string name="macro_test_value_set">El valor %1$s está establecido</string>
+    <string name="macro_test_value_value">El valor %1$s contiene %2$s</string>
+    <string name="macro_test_not">No: %1$s</string>
+    <string name="macro_values_help">Los valores se insertan como {name}. También {item}, {clipboard}, {time}, {date}, {battery} y {device.wifi}.</string>
+    <string name="macro_do_device_control">Ajuste del dispositivo</string>
+    <string name="macro_do_device_control_value">%1$s: %2$s</string>
+    <string name="macro_do_turn_on">Activar</string>
+    <string name="macro_do_turn_off">Desactivar</string>
+    <string name="macro_do_toggle">Activar o desactivar</string>
+    <string name="macro_do_slider_help" formatted="false">Un número, un porcentaje como 50%, o +1 o -1.</string>
+    <string name="macro_do_choice_help">Una opción, como Vibración, o next.</string>
+    <string name="macro_do_media">Tecla multimedia</string>
+    <string name="macro_media_play_pause">Reproducir o pausar</string>
+    <string name="macro_media_play">Reproducir</string>
+    <string name="macro_media_pause">Pausar</string>
+    <string name="macro_media_next">Siguiente</string>
+    <string name="macro_media_previous">Anterior</string>
+    <string name="macro_media_stop">Detener</string>
+    <string name="macro_media_rewind">Retroceder</string>
+    <string name="macro_media_fast_forward">Avanzar</string>
+    <string name="macro_do_set_timer">Establecer temporizador</string>
+    <string name="macro_do_set_timer_value">Establecer temporizador: %1$s s, %2$s</string>
+    <string name="macro_do_timer_seconds">Segundos</string>
+    <string name="macro_do_label">Etiqueta (opcional)</string>
+    <string name="macro_do_set_alarm">Establecer alarma</string>
+    <string name="macro_do_set_alarm_value">Establecer alarma: %1$s, %2$s</string>
+    <string name="macro_do_call">Llamar</string>
+    <string name="macro_do_number">Número de teléfono</string>
+    <string name="macro_do_send_message">Enviar mensaje</string>
+    <string name="macro_do_send_message_value">Mensaje a %1$s: %2$s</string>
+    <string name="macro_do_open_camera">Abrir cámara</string>
+    <string name="macro_do_camera_photo">Foto</string>
+    <string name="macro_do_camera_video">Vídeo</string>
+    <string name="macro_do_set_timer_short">Establecer temporizador: %1$s s</string>
+    <string name="macro_do_set_alarm_short">Establecer alarma: %1$s</string>
+    <string name="macro_step_act_item">Mantener pulsado o desplazar un elemento</string>
+    <string name="macro_act_long_press">Mantener pulsado</string>
+    <string name="macro_act_scroll_forward">Desplazar hacia delante</string>
+    <string name="macro_act_scroll_backward">Desplazar hacia atrás</string>
+    <string name="macro_step_act_value">%1$s: %2$s</string>
+    <string name="macro_step_act_times_value">%1$s: %2$s, %3$d veces</string>
+    <string name="macro_test_focus_inside">El foco está dentro de un elemento</string>
+    <string name="macro_test_focus_inside_value">Foco dentro de: %1$s</string>
+    <string name="macro_test_not_focus_inside_value">Foco fuera de: %1$s</string>
+    <string name="macro_step_tap_position">Tocar en posición</string>
+    <string name="macro_step_tap_position_value">Tocar en <xliff:g id="x" example="540">%1$d</xliff:g>, <xliff:g id="y" example="1200">%2$d</xliff:g></string>
+    <string name="macro_tap_x">X, píxeles desde la izquierda</string>
+    <string name="macro_tap_y">Y, píxeles desde arriba</string>
+    <string name="macro_invalid_position">Introduce X e Y de 0 a <xliff:g id="max" example="10000">%1$d</xliff:g></string>
+    <string name="macro_field_tooltip">Información sobre herramientas</string>
+    <string name="macro_step_touch_hold">Mantener pulsado elemento</string>
+    <string name="macro_step_touch_hold_value">Mantener pulsado <xliff:g id="label" example="Voice message">%1$s</xliff:g> durante <xliff:g id="seconds" example="1.5">%2$s</xliff:g> s</string>
+    <string name="macro_step_touch_hold_slide_value">Mantener pulsado <xliff:g id="label" example="Voice message">%1$s</xliff:g> durante <xliff:g id="seconds" example="1">%2$s</xliff:g> s. <xliff:g id="slide" example="Slide up">%3$s</xliff:g> <xliff:g id="distance" example="100">%4$d</xliff:g> dp</string>
+    <string name="macro_hold_seconds">Segundos pulsado</string>
+    <string name="macro_slide">Antes de levantar</string>
+    <string name="macro_slide_none">Levantar sin mover</string>
+    <string name="macro_slide_up">Deslizar hacia arriba</string>
+    <string name="macro_slide_down">Deslizar hacia abajo</string>
+    <string name="macro_slide_left">Deslizar hacia la izquierda</string>
+    <string name="macro_slide_right">Deslizar hacia la derecha</string>
+    <string name="macro_slide_distance">Distancia en dp</string>
+    <string name="macro_app">Aplicación</string>
+    <string name="macro_all_apps">Todas las aplicaciones</string>
+    <string name="macro_add_app">Añadir aplicación</string>
+    <string name="macro_apps">Aplicaciones</string>
+    <string name="macro_in_actions">Mostrar en Acciones</string>
+    <string name="macro_in_actions_only_when">Mostrar en Acciones solo cuando</string>
+    <string name="macro_not_in_app">Macro no ejecutada. Solo se ejecuta en <xliff:g id="app" example="WhatsApp">%1$s</xliff:g></string>
+    <plurals name="macro_count">
+        <item quantity="one"><xliff:g id="count" example="1">%d</xliff:g> macro</item>
+        <item quantity="many"><xliff:g id="count" example="3">%d</xliff:g> macros</item>
+        <item quantity="other"><xliff:g id="count" example="3">%d</xliff:g> macros</item>
+    </plurals>
+    <string name="macro_record">Grabar pasos</string>
+    <string name="macro_record_new">Grabar una macro</string>
+    <string name="macro_recording_notification">Grabando pasos de la macro: <xliff:g id="macro" example="Turn on Wi-Fi">%1$s</xliff:g></string>
+    <string name="macro_recording_toast">Grabando. Para detener la grabación, ejecuta Grabar una macro o Detener macro, o abre la notificación Grabando pasos de la macro.</string>
+    <string name="macro_recorded">Pasos grabados</string>
+    <string name="macro_recorded_no_passwords">El texto escrito en campos de contraseña no se graba.</string>
+    <string name="macro_recorded_too_many">No se ha añadido. Una macro tiene como máximo <xliff:g id="count" example="200">%1$d</xliff:g> pasos.</string>
+    <string name="macro_recorded_name">Grabación <xliff:g id="time" example="19 Nov 2026, 14:52">%1$s</xliff:g></string>
+    <string name="macro_list_on_screen">Lista en pantalla</string>
+
+    <!-- Shared macro, command, file and shortcut strings adapted for CAN Talk. -->
+    <string name="app_gestures_choose_command">Elegir comando</string>
+    <string name="item_file_export">Exportar a archivo</string>
+    <string name="item_file_import">Importar desde archivo</string>
+    <string name="item_file_exported">Exportado</string>
+    <string name="item_file_export_failed">No se pudo exportar</string>
+    <string name="item_file_imported">Importado: <xliff:g id="items" example="2 macros">%1$s</xliff:g></string>
+    <plurals name="item_file_count_macros">
+        <item quantity="one"><xliff:g id="count" example="1">%d</xliff:g> macro</item>
+        <item quantity="many"><xliff:g id="count" example="2">%d</xliff:g> macros</item>
+        <item quantity="other"><xliff:g id="count" example="2">%d</xliff:g> macros</item>
+    </plurals>
+    <string name="macro_import_none">No se encontraron macros en el archivo</string>
+    <string name="macro_import_failed">No se pudo importar</string>
+    <string name="macro_add_to_home_screen">Añadir a la pantalla de inicio</string>
+    <string name="macro_shortcut_unsupported">La aplicación de inicio no admite accesos directos en la pantalla de inicio</string>
+    <string name="macro_shortcut_already_added">Ya está en la pantalla de inicio</string>
+    <string name="macro_shortcut_failed">Acceso directo no añadido</string>
+    <string name="macro_shortcut_deleted">Macro eliminada</string>
+    <string name="macro_shortcut_invalid">Acceso directo no válido. Vuelve a añadir la macro a la pantalla de inicio.</string>
+    <string name="menu_assign">Gestos</string>
+    <string name="menu_delete">Eliminar</string>
+    <string name="menu_name">Nombre</string>
+    <string name="menu_rename">Cambiar nombre</string>
+    <string name="macro_assign_gesture">Asignar gesto</string>
+    <string name="macro_gestures_none">Sin gestos asignados</string>
+    <string name="macro_remove_gesture">Quitar gesto</string>
+    <string name="notification_choose_app">Elige una aplicación</string>
+    <string name="notification_edit">Editar</string>
+    <string name="quick_settings_removed">%1$s eliminado</string>
+    <string name="script_builder_time">Hora</string>
+    <string name="script_builder_time_error">Introduce una hora como 08:30</string>
+    <string name="script_builder_recording_notification_text">Abre para guardar los pasos.</string>
+    <string name="script_builder_save">Guardar</string>
+    <string name="script_builder_record_again">Volver a grabar</string>
+    <string name="script_builder_nothing_recorded">No se han grabado pasos</string>
+    <string name="shortcut_title_open_app">Abrir aplicación</string>
+    <string name="shortcut_open_app">Abrir <xliff:g id="app_name" example="Gmail">%1$s</xliff:g></string>
+
+    <string name="macro_control_flashlight">Linterna</string>
+    <string name="macro_control_sound_mode">Modo de sonido</string>
+    <string name="macro_control_media_volume">Volumen multimedia</string>
+    <string name="macro_control_call_volume">Volumen de llamadas</string>
+    <string name="macro_control_ring_volume">Volumen del timbre</string>
+    <string name="macro_control_notification_volume">Volumen de notificaciones</string>
+    <string name="macro_control_alarm_volume">Volumen de alarma</string>
+    <string name="macro_control_accessibility_volume">Volumen de accesibilidad</string>
+    <string name="macro_control_system_volume">Volumen del sistema</string>
+    <string name="macro_sound_mode_normal">Normal</string>
+    <string name="macro_sound_mode_vibrate">Vibración</string>
+    <string name="macro_sound_mode_silent">Silencio</string>
+    <string name="summary_context_menu_macros">Grabar, detener o ejecutar macros para la aplicación actual</string>
+</resources>

@@ -1,0 +1,1485 @@
+/*
+ * Copyright 2026 SandFly contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package com.google.android.accessibility.talkback.macros
+
+import android.content.Context
+import android.os.Bundle
+import android.text.InputType
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
+import androidx.fragment.app.Fragment
+import androidx.preference.Preference
+import androidx.preference.PreferenceGroup
+import androidx.preference.PreferenceViewHolder
+import com.google.android.accessibility.talkback.R
+import com.google.android.accessibility.talkback.TalkBackService
+import com.google.android.accessibility.talkback.gesture.OpenAppActions
+import com.google.android.accessibility.talkback.macros.MacroCodeFragment.DialogChoice
+import com.google.android.accessibility.talkback.preference.base.announce
+import com.google.android.accessibility.talkback.preference.base.focusAfterLayout
+import com.google.android.accessibility.talkback.preference.base.positionText
+import com.google.android.accessibility.talkback.preference.base.setMoveActions
+import com.google.android.accessibility.utils.SharedPreferencesUtils
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+
+/**
+ * Macros: the macros the user made, those for all apps first, then the apps that have macros, each
+ * opening the same screen with [ARG_APP], which lists that app's macros.
+ */
+class MacrosFragment : MacroCodeFragment(R.string.title_pref_macros) {
+
+  private val files = MacroFileLauncher(this) { rebuild() }
+
+  /** The app whose macros the screen lists, or null for the Macros screen. */
+  private val app: String? by lazy { arguments?.getString(ARG_APP)?.ifEmpty { null } }
+
+  override fun getTitle(): CharSequence =
+    app?.let { Macros.appName(requireContext(), it) } ?: getText(R.string.title_pref_macros)
+
+  override fun build(screen: PreferenceGroup) {
+    val app = app
+    screen.action(getString(R.string.macro_add)) { add() }
+    if (app == null) screen.action(getString(R.string.macro_add_app)) { addApp() }
+    val all = Macros.read(prefs)
+    val macros = all.filter { it.app == app }
+    if (MacroFileLauncher.isAvailable) {
+      if (app == null) screen.action(getString(R.string.item_file_import)) { files.importFile() }
+      val exported = if (app == null) all else macros
+      if (exported.isNotEmpty()) {
+        val ids = if (app == null) null else macros.map { it.id }.toSet()
+        screen.action(getString(R.string.item_file_export)) {
+          files.export(getTitle().toString()) { MacroFileLauncher.exportMacros(it, ids) }
+        }
+      }
+    }
+    if (app != null) {
+      for (macro in macros) screen.macroLink(macro)
+      return
+    }
+    if (macros.isNotEmpty()) {
+      val general = screen.category(R.string.macro_all_apps)
+      for (macro in macros) general.macroLink(macro)
+    }
+    val context = requireContext()
+    val apps =
+      all
+        .mapNotNull { it.app }
+        .groupingBy { it }
+        .eachCount()
+        .map { (packageName, count) -> Triple(packageName, Macros.appName(context, packageName), count) }
+        .sortedBy { it.second.lowercase() }
+    if (apps.isNotEmpty()) {
+      val list = screen.category(R.string.macro_apps)
+      for ((packageName, name, count) in apps) {
+        list.link(name, resources.getQuantityString(R.plurals.macro_count, count, count), MacrosFragment::class.java) {
+          putString(ARG_APP, packageName)
+        }
+      }
+    }
+  }
+
+  private fun PreferenceGroup.macroLink(macro: Macros.Macro) {
+    link(macro.name, null, MacroFragment::class.java) { putString(MacroFragment.ARG_MACRO, macro.id) }
+  }
+
+  /** Asks for an app and opens the list of its macros. */
+  private fun addApp() {
+    chooseApp { packageName, _ ->
+      if (packageName.isNotEmpty() && isAdded) {
+        onPreferenceTreeClick(
+          Preference(requireContext()).apply {
+            fragment = MacrosFragment::class.java.name
+            extras.putString(ARG_APP, packageName)
+          }
+        )
+      }
+    }
+  }
+
+  private fun add() {
+    askText(getString(R.string.macro_add), hint = getString(R.string.menu_name)) { name, _, _ ->
+      val trimmed = name.trim()
+      if (trimmed.isEmpty()) {
+        ""
+      } else {
+        val macro = Macros.add(prefs, trimmed, app)
+        rebuild()
+        onPreferenceTreeClick(
+          Preference(requireContext()).apply {
+            fragment = MacroFragment::class.java.name
+            extras.putString(MacroFragment.ARG_MACRO, macro.id)
+          }
+        )
+        null
+      }
+    }
+  }
+
+  companion object {
+    /** The argument with the package of the app whose macros the screen lists. */
+    const val ARG_APP = "app"
+  }
+}
+
+/** A screen that edits a macro, with the dialogs that ask for the tests of its conditions. */
+abstract class MacroEditorFragment : MacroCodeFragment(R.string.title_pref_macros) {
+
+  protected val macroId: String by lazy { arguments?.getString(MacroFragment.ARG_MACRO).orEmpty() }
+
+  // The title is asked for before the screen is made, when prefs isn't set yet.
+  protected fun macro(): Macros.Macro? =
+    Macros.find(SharedPreferencesUtils.getSharedPreferences(requireContext()), macroId)
+
+  /** Opens [screen] with the arguments [arguments]. */
+  protected fun open(screen: Class<out Fragment>, arguments: Bundle.() -> Unit) {
+    onPreferenceTreeClick(
+      Preference(requireContext()).apply {
+        fragment = screen.name
+        extras.arguments()
+      }
+    )
+  }
+
+  /** The Match in list of the item text dialogs, with [field] chosen: Any text, then each field. */
+  protected fun fieldChoice(field: Macros.Field?): DialogChoice =
+    DialogChoice(
+      getString(R.string.macro_match_in),
+      listOf(getString(R.string.macro_field_any)) + Macros.Field.entries.map { getString(it.title) },
+      field?.let { it.ordinal + 1 } ?: 0,
+    )
+
+  /** The field chosen in [choice], made by [fieldChoice], or null for Any text. */
+  protected fun chosenField(choice: DialogChoice): Macros.Field? = Macros.Field.entries.getOrNull(choice.selected - 1)
+
+  /** The Item type list of the step dialogs that find an item, with [kind] chosen: Any type, then each type. */
+  protected fun kindChoice(kind: Macros.Kind?): DialogChoice =
+    DialogChoice(
+      getString(R.string.macro_item_kind),
+      listOf(getString(R.string.macro_kind_any)) + Macros.Kind.entries.map { getString(it.title) },
+      kind?.let { it.ordinal + 1 } ?: 0,
+    )
+
+  /** The item type chosen in [choice], made by [kindChoice], or null for Any type. */
+  protected fun chosenKind(choice: DialogChoice): Macros.Kind? = Macros.Kind.entries.getOrNull(choice.selected - 1)
+
+  /**
+   * Asks for a test, with [old] chosen, then for what it looks for, and gives it to [then].
+   */
+  protected fun askTest(old: Macros.Test?, then: (Macros.Test) -> Unit) {
+    val kinds =
+      listOf(
+        R.string.macro_test_item,
+        R.string.macro_test_focused,
+        R.string.macro_test_focus_inside,
+        R.string.macro_test_app,
+        R.string.macro_test_keyboard,
+        R.string.macro_test_locked,
+        R.string.macro_test_value,
+      )
+    val checked =
+      when (old) {
+        is Macros.ItemOnScreen -> 0
+        is Macros.FocusedItem -> 1
+        is Macros.FocusInside -> 2
+        is Macros.AppInFront -> 3
+        Macros.KeyboardShown -> 4
+        Macros.ScreenLocked -> 5
+        is Macros.ValueIs -> 6
+        null -> -1
+      }
+    choose(getString(R.string.macro_choose_test), kinds.map { getString(it) }, checked) { chosen ->
+      when (kinds[chosen]) {
+        R.string.macro_test_item -> {
+          val item = old as? Macros.ItemOnScreen
+          val fields = fieldChoice(item?.field)
+          askText(
+            getString(R.string.macro_test_item),
+            text = item?.label.orEmpty(),
+            hint = getString(R.string.macro_tap_label),
+            checkLabels = listOf(getString(R.string.macro_regex)),
+            checked = listOf(item?.regex == true),
+            inputType = InputType.TYPE_CLASS_TEXT,
+            choice = fields,
+          ) { text, _, checked ->
+            val label = text.take(Macros.MAX_LABEL)
+            val regex = checked.firstOrNull() == true
+            when {
+              label.isEmpty() -> ""
+              regex && Macros.compilePattern(label) == null -> getString(R.string.macro_invalid_regex)
+              else -> {
+                val field = chosenField(fields)
+                askKind(item?.kind, anyType = true) { then(Macros.ItemOnScreen(label, it, regex, field)) }
+                null
+              }
+            }
+          }
+        }
+        R.string.macro_test_focused -> {
+          val item = old as? Macros.FocusedItem
+          val fields = fieldChoice(item?.field)
+          askText(
+            getString(R.string.macro_test_focused),
+            text = item?.label.orEmpty(),
+            hint = getString(R.string.macro_test_label_optional),
+            checkLabels = listOf(getString(R.string.macro_regex)),
+            checked = listOf(item?.regex == true),
+            inputType = InputType.TYPE_CLASS_TEXT,
+            choice = fields,
+          ) { text, _, checked ->
+            val label = text.take(Macros.MAX_LABEL)
+            val regex = label.isNotEmpty() && checked.firstOrNull() == true
+            if (regex && Macros.compilePattern(label) == null) {
+              getString(R.string.macro_invalid_regex)
+            } else {
+              // A test of the focused item looks for a text, a type or both.
+              val field = chosenField(fields).takeIf { label.isNotEmpty() }
+              askKind(item?.kind, anyType = label.isNotEmpty()) { then(Macros.FocusedItem(label, it, regex, field)) }
+              null
+            }
+          }
+        }
+        R.string.macro_test_focus_inside -> {
+          val inside = old as? Macros.FocusInside
+          val fields = fieldChoice(inside?.field)
+          askText(
+            getString(R.string.macro_test_focus_inside),
+            text = inside?.label.orEmpty(),
+            hint = getString(R.string.macro_tap_label),
+            checkLabels = listOf(getString(R.string.macro_regex)),
+            checked = listOf(inside?.regex == true),
+            inputType = InputType.TYPE_CLASS_TEXT,
+            choice = fields,
+          ) { text, _, checked ->
+            val label = text.take(Macros.MAX_LABEL)
+            val regex = checked.firstOrNull() == true
+            when {
+              label.isEmpty() -> ""
+              regex && Macros.compilePattern(label) == null -> getString(R.string.macro_invalid_regex)
+              else -> null.also { then(Macros.FocusInside(label, regex, chosenField(fields))) }
+            }
+          }
+        }
+        R.string.macro_test_app ->
+          chooseApp(null) { packageName, _ ->
+            if (packageName.isNotEmpty()) then(Macros.AppInFront(packageName))
+          }
+        R.string.macro_test_keyboard -> then(Macros.KeyboardShown)
+        R.string.macro_test_locked -> then(Macros.ScreenLocked)
+        R.string.macro_test_value -> {
+          val value = old as? Macros.ValueIs
+          askText(
+            getString(R.string.macro_test_value),
+            text = value?.name.orEmpty(),
+            hint = getString(R.string.macro_value_name),
+            secondHint = getString(R.string.macro_test_value_label),
+            secondText = value?.label.orEmpty(),
+            checkLabels = listOf(getString(R.string.macro_regex)),
+            checked = listOf(value?.regex == true),
+            inputType = InputType.TYPE_CLASS_TEXT,
+          ) { name, label, checked ->
+            val text = label.trim().take(Macros.MAX_LABEL)
+            val regex = text.isNotEmpty() && checked.firstOrNull() == true
+            when {
+              !Macros.VALUE_NAME.matches(name) -> getString(R.string.macro_value_name_invalid)
+              regex && Macros.compilePattern(text) == null -> getString(R.string.macro_invalid_regex)
+              else -> null.also { then(Macros.ValueIs(name, text, regex)) }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /** Asks for an item type, with [old] chosen, and Any type first for [anyType]. */
+  private fun askKind(old: Macros.Kind?, anyType: Boolean, then: (Macros.Kind?) -> Unit) {
+    val kinds: List<Macros.Kind?> = (if (anyType) listOf(null) else emptyList()) + Macros.Kind.entries
+    val names = kinds.map { getString(it?.title ?: R.string.macro_kind_any) }
+    choose(getString(R.string.macro_item_kind), names, kinds.indexOf(old)) { then(kinds[it]) }
+  }
+
+  /** A row of a list that can be moved, edited and deleted from its accessibility actions. */
+  protected open inner class ListRow(
+    context: Context,
+    rowKey: String,
+    protected val index: Int,
+    private val count: Int,
+    name: CharSequence,
+    private val level: Int = 0,
+  ) : Preference(context) {
+    init {
+      key = rowKey
+      isPersistent = false
+      isIconSpaceReserved = false
+      title = name
+    }
+
+    open fun move(offset: Int): Boolean = false
+
+    open fun edit(): Boolean = false
+
+    open fun delete(): Boolean = false
+
+    open val editable: Boolean = true
+
+    override fun onBindViewHolder(holder: PreferenceViewHolder) {
+      super.onBindViewHolder(holder)
+      // Rows are reused for other rows of the class, so every bind sets the indent and replaces all
+      // the actions.
+      val row = holder.itemView
+      val base =
+        row.getTag(R.id.macro_step_base_padding) as? Int
+          ?: row.paddingStart.also { row.setTag(R.id.macro_step_base_padding, it) }
+      val indent = (INDENT_DP * row.resources.displayMetrics.density).toInt()
+      row.setPaddingRelative(base + level * indent, row.paddingTop, row.paddingEnd, row.paddingBottom)
+      setMoveActions(row, index, count) { move(it) }
+      val editText = getString(R.string.notification_edit)
+      if (editable) {
+        ViewCompat.replaceAccessibilityAction(
+          row,
+          AccessibilityActionCompat(R.id.accessibility_custom_action_3, editText),
+          editText,
+        ) { _, _ ->
+          edit()
+        }
+      } else {
+        ViewCompat.removeAccessibilityAction(row, R.id.accessibility_custom_action_3)
+      }
+      val deleteText = getString(R.string.menu_delete)
+      ViewCompat.replaceAccessibilityAction(
+        row,
+        AccessibilityActionCompat(R.id.accessibility_custom_action_2, deleteText),
+        deleteText,
+      ) { _, _ ->
+        delete()
+      }
+    }
+  }
+
+  companion object {
+    private const val INDENT_DP = 24
+  }
+}
+
+/**
+ * One macro: Run now, the condition it runs on, its steps in order, each of which can be edited,
+ * moved or deleted, and the gestures that run it.
+ */
+class MacroFragment : MacroEditorFragment() {
+
+  private val files = MacroFileLauncher(this) { rebuild() }
+
+  // Where Add step adds a step: after the step added last, so that the steps added after If or a
+  // repeat go in its block. Null for the end.
+  private var insertAt: Int? = null
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    insertAt = savedInstanceState?.getInt(STATE_INSERT_AT, -1)?.takeIf { it >= 0 }
+  }
+
+  override fun onSaveInstanceState(outState: Bundle) {
+    super.onSaveInstanceState(outState)
+    outState.putInt(STATE_INSERT_AT, insertAt ?: -1)
+  }
+
+  override fun getTitle(): CharSequence = macro()?.name ?: getText(R.string.title_pref_macros)
+
+  private fun steps(): List<Macros.Step> = macro()?.steps.orEmpty()
+
+  private fun save(steps: List<Macros.Step>) {
+    val macro = macro() ?: return
+    Macros.update(prefs, macro.copy(steps = steps.take(Macros.MAX_STEPS)))
+  }
+
+  override fun build(screen: PreferenceGroup) {
+    val context = requireContext()
+    val macro = macro() ?: return
+    screen.action(getString(R.string.macro_run_now)) { runNow() }
+    // The steps can have changed on another screen.
+    val at = insertAt?.takeIf { it < macro.steps.size }
+    insertAt = at
+    if (macro.steps.size < Macros.MAX_STEPS) {
+      screen.action(getString(R.string.macro_add_step), addStepPlace(context, macro.steps, at)) { addStep(at) }
+      screen.action(getString(R.string.macro_record), addStepPlace(context, macro.steps, at)) { startRecording() }
+    }
+    screen.link(
+      getString(R.string.macro_run_only_when),
+      if (macro.condition.clauses.isEmpty()) getString(R.string.macro_always)
+      else Macros.describe(context, macro.condition),
+      MacroConditionFragment::class.java,
+    ) {
+      putString(ARG_MACRO, macro.id)
+    }
+    // A script's commands run where the script runs.
+    if (!Macros.isExternal(macro.id)) {
+      screen.action(
+        getString(R.string.macro_app),
+        macro.app?.let { Macros.appName(context, it) } ?: getString(R.string.macro_all_apps),
+      ) {
+        chooseApp(getString(R.string.macro_all_apps)) { packageName, _ ->
+          macro()?.let { Macros.update(prefs, it.copy(app = packageName.ifEmpty { null })) }
+          rebuild()
+        }
+      }
+      screen.switch(getString(R.string.macro_in_actions), macro.inActions) { checked ->
+        macro()?.let { Macros.update(prefs, it.copy(inActions = checked)) }
+        rebuild()
+      }
+      if (macro.inActions) {
+        screen.link(
+          getString(R.string.macro_in_actions_only_when),
+          if (macro.actionsCondition.clauses.isEmpty()) getString(R.string.macro_always)
+          else Macros.describe(context, macro.actionsCondition),
+          MacroConditionFragment::class.java,
+        ) {
+          putString(ARG_MACRO, macro.id)
+          putInt(MacroConditionFragment.ARG_STEP, MacroConditionFragment.ACTIONS)
+        }
+      }
+    }
+    val list = screen.category(R.string.macro_steps)
+    if (macro.steps.isEmpty()) list.addPreference(infoRow(context, "macro_no_steps", getString(R.string.macro_no_steps)))
+    val flow = Macros.analyze(macro.steps)
+    flow.problem?.let {
+      list.addPreference(
+        infoRow(context, "macro_problem", getString(R.string.macro_problem, it.index + 1, getString(it.message)))
+      )
+    }
+    // The names of the commands, looked up together.
+    val commands = MacroCommands.labels(context, macro.steps.map { (it as? Macros.RunCommand)?.value.orEmpty() })
+    macro.steps.forEachIndexed { index, step ->
+      val name =
+        if (step is Macros.RunCommand) commands[index] ?: getString(R.string.macro_step_unavailable)
+        else Macros.describe(context, step)
+      list.addPreference(StepRow(context, macro.steps, index, name, flow.level[index]))
+    }
+    // A script's commands are assigned on the script's page.
+    val external = Macros.isExternal(macro.id)
+    if (!external) {
+      val cmd = Macros.commandOf(macro.id)
+      screen.action(
+        getString(R.string.menu_assign),
+        MacroCommands.assignedSummary(context, prefs, cmd),
+      ) {
+        MacroCommands.showAssignGestureDialog(context, prefs, cmd, macro.name) { rebuild() }
+      }
+    } else {
+      Macros.assignScreen(macro.id)?.let { (fragmentName, arguments) ->
+        screen.addPreference(
+          Preference(context).apply {
+            title = getString(R.string.menu_assign)
+            isPersistent = false
+            isIconSpaceReserved = false
+            layoutResource = R.layout.listitem_2texts
+            fragment = fragmentName
+            extras.putAll(arguments)
+          }
+        )
+      }
+    }
+    if (!external) screen.action(getString(R.string.macro_add_to_home_screen)) { addToHomeScreen() }
+    if (Macros.canRename(macro.id)) screen.action(getString(R.string.menu_rename)) { rename() }
+    if (MacroFileLauncher.isAvailable && !external) {
+      screen.action(getString(R.string.item_file_export)) {
+        files.export(macro.name) { MacroFileLauncher.exportMacros(it, setOf(macro.id)) }
+      }
+    }
+    screen.action(getString(if (external) R.string.menu_delete else R.string.macro_delete)) { confirmDelete() }
+  }
+
+  /** Says where Add step adds a step: at the end, at the start or after a step. */
+  private fun addStepPlace(context: Context, steps: List<Macros.Step>, at: Int?): CharSequence? =
+    when {
+      steps.isEmpty() -> null
+      at == null -> getString(R.string.macro_add_at_end)
+      at == 0 -> getString(R.string.macro_add_at_start)
+      else -> getString(R.string.macro_add_after, at, Macros.describe(context, steps[at - 1]))
+    }
+
+  private fun infoRow(context: Context, rowKey: String, text: CharSequence): Preference =
+    Preference(context).apply {
+      key = rowKey
+      isPersistent = false
+      isIconSpaceReserved = false
+      isSelectable = false
+      title = text
+    }
+
+  private fun rowKey(index: Int): String = "macro_step_$index"
+
+  override fun onResume() {
+    super.onResume()
+    // Coming back to the macro, from the notification, Stop macro or otherwise, ends a recording.
+    if (MacroRecorder.isRecording(macroId)) finishRecording()
+  }
+
+  /**
+   * Records steps as the user does them, to be added where Add step adds a step. CAN Talk's
+   * settings go to the back, showing the app before them, or the macro's app is opened. [created]
+   * when the macro was made for the recording, which deletes it when nothing is kept.
+   */
+  private fun startRecording(created: Boolean = false) {
+    val macro = macro() ?: return
+    if (TalkBackService.getInstance() == null) {
+      toast(R.string.talkback_inactive_title)
+      return
+    }
+    val context = requireContext()
+    MacroRecorder.start(
+      context,
+      macro.id,
+      macro.name,
+      insertAt?.takeIf { it < macro.steps.size },
+      forApp = macro.app != null,
+      created = created,
+    )
+    android.widget.Toast.makeText(context, R.string.macro_recording_toast, android.widget.Toast.LENGTH_LONG).show()
+    val launch = macro.app?.let { context.packageManager.getLaunchIntentForPackage(it) }
+    if (launch != null) {
+      startActivity(launch.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+    } else {
+      requireActivity().moveTaskToBack(true)
+    }
+  }
+
+  /** Ends the recording and offers its steps: Save adds them, Record again starts over. */
+  private fun finishRecording() {
+    val context = requireContext()
+    val result = MacroRecorder.stop(context) ?: return
+    if (result.steps.isEmpty()) {
+      toast(R.string.script_builder_nothing_recorded)
+      deleteIfUnused(result)
+      return
+    }
+    val flow = Macros.analyze(result.steps)
+    val lines =
+      result.steps.mapIndexed { i, step -> "  ".repeat(flow.level[i]) + Macros.describe(context, step) }.toMutableList()
+    if (result.skippedPasswords) lines += getString(R.string.macro_recorded_no_passwords)
+    dialog()
+      .setTitle(R.string.macro_recorded)
+      .setMessage(lines.joinToString("\n"))
+      .setPositiveButton(R.string.script_builder_save) { _, _ ->
+        val steps = steps()
+        // The steps can have changed meanwhile, on another screen.
+        val at = result.at?.takeIf { it <= steps.size }
+        if (steps.size + result.steps.size > Macros.MAX_STEPS) {
+          android.widget.Toast.makeText(context, getString(R.string.macro_recorded_too_many, Macros.MAX_STEPS), android.widget.Toast.LENGTH_LONG).show()
+        } else {
+          insertSteps(at, result.steps, afterAll = true)
+        }
+      }
+      .setNeutralButton(R.string.script_builder_record_again) { _, _ -> startRecording(result.created) }
+      .setNegativeButton(android.R.string.cancel) { _, _ -> deleteIfUnused(result) }
+      .setOnCancelListener { deleteIfUnused(result) }
+      .show()
+  }
+
+  /** Deletes the macro made for the recording [result] when it has no steps, and leaves its screen. */
+  private fun deleteIfUnused(result: MacroRecorder.Result) {
+    if (!result.created || !isAdded || macro()?.steps?.isNotEmpty() != false) return
+    Macros.delete(requireContext(), prefs, result.macroId)
+    requireActivity().onBackPressedDispatcher.onBackPressed()
+  }
+
+  private fun runNow() {
+    if (TalkBackService.getInstance() == null) {
+      toast(R.string.talkback_inactive_title)
+      return
+    }
+    MacroRunner.run(macroId, sayNotMet = true)
+  }
+
+  private fun isEditable(step: Macros.Step): Boolean =
+    step !== Macros.Else &&
+      step !== Macros.EndIf &&
+      step !== Macros.EndRepeat &&
+      step !== Macros.ExitLoop &&
+      step !== Macros.StopMacro
+
+  private fun showActions(steps: List<Macros.Step>, index: Int, name: CharSequence) {
+    val actions = ArrayList<Pair<Int, () -> Unit>>()
+    if (isEditable(steps[index])) actions += R.string.notification_edit to { editStep(index) }
+    if (steps.size < Macros.MAX_STEPS) actions += R.string.macro_add_step_after to { addStep(index + 1) }
+    if (index > 0) actions += R.string.action_move_up to { move(steps, index, -1) }
+    if (index < steps.size - 1) actions += R.string.action_move_down to { move(steps, index, 1) }
+    actions += R.string.menu_delete to { delete(index, name) }
+    choose(name, actions.map { getString(it.first) }) { actions[it].second() }
+  }
+
+  private fun move(steps: List<Macros.Step>, index: Int, offset: Int): Boolean {
+    val moved = Macros.moved(steps, index, offset) ?: return false
+    insertAt = insertAt?.let { Macros.positionAfterMove(it, index, index + offset) }
+    save(moved)
+    rebuild()
+    listView?.let {
+      focusAfterLayout(it, findPreference(rowKey(index + offset)), positionText(it, index + offset, moved.size))
+    }
+    return true
+  }
+
+  /** Deletes the step at [index], and the Else and End steps of the block it starts. */
+  private fun delete(index: Int, name: CharSequence): Boolean {
+    val steps = steps()
+    val dropped = Macros.removedIndices(steps, index) ?: return false
+    insertAt = insertAt?.let { Macros.positionAfterRemoval(it, dropped) }
+    save(steps.filterIndexed { i, _ -> i !in dropped })
+    rebuild()
+    listView?.let { announce(it, getString(R.string.quick_settings_removed, name)) }
+    return true
+  }
+
+  /**
+   * Asks for the kind of step, then for what it does, and adds it at [at], or at the end for null.
+   * If and the repeats are added with their End step. Else if and Else added right after End if go
+   * before it.
+   */
+  private fun addStep(at: Int?) {
+    val kinds =
+      listOf(
+        R.string.macro_step_command,
+        R.string.macro_step_tap,
+        R.string.macro_step_tap_position,
+        R.string.macro_step_touch_hold,
+        R.string.macro_step_focus,
+        R.string.macro_step_speak_item,
+        R.string.macro_step_act_item,
+        R.string.macro_step_speak_text,
+        R.string.macro_step_type,
+        R.string.shortcut_title_open_app,
+        R.string.macro_step_more,
+        R.string.macro_step_wait,
+        R.string.macro_step_wait_until,
+        R.string.macro_step_if,
+        R.string.macro_step_else_if,
+        R.string.macro_step_else,
+        R.string.macro_step_end_if,
+        R.string.macro_step_repeat,
+        R.string.macro_step_repeat_while,
+        R.string.macro_step_end_repeat,
+        R.string.macro_step_exit_loop,
+        R.string.shortcut_stop_macro,
+      )
+    choose(getString(R.string.macro_add_step), kinds.map { getString(it) }) { chosen ->
+      val add: (Macros.Step) -> Unit = { step ->
+        val steps = steps()
+        insertSteps(Macros.insertPosition(steps, at ?: steps.size, step), listOf(step))
+      }
+      fun condition(test: Macros.Test) = Macros.Condition(listOf(Macros.Clause(test)))
+      when (kinds[chosen]) {
+        R.string.macro_step_command -> chooseCommand(add)
+        R.string.macro_step_tap -> askTap(null, add)
+        R.string.macro_step_tap_position -> askTapPosition(null, add)
+        R.string.macro_step_touch_hold -> askTouchHold(null, add)
+        R.string.macro_step_focus -> askTap(null, add, R.string.macro_step_focus)
+        R.string.macro_step_speak_item -> askTap(null, add, R.string.macro_step_speak_item)
+        R.string.macro_step_act_item -> askActOnItem(null, add)
+        R.string.macro_step_speak_text -> askSpeakText(null, add)
+        R.string.macro_step_type -> askTypeText(null, add)
+        R.string.shortcut_title_open_app -> chooseOpenApp(add)
+        R.string.macro_step_more ->
+          choose(getString(R.string.macro_step_more), Macros.DoKind.entries.map { getString(it.title) }) {
+            askDo(Macros.DoKind.entries[it], null, add)
+          }
+        R.string.macro_step_wait -> askWait(null, add)
+        R.string.macro_step_wait_until -> askTest(null) { add(Macros.WaitUntil(condition(it))) }
+        R.string.macro_step_if ->
+          askTest(null) { insertSteps(at, listOf(Macros.If(condition(it)), Macros.EndIf)) }
+        R.string.macro_step_else_if -> askTest(null) { add(Macros.ElseIf(condition(it))) }
+        R.string.macro_step_else -> add(Macros.Else)
+        R.string.macro_step_end_if -> add(Macros.EndIf)
+        R.string.macro_step_repeat ->
+          askTimes(null) { insertSteps(at, listOf(Macros.RepeatTimes(it), Macros.EndRepeat)) }
+        R.string.macro_step_repeat_while ->
+          askTest(null) { insertSteps(at, listOf(Macros.RepeatWhile(condition(it)), Macros.EndRepeat)) }
+        R.string.macro_step_end_repeat -> add(Macros.EndRepeat)
+        R.string.macro_step_exit_loop -> add(Macros.ExitLoop)
+        R.string.shortcut_stop_macro -> add(Macros.StopMacro)
+      }
+    }
+  }
+
+  private fun editStep(index: Int) {
+    val step = steps().getOrNull(index) ?: return
+    val replace: (Macros.Step) -> Unit = { placeStep(index, it) }
+    when (step) {
+      is Macros.RunCommand -> chooseCommand(replace)
+      is Macros.Wait -> askWait(step, replace)
+      is Macros.Tap -> askTap(step, replace)
+      is Macros.TapPosition -> askTapPosition(step, replace)
+      is Macros.TouchHold -> askTouchHold(step, replace)
+      is Macros.FocusItem ->
+        askTap(
+          Macros.Tap(step.label, step.timeoutMillis, step.regex, step.field, step.kind),
+          replace,
+          R.string.macro_step_focus,
+        )
+      is Macros.SpeakItem ->
+        askTap(
+          Macros.Tap(step.label, step.timeoutMillis, step.regex, step.field, step.kind),
+          replace,
+          R.string.macro_step_speak_item,
+        )
+      is Macros.ActOnItem -> askActOnItem(step, replace)
+      is Macros.SpeakText -> askSpeakText(step, replace)
+      is Macros.OpenApp -> chooseOpenApp(replace)
+      is Macros.TypeText -> askTypeText(step, replace)
+      is Macros.Do -> askDo(step.kind, step, replace)
+      is Macros.RepeatTimes -> askTimes(step.count) { placeStep(index, Macros.RepeatTimes(it)) }
+      is Macros.If, is Macros.ElseIf, is Macros.RepeatWhile, is Macros.WaitUntil ->
+        open(MacroConditionFragment::class.java) {
+          putString(ARG_MACRO, macroId)
+          putInt(MacroConditionFragment.ARG_STEP, index)
+        }
+      Macros.Else, Macros.EndIf, Macros.EndRepeat, Macros.ExitLoop, Macros.StopMacro -> {}
+    }
+  }
+
+  /** Saves [step] in place of the step at [index], and moves focus to it. */
+  private fun placeStep(index: Int, step: Macros.Step) {
+    if (!isAdded) return
+    val steps = steps()
+    if (index !in steps.indices) return
+    save(steps.mapIndexed { i, old -> if (i == index) step else old })
+    rebuild()
+    listView?.let { focusAfterLayout(it, findPreference(rowKey(index)), null) }
+  }
+
+  /**
+   * Adds [added] at [at], or at the end for null, and moves focus to the first of them. The next
+   * step goes after the first of them: after a single step, or into the block it starts; or after
+   * all of them for [afterAll], as for recorded steps.
+   */
+  private fun insertSteps(at: Int?, added: List<Macros.Step>, afterAll: Boolean = false) {
+    if (!isAdded) return
+    val steps = steps()
+    if (steps.size + added.size > Macros.MAX_STEPS) return
+    val position = at?.coerceIn(0, steps.size) ?: steps.size
+    insertAt = if (afterAll) at?.let { position + added.size } else position + 1
+    save(steps.subList(0, position) + added + steps.subList(position, steps.size))
+    rebuild()
+    listView?.let { focusAfterLayout(it, findPreference(rowKey(position)), null) }
+  }
+
+  /** Asks for a command, first its category, leaving out macros, and gives it to [then]. */
+  private fun chooseCommand(then: (Macros.Step) -> Unit) {
+    val context = requireContext()
+    val categories = MacroCommands.categories(context).filter { it.title != getString(R.string.title_pref_macros) }
+    choose(getString(R.string.app_gestures_choose_command), categories.map { it.title }) { group ->
+      val commands = categories[group].commands
+      choose(categories[group].title, commands.map { it.label }) {
+        then(Macros.RunCommand(commands[it].value))
+      }
+    }
+  }
+
+  private fun askWait(step: Macros.Wait?, then: (Macros.Step) -> Unit) {
+    askText(
+      getString(R.string.macro_step_wait),
+      text = step?.let { Macros.secondsText(it.millis) } ?: "1",
+      hint = getString(R.string.macro_seconds),
+      inputType = SECONDS_INPUT,
+    ) { text, _, _ ->
+      val millis = Macros.parseSeconds(text)
+      if (millis == null) {
+        getString(R.string.macro_invalid_seconds, (Macros.MAX_WAIT_MS / 1000).toInt())
+      } else {
+        then(Macros.Wait(millis))
+        null
+      }
+    }
+  }
+
+  private fun askTimes(count: Int?, then: (Int) -> Unit) {
+    askText(
+      getString(R.string.macro_step_repeat),
+      text = (count ?: 2).toString(),
+      hint = getString(R.string.macro_times),
+      inputType = InputType.TYPE_CLASS_NUMBER,
+    ) { text, _, _ ->
+      val times = text.toIntOrNull()?.takeIf { it in 1..Macros.MAX_REPEATS }
+      if (times == null) {
+        getString(R.string.macro_invalid_times, Macros.MAX_REPEATS)
+      } else {
+        then(times)
+        null
+      }
+    }
+  }
+
+  /**
+   * Asks for the values of a step that finds an item: Tap item, or the step whose name is [kind],
+   * Focus item or Speak item.
+   */
+  private fun askTap(step: Macros.Tap?, then: (Macros.Step) -> Unit, kind: Int = R.string.macro_step_tap) {
+    val fields = fieldChoice(step?.field)
+    val types = kindChoice(step?.kind)
+    askText(
+      getString(kind),
+      text = step?.label.orEmpty(),
+      hint = getString(R.string.macro_tap_label),
+      secondHint = getString(R.string.macro_tap_timeout),
+      secondText = Macros.secondsText(step?.timeoutMillis ?: Macros.DEFAULT_TAP_TIMEOUT_MS),
+      checkLabels = listOf(getString(R.string.macro_regex)),
+      checked = listOf(step?.regex == true),
+      inputType = InputType.TYPE_CLASS_TEXT,
+      secondInputType = SECONDS_INPUT,
+      choice = fields,
+      secondChoice = types,
+    ) { label, timeout, checked ->
+      val regex = checked.firstOrNull() == true
+      when {
+        label.isEmpty() -> ""
+        regex && Macros.compilePattern(label) == null -> getString(R.string.macro_invalid_regex)
+        else -> {
+          val millis =
+            Macros.parseSeconds(timeout)?.coerceIn(Macros.MIN_TAP_TIMEOUT_MS, Macros.MAX_TAP_TIMEOUT_MS)
+              ?: Macros.DEFAULT_TAP_TIMEOUT_MS
+          val field = chosenField(fields)
+          val type = chosenKind(types)
+          then(
+            when (kind) {
+              R.string.macro_step_focus -> Macros.FocusItem(label, millis, regex, field, type)
+              R.string.macro_step_speak_item -> Macros.SpeakItem(label, millis, regex, field, type)
+              else -> Macros.Tap(label, millis, regex, field, type)
+            }
+          )
+          null
+        }
+      }
+    }
+  }
+
+  /** Asks for a Long-press or scroll an item step: what to do, the item, and how many times. */
+  private fun askActOnItem(step: Macros.ActOnItem?, then: (Macros.Step) -> Unit) {
+    val acts = Macros.ItemAct.entries
+    choose(getString(R.string.macro_step_act_item), acts.map { getString(it.title) }, step?.let { acts.indexOf(it.act) } ?: -1) { chosen ->
+      val act = acts[chosen]
+      val fields = fieldChoice(step?.field)
+      val types = kindChoice(step?.kind)
+      askText(
+        getString(act.title),
+        text = step?.label.orEmpty(),
+        hint = getString(R.string.macro_tap_label),
+        secondHint = getString(R.string.macro_times),
+        secondText = (step?.times ?: 1).toString(),
+        checkLabels = listOf(getString(R.string.macro_regex)),
+        checked = listOf(step?.regex == true),
+        inputType = InputType.TYPE_CLASS_TEXT,
+        secondInputType = InputType.TYPE_CLASS_NUMBER,
+        choice = fields,
+        secondChoice = types,
+      ) { label, timesText, checked ->
+        val regex = checked.firstOrNull() == true
+        val times = timesText.trim().toIntOrNull()?.takeIf { it in 1..Macros.MAX_REPEATS }
+        when {
+          // A scroll without an item scrolls the largest list on screen.
+          label.isEmpty() && act == Macros.ItemAct.LONG_PRESS -> ""
+          regex && Macros.compilePattern(label) == null -> getString(R.string.macro_invalid_regex)
+          times == null -> getString(R.string.macro_invalid_times, Macros.MAX_REPEATS)
+          else -> {
+            val type = chosenKind(types).takeIf { label.isNotEmpty() }
+            then(Macros.ActOnItem(label, act, times, step?.timeoutMillis ?: Macros.DEFAULT_TAP_TIMEOUT_MS, regex, chosenField(fields), type))
+            null
+          }
+        }
+      }
+    }
+  }
+
+  private fun askTapPosition(step: Macros.TapPosition?, then: (Macros.Step) -> Unit) {
+    askText(
+      getString(R.string.macro_step_tap_position),
+      text = step?.x?.toString().orEmpty(),
+      hint = getString(R.string.macro_tap_x),
+      secondHint = getString(R.string.macro_tap_y),
+      secondText = step?.y?.toString().orEmpty(),
+      inputType = InputType.TYPE_CLASS_NUMBER,
+      secondInputType = InputType.TYPE_CLASS_NUMBER,
+    ) { xText, yText, _ ->
+      val x = Macros.parseCoordinate(xText)
+      val y = Macros.parseCoordinate(yText)
+      if (x == null || y == null) {
+        getString(R.string.macro_invalid_position, Macros.MAX_COORDINATE)
+      } else {
+        then(Macros.TapPosition(x, y))
+        null
+      }
+    }
+  }
+
+  /**
+   * Asks for the values of a Touch and hold item step: the item, how long to hold, and whether and
+   * how far the touch slides before it lifts.
+   */
+  private fun askTouchHold(step: Macros.TouchHold?, then: (Macros.Step) -> Unit) {
+    val fields = fieldChoice(step?.field)
+    val types = kindChoice(step?.kind)
+    askText(
+      getString(R.string.macro_step_touch_hold),
+      text = step?.label.orEmpty(),
+      hint = getString(R.string.macro_tap_label),
+      secondHint = getString(R.string.macro_hold_seconds),
+      secondText = Macros.secondsText(step?.holdMillis ?: Macros.DEFAULT_HOLD_MS),
+      checkLabels = listOf(getString(R.string.macro_regex)),
+      checked = listOf(step?.regex == true),
+      inputType = InputType.TYPE_CLASS_TEXT,
+      secondInputType = SECONDS_INPUT,
+      choice = fields,
+      secondChoice = types,
+    ) { label, holdText, checked ->
+      val regex = checked.firstOrNull() == true
+      val hold = Macros.parseSeconds(holdText)
+      when {
+        label.isEmpty() -> ""
+        regex && Macros.compilePattern(label) == null -> getString(R.string.macro_invalid_regex)
+        hold == null -> getString(R.string.macro_invalid_seconds, (Macros.MAX_HOLD_MS / 1000).toInt())
+        else -> {
+          val held =
+            Macros.TouchHold(
+              label.take(Macros.MAX_LABEL),
+              hold.coerceIn(Macros.MIN_HOLD_MS, Macros.MAX_HOLD_MS),
+              step?.slide,
+              step?.slideDp ?: Macros.DEFAULT_SLIDE_DP,
+              step?.timeoutMillis ?: Macros.DEFAULT_TAP_TIMEOUT_MS,
+              regex,
+              chosenField(fields),
+              chosenKind(types),
+            )
+          askSlide(held, then)
+          null
+        }
+      }
+    }
+  }
+
+  /** Asks whether and how far the touch of [step] slides before it lifts, and gives the step to [then]. */
+  private fun askSlide(step: Macros.TouchHold, then: (Macros.Step) -> Unit) {
+    val directions: List<Macros.Direction?> = listOf(null) + Macros.Direction.entries
+    val names = directions.map { getString(it?.title ?: R.string.macro_slide_none) }
+    choose(getString(R.string.macro_slide), names, directions.indexOf(step.slide)) { chosen ->
+      val direction = directions[chosen]
+      if (direction == null) {
+        then(step.copy(slide = null, slideDp = Macros.DEFAULT_SLIDE_DP))
+        return@choose
+      }
+      askText(
+        getString(direction.title),
+        text = step.slideDp.toString(),
+        hint = getString(R.string.macro_slide_distance),
+        inputType = InputType.TYPE_CLASS_NUMBER,
+      ) { text, _, _ ->
+        val distance = text.trim().toIntOrNull()?.takeIf { it in Macros.MIN_SLIDE_DP..Macros.MAX_SLIDE_DP }
+        if (distance == null) {
+          getString(R.string.macro_invalid_times, Macros.MAX_SLIDE_DP)
+        } else {
+          then(step.copy(slide = direction, slideDp = distance))
+          null
+        }
+      }
+    }
+  }
+
+  private fun askTypeText(step: Macros.TypeText?, then: (Macros.Step) -> Unit) {
+    askText(
+      getString(R.string.macro_step_type),
+      text = step?.text.orEmpty(),
+      hint = getString(R.string.macro_text),
+      checkLabels = listOf(getString(R.string.macro_replace_text)),
+      checked = listOf(step?.replace == true),
+    ) { text, _, checked ->
+      if (text.isEmpty()) {
+        ""
+      } else {
+        then(Macros.TypeText(text.take(Macros.MAX_TEXT), checked.firstOrNull() == true))
+        null
+      }
+    }
+  }
+
+  /** Asks for what the [Macros.Do] step of [kind] does, with [old] filled in. */
+  private fun askDo(kind: Macros.DoKind, old: Macros.Do?, then: (Macros.Step) -> Unit) {
+    val title = getString(kind.title)
+    fun pick(options: List<String>, done: (String) -> Unit) =
+      choose(title, options, options.indexOf(old?.text)) { done(options[it]) }
+    fun number(default: Int, range: IntRange, done: (Int) -> Unit) =
+      askText(title, text = (old?.number?.takeIf { it != 0 } ?: default).toString(), inputType = InputType.TYPE_CLASS_NUMBER) { text, _, _ ->
+        val value = text.toIntOrNull()?.takeIf { it in range }
+        if (value == null) getString(R.string.macro_number_range, range.first, range.last) else null.also { done(value) }
+      }
+    fun text(hint: Int, done: (String) -> Unit) =
+      askText(title, text = old?.text.orEmpty(), hint = getString(hint), message = getString(R.string.macro_values_help)) { text, _, _ ->
+        if (text.isBlank()) "" else null.also { done(text.take(Macros.MAX_TEXT)) }
+      }
+    when (kind) {
+      Macros.DoKind.PLAY_SOUND -> pick(Macros.SOUNDS) { then(Macros.Do(kind, it)) }
+      Macros.DoKind.VIBRATE -> number(200, 1..5_000) { then(Macros.Do(kind, number = it)) }
+      Macros.DoKind.PLAY_TONE -> number(880, 20..20_000) { then(Macros.Do(kind, number = it)) }
+      Macros.DoKind.OPEN_SETTINGS -> pick(Macros.SETTINGS_PAGES) { then(Macros.Do(kind, it)) }
+      Macros.DoKind.SET_RINGER -> pick(Macros.RINGER_MODES) { then(Macros.Do(kind, it)) }
+      Macros.DoKind.DEVICE_CONTROL -> {
+        val names = DeviceActions.availableControls(requireContext())
+        choose(title, names.map { controlTitle(it) }, names.indexOf(old?.name)) { chosen ->
+          val name = names[chosen]
+          when (DeviceActions.kindOf(name)) {
+            DeviceActions.ControlKind.SWITCH -> {
+              val values = listOf("on", "off", "toggle")
+              val labels = listOf(R.string.macro_do_turn_on, R.string.macro_do_turn_off, R.string.macro_do_toggle).map { getString(it) }
+              choose(controlTitle(name), labels, values.indexOf(old?.text)) { then(Macros.Do(kind, values[it], name)) }
+            }
+            else ->
+              askText(
+                controlTitle(name),
+                text = old?.takeIf { it.name == name }?.text.orEmpty(),
+                message = getString(
+                  if (DeviceActions.kindOf(name) == DeviceActions.ControlKind.SLIDER) {
+                    R.string.macro_do_slider_help
+                  } else {
+                    R.string.macro_do_choice_help
+                  }
+                ),
+                inputType = InputType.TYPE_CLASS_TEXT,
+              ) { value, _, _ ->
+                if (value.isBlank()) "" else null.also { then(Macros.Do(kind, value, name)) }
+              }
+          }
+        }
+      }
+      Macros.DoKind.MEDIA -> {
+        val keys = DeviceActions.MEDIA_KEYS.keys.toList()
+        val labels =
+          listOf(
+              R.string.macro_media_play_pause, R.string.macro_media_play, R.string.macro_media_pause,
+              R.string.macro_media_next, R.string.macro_media_previous, R.string.macro_media_stop,
+              R.string.macro_media_rewind, R.string.macro_media_fast_forward,
+            )
+            .map { getString(it) }
+        choose(title, labels, keys.indexOf(old?.text)) { then(Macros.Do(kind, keys[it])) }
+      }
+      Macros.DoKind.SET_TIMER ->
+        askText(
+          title,
+          text = old?.number?.takeIf { it > 0 }?.let { Macros.secondsText(it * 1000L) }.orEmpty(),
+          hint = getString(R.string.macro_do_timer_seconds),
+          secondHint = getString(R.string.macro_do_label),
+          secondText = old?.text.orEmpty(),
+          inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL,
+        ) { seconds, label, _ ->
+          val ms = Macros.parseSeconds(seconds)?.takeIf { it in 1_000L..86_400_000L }
+            ?: return@askText getString(R.string.macro_number_range, 1, 86_400)
+          null.also { then(Macros.Do(kind, label.trim(), number = (ms / 1000).toInt())) }
+        }
+      Macros.DoKind.SET_ALARM ->
+        askText(
+          title,
+          text = old?.let { "%02d:%02d".format(it.number / 60, it.number % 60) }.orEmpty(),
+          hint = getString(R.string.script_builder_time),
+          secondHint = getString(R.string.macro_do_label),
+          secondText = old?.text.orEmpty(),
+          inputType = InputType.TYPE_CLASS_DATETIME or InputType.TYPE_DATETIME_VARIATION_TIME,
+        ) { time, label, _ ->
+          val match = Regex("^(\\d{1,2}):(\\d{2})$").find(time.trim())
+          val hour = match?.groupValues?.get(1)?.toInt()
+          val minute = match?.groupValues?.get(2)?.toInt()
+          if (hour == null || minute == null || hour > 23 || minute > 59) return@askText getString(R.string.script_builder_time_error)
+          null.also { then(Macros.Do(kind, label.trim(), number = hour * 60 + minute)) }
+        }
+      Macros.DoKind.CALL -> text(R.string.macro_do_number) { then(Macros.Do(kind, it)) }
+      Macros.DoKind.SEND_MESSAGE ->
+        askText(
+          title,
+          text = old?.name.orEmpty(),
+          hint = getString(R.string.macro_do_number),
+          message = getString(R.string.macro_values_help),
+          secondHint = getString(R.string.macro_text),
+          secondText = old?.text.orEmpty(),
+          inputType = InputType.TYPE_CLASS_PHONE,
+        ) { number, message, _ ->
+          if (number.isBlank()) "" else null.also { then(Macros.Do(kind, message, number.trim().take(64))) }
+        }
+      Macros.DoKind.OPEN_CAMERA -> {
+        val modes = listOf("photo", "video")
+        choose(title, listOf(getString(R.string.macro_do_camera_photo), getString(R.string.macro_do_camera_video)), modes.indexOf(old?.text)) {
+          then(Macros.Do(kind, modes[it]))
+        }
+      }
+      Macros.DoKind.SET_VOLUME ->
+        choose(title, Macros.VOLUME_STREAMS, Macros.VOLUME_STREAMS.indexOf(old?.name)) { stream ->
+          number(50, 0..100) { then(Macros.Do(kind, name = Macros.VOLUME_STREAMS[stream], number = it)) }
+        }
+      Macros.DoKind.OPEN_LINK -> text(R.string.macro_do_link_hint) { then(Macros.Do(kind, it)) }
+      Macros.DoKind.PRESS_KEYS -> text(R.string.macro_do_keys_hint) { then(Macros.Do(kind, it)) }
+      Macros.DoKind.COPY_TEXT, Macros.DoKind.SHARE_TEXT, Macros.DoKind.SHOW_MESSAGE ->
+        text(R.string.macro_text) { then(Macros.Do(kind, it)) }
+      Macros.DoKind.SET_VALUE, Macros.DoKind.FETCH, Macros.DoKind.TRANSLATE ->
+        askText(
+          title,
+          text = old?.text.orEmpty(),
+          hint = getString(if (kind == Macros.DoKind.FETCH) R.string.macro_do_link_hint else R.string.macro_text),
+          message = getString(R.string.macro_values_help),
+          secondHint = getString(R.string.macro_value_name),
+          secondText = old?.name.orEmpty(),
+          inputType = InputType.TYPE_CLASS_TEXT,
+        ) { text, name, _ ->
+          when {
+            kind != Macros.DoKind.SET_VALUE && text.isBlank() -> ""
+            !Macros.VALUE_NAME.matches(name.trim()) -> getString(R.string.macro_value_name_invalid)
+            else -> null.also { then(Macros.Do(kind, text.take(Macros.MAX_TEXT), name.trim())) }
+          }
+        }
+    }
+  }
+
+  /** The title of the device control [name], as the quick settings panel names it. */
+  private fun controlTitle(name: String): String =
+    DeviceActions.CONTROLS[name]?.let { getString(it.title) } ?: name
+
+  private fun askSpeakText(step: Macros.SpeakText?, then: (Macros.Step) -> Unit) {
+    askText(
+      getString(R.string.macro_step_speak_text),
+      text = step?.text.orEmpty(),
+      hint = getString(R.string.macro_text),
+      message = getString(R.string.macro_values_help),
+    ) { text, _, _ ->
+      if (text.isBlank()) {
+        ""
+      } else {
+        then(Macros.SpeakText(text.take(Macros.MAX_TEXT)))
+        null
+      }
+    }
+  }
+
+  /**
+   * Asks for an app with an icon on the home screen, and gives the step that opens it to [then].
+   * The first choice, Search, lists the apps whose names contain a text.
+   */
+  private fun chooseOpenApp(then: (Macros.Step) -> Unit) {
+    val context = requireContext().applicationContext
+    APP_LOADER.execute {
+      val apps = OpenAppActions.apps(context)
+      activity?.runOnUiThread {
+        if (!isAdded) return@runOnUiThread
+        val title = getString(R.string.notification_choose_app)
+        val search = getString(android.R.string.search_go)
+        choose(title, listOf(search) + apps.map { it.label }) { index ->
+          if (index > 0) {
+            then(Macros.OpenApp(apps[index - 1].value))
+            return@choose
+          }
+          askText(search, inputType = InputType.TYPE_CLASS_TEXT) { text, _, _ ->
+            val found = apps.filter { it.label.contains(text, ignoreCase = true) }
+            if (found.isEmpty()) {
+              getString(R.string.keyboard_shortcuts_no_results)
+            } else {
+              choose(title, found.map { it.label }) { then(Macros.OpenApp(found[it].value)) }
+              null
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private fun rename() {
+    val macro = macro() ?: return
+    askText(getString(R.string.menu_rename), macro.name, hint = getString(R.string.menu_name)) { name, _, _ ->
+      val trimmed = name.trim()
+      if (trimmed.isEmpty()) {
+        ""
+      } else {
+        Macros.update(prefs, macro.copy(name = trimmed))
+        Macros.find(prefs, macro.id)?.let { MacroShortcuts.update(requireContext(), it) }
+        activity?.title = trimmed
+        rebuild()
+        null
+      }
+    }
+  }
+
+  private fun addToHomeScreen() {
+    when (MacroShortcuts.request(requireContext(), prefs, macroId)) {
+      MacroShortcuts.Result.REQUESTED -> {}
+      MacroShortcuts.Result.ALREADY_ADDED -> toast(R.string.macro_shortcut_already_added)
+      MacroShortcuts.Result.UNSUPPORTED -> toast(R.string.macro_shortcut_unsupported)
+      MacroShortcuts.Result.FAILED -> toast(R.string.macro_shortcut_failed)
+    }
+  }
+
+  private fun confirmDelete() {
+    val macro = macro() ?: return
+    confirm(getString(R.string.macro_delete_confirm, macro.name), R.string.menu_delete) {
+      if (MacroRunner.runningId() == macro.id) MacroRunner.stop()
+      Macros.delete(requireContext(), prefs, macro.id)
+      requireActivity().onBackPressedDispatcher.onBackPressed()
+    }
+  }
+
+  /** A step, at [index] of [steps], indented by the [level] of blocks it is in. */
+  private inner class StepRow(
+    context: Context,
+    private val steps: List<Macros.Step>,
+    index: Int,
+    private val name: CharSequence,
+    level: Int,
+  ) : ListRow(context, rowKey(index), index, steps.size, name, level) {
+    init {
+      setOnPreferenceClickListener {
+        showActions(steps, index, name)
+        true
+      }
+    }
+
+    override val editable: Boolean = isEditable(steps[index])
+
+    override fun move(offset: Int): Boolean = this@MacroFragment.move(steps, index, offset)
+
+    override fun edit(): Boolean {
+      editStep(index)
+      return true
+    }
+
+    override fun delete(): Boolean = this@MacroFragment.delete(index, name)
+  }
+
+  companion object {
+    /** The argument with the ID of the macro, for each screen of a macro. */
+    const val ARG_MACRO = "macro"
+
+    private const val STATE_INSERT_AT = "insert_at"
+
+    private const val SECONDS_INPUT = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+
+    /** Loads the apps for Open app, on a thread that ends once it has been idle for a while. */
+    private val APP_LOADER = ThreadPoolExecutor(0, 1, 30, TimeUnit.SECONDS, LinkedBlockingQueue<Runnable>())
+  }
+}
+
+/**
+ * The condition of a macro step, or for no step, the condition the macro runs on: its tests in
+ * order, each of which can be edited, reversed, joined with and or or, moved or deleted.
+ */
+class MacroConditionFragment : MacroEditorFragment() {
+
+  private val stepIndex: Int by lazy { arguments?.getInt(ARG_STEP, -1) ?: -1 }
+
+  private fun step(): Macros.Step? = macro()?.steps?.getOrNull(stepIndex)
+
+  override fun getTitle(): CharSequence =
+    getText(
+      when (step()) {
+        is Macros.If -> R.string.macro_step_if
+        is Macros.ElseIf -> R.string.macro_step_else_if
+        is Macros.RepeatWhile -> R.string.macro_step_repeat_while
+        is Macros.WaitUntil -> R.string.macro_step_wait_until
+        else ->
+          if (stepIndex == ACTIONS) R.string.macro_in_actions_only_when
+          else R.string.macro_run_only_when
+      }
+    )
+
+  /** The condition, or null when the step isn't there any more. */
+  private fun condition(): Macros.Condition? =
+    when {
+      stepIndex == ACTIONS -> macro()?.actionsCondition
+      stepIndex < 0 -> macro()?.condition
+      else -> Macros.conditionOf(step())
+    }
+
+  private fun save(condition: Macros.Condition) {
+    val macro = macro() ?: return
+    val clauses = condition.clauses.take(Macros.MAX_CLAUSES)
+    // The first test has nothing before it to join.
+    val saved = Macros.Condition(clauses.mapIndexed { i, clause -> if (i == 0) clause.copy(or = false) else clause })
+    if (stepIndex == ACTIONS) {
+      Macros.update(prefs, macro.copy(actionsCondition = saved))
+      return
+    }
+    if (stepIndex < 0) {
+      Macros.update(prefs, macro.copy(condition = saved))
+      return
+    }
+    val step = macro.steps.getOrNull(stepIndex) ?: return
+    val changed = Macros.withCondition(step, saved) ?: return
+    Macros.update(prefs, macro.copy(steps = macro.steps.mapIndexed { i, old -> if (i == stepIndex) changed else old }))
+  }
+
+  override fun build(screen: PreferenceGroup) {
+    val context = requireContext()
+    val condition = condition() ?: return
+    val clauses = condition.clauses
+    if (clauses.size < Macros.MAX_CLAUSES) {
+      screen.action(getString(R.string.macro_add_test)) {
+        if (condition()?.clauses.isNullOrEmpty()) {
+          addTest(or = false)
+        } else {
+          // A test after the first is joined to the ones before it with and or or.
+          val joins = listOf(getString(R.string.macro_join_with_and), getString(R.string.macro_join_with_or))
+          choose(getString(R.string.macro_add_test), joins) { addTest(or = it == 1) }
+        }
+      }
+    }
+    (step() as? Macros.WaitUntil)?.let { wait ->
+      screen.action(getString(R.string.macro_wait_timeout), Macros.secondsText(wait.timeoutMillis)) {
+        askTimeout(wait)
+      }
+    }
+    val list = screen.category(R.string.macro_tests)
+    if (clauses.isEmpty()) {
+      list.addPreference(
+        Preference(context).apply {
+          key = "macro_no_tests"
+          isPersistent = false
+          isIconSpaceReserved = false
+          isSelectable = false
+          setTitle(R.string.macro_no_tests)
+        }
+      )
+    }
+    clauses.forEachIndexed { index, clause ->
+      list.addPreference(ClauseRow(context, clauses, index, clauseText(index, clause)))
+    }
+  }
+
+  /** Asks for a test and adds it at the end, joined to the tests before it with or when [or]. */
+  private fun addTest(or: Boolean) {
+    askTest(null) { test ->
+      val current = condition() ?: return@askTest
+      save(Macros.Condition(current.clauses + Macros.Clause(test, or = or)))
+      rebuild()
+      listView?.let { focusAfterLayout(it, findPreference(rowKey(current.clauses.size)), null) }
+    }
+  }
+
+  private fun clauseText(index: Int, clause: Macros.Clause): String {
+    val text = Macros.describe(requireContext(), clause)
+    return when {
+      index == 0 -> text
+      clause.or -> getString(R.string.macro_clause_or, text)
+      else -> getString(R.string.macro_clause_and, text)
+    }
+  }
+
+  private fun rowKey(index: Int): String = "macro_test_$index"
+
+  private fun askTimeout(wait: Macros.WaitUntil) {
+    askText(
+      getString(R.string.macro_wait_timeout),
+      text = Macros.secondsText(wait.timeoutMillis),
+      hint = getString(R.string.macro_seconds),
+      inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL,
+    ) { text, _, _ ->
+      val millis = Macros.parseSeconds(text)?.takeIf { it >= Macros.MIN_TAP_TIMEOUT_MS }
+      val macro = macro()
+      if (millis == null) {
+        getString(R.string.macro_invalid_seconds, (Macros.MAX_WAIT_MS / 1000).toInt())
+      } else {
+        val step = step() as? Macros.WaitUntil
+        if (macro != null && step != null) {
+          val changed = step.copy(timeoutMillis = millis)
+          Macros.update(prefs, macro.copy(steps = macro.steps.mapIndexed { i, old -> if (i == stepIndex) changed else old }))
+          rebuild()
+        }
+        null
+      }
+    }
+  }
+
+  /** Saves [clauses] with [change] made to the test at [index], and moves focus to it. */
+  private fun change(clauses: List<Macros.Clause>, index: Int, change: (Macros.Clause) -> Macros.Clause) {
+    if (!isAdded || index !in clauses.indices) return
+    save(Macros.Condition(clauses.mapIndexed { i, clause -> if (i == index) change(clause) else clause }))
+    rebuild()
+    listView?.let { focusAfterLayout(it, findPreference(rowKey(index)), null) }
+  }
+
+  private fun edit(clauses: List<Macros.Clause>, index: Int) {
+    val clause = clauses.getOrNull(index) ?: return
+    askTest(clause.test) { test -> change(clauses, index) { it.copy(test = test) } }
+  }
+
+  private fun move(clauses: List<Macros.Clause>, index: Int, offset: Int): Boolean {
+    val target = index + offset
+    if (index !in clauses.indices || target !in clauses.indices) return false
+    val moved = clauses.toMutableList().apply { add(target, removeAt(index)) }
+    save(Macros.Condition(moved))
+    rebuild()
+    listView?.let { focusAfterLayout(it, findPreference(rowKey(target)), positionText(it, target, moved.size)) }
+    return true
+  }
+
+  private fun delete(clauses: List<Macros.Clause>, index: Int, name: CharSequence): Boolean {
+    if (index !in clauses.indices) return false
+    save(Macros.Condition(clauses.filterIndexed { i, _ -> i != index }))
+    rebuild()
+    listView?.let { announce(it, getString(R.string.quick_settings_removed, name)) }
+    return true
+  }
+
+  private fun showActions(clauses: List<Macros.Clause>, index: Int, name: CharSequence) {
+    val clause = clauses[index]
+    val reversed = Macros.describe(requireContext(), clause.copy(not = !clause.not))
+    val actions = ArrayList<Pair<String, () -> Unit>>()
+    actions += getString(R.string.notification_edit) to { edit(clauses, index) }
+    actions += getString(R.string.macro_change_to, reversed) to { change(clauses, index) { it.copy(not = !it.not) } }
+    if (index > 0) {
+      actions +=
+        getString(if (clause.or) R.string.macro_join_with_and else R.string.macro_join_with_or) to
+          { change(clauses, index) { it.copy(or = !it.or) } }
+    }
+    if (index > 0) actions += getString(R.string.action_move_up) to { move(clauses, index, -1) }
+    if (index < clauses.size - 1) actions += getString(R.string.action_move_down) to { move(clauses, index, 1) }
+    actions += getString(R.string.menu_delete) to { delete(clauses, index, name) }
+    choose(name, actions.map { it.first }) { actions[it].second() }
+  }
+
+  /** A test, at [index] of [clauses]. */
+  private inner class ClauseRow(
+    context: Context,
+    private val clauses: List<Macros.Clause>,
+    index: Int,
+    private val name: CharSequence,
+  ) : ListRow(context, rowKey(index), index, clauses.size, name) {
+    init {
+      setOnPreferenceClickListener {
+        showActions(clauses, index, name)
+        true
+      }
+    }
+
+    override fun move(offset: Int): Boolean = this@MacroConditionFragment.move(clauses, index, offset)
+
+    override fun edit(): Boolean {
+      this@MacroConditionFragment.edit(clauses, index)
+      return true
+    }
+
+    override fun delete(): Boolean = this@MacroConditionFragment.delete(clauses, index, name)
+  }
+
+  companion object {
+    /**
+     * The argument with the index of the step, or -1 for the condition the macro runs on, or
+     * [ACTIONS] for the condition it is shown in Actions on.
+     */
+    const val ARG_STEP = "step"
+
+    /** [ARG_STEP] for the condition a macro is shown in the Actions menu on. */
+    const val ACTIONS = -2
+  }
+}

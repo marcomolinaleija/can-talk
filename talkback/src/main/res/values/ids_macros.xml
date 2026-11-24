@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tag on a row of a macro's steps holding its start padding before the indent of its blocks. -->
+    <item name="macro_step_base_padding" type="id" />
+    <item name="macros_menu" type="id" />
+    <item name="group_macros" type="id" />
+    <item name="macro_record_menu" type="id" />
+    <item name="macro_stop_menu" type="id" />
+</resources>

@@ -238,6 +238,14 @@
             android:title="@string/title_show_voice_commands"
             app:singleLineTitle="false"
             android:summary="@string/summary_voice_commands"/>
+        <com.google.android.accessibility.material.preference.AccessibilitySuiteCheckBoxPreference
+            android:layout="@layout/listitem_2texts"
+            android:defaultValue="@bool/pref_show_context_menu_macros_default"
+            android:key="@string/pref_show_context_menu_macros_setting_key"
+            android:order="22"
+            android:title="@string/title_pref_macros"
+            app:singleLineTitle="false"
+            android:summary="@string/summary_context_menu_macros"/>
     </com.google.android.accessibility.material.preference.AccessibilitySuitePreferenceCategory>
     <com.google.android.accessibility.material.preference.AccessibilitySuitePreferenceCategory
         android:key="@string/pref_show_context_menu_others_category_key"

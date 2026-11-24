@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- Title of the settings screen of macros, lists of steps such as commands, waits and taps that run one after another, and the group of commands that run them. [CHAR LIMIT=40] -->
+    <string name="title_pref_macros">Macros</string>
+    <!-- Name of the command that stops the macro running. [CHAR LIMIT=40] -->
+    <string name="shortcut_stop_macro">Stop macro</string>
+    <!-- Button that makes a new macro. [CHAR LIMIT=40] -->
+    <string name="macro_add">Add macro</string>
+    <!-- Button on a macro's screen that runs the macro now, to test it. [CHAR LIMIT=40] -->
+    <string name="macro_run_now">Run now</string>
+    <!-- Button that adds a step to a macro, after the step added last or at the end. [CHAR LIMIT=40] -->
+    <string name="macro_add_step">Add step</string>
+    <!-- Shown under Add step: the step is added at the end of the macro. [CHAR LIMIT=NONE] -->
+    <string name="macro_add_at_end">At the end</string>
+    <!-- Shown under Add step: the step is added before the first step of the macro. [CHAR LIMIT=NONE] -->
+    <string name="macro_add_at_start">At the start</string>
+    <!-- Shown under Add step: where the step is added. step is the number of the step it follows, name that step. [CHAR LIMIT=NONE] -->
+    <string name="macro_add_after">After step <xliff:g id="step" example="2">%1$d</xliff:g>: <xliff:g id="name" example="If App in front: Chrome">%2$s</xliff:g></string>
+    <!-- Heading of the list of a macro's steps, in the order they run. [CHAR LIMIT=40] -->
+    <string name="macro_steps">Steps</string>
+    <!-- Shown in place of the steps of a macro that has none. [CHAR LIMIT=40] -->
+    <string name="macro_no_steps">No steps</string>
+    <!-- Button that deletes the macro shown. [CHAR LIMIT=40] -->
+    <string name="macro_delete">Delete macro</string>
+    <!-- Question before deleting a macro. name is its name. [CHAR LIMIT=NONE] -->
+    <string name="macro_delete_confirm">Delete <xliff:g id="name" example="Send message">%1$s</xliff:g>?</string>
+    <!-- Kind of macro step: runs a screen reader command, such as Back or Read from top. [CHAR LIMIT=40] -->
+    <string name="macro_step_command">Run command</string>
+    <!-- Kind of macro step, and the title of its dialog: waits a number of seconds before the next step. [CHAR LIMIT=40] -->
+    <string name="macro_step_wait">Wait</string>
+    <!-- Kind of macro step, and the title of its dialog: finds an item on screen by its text and activates it. [CHAR LIMIT=40] -->
+    <string name="macro_step_tap">Tap item</string>
+    <!-- Kind of macro step, and the title of its dialog: taps the screen at an X and Y position in pixels, from the top left of the screen. [CHAR LIMIT=40] -->
+    <string name="macro_step_tap_position">Tap at position</string>
+    <!-- A Tap at position step in a macro's list of steps. x and y are the position in pixels from the left and from the top of the screen. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_tap_position_value">Tap at <xliff:g id="x" example="540">%1$d</xliff:g>, <xliff:g id="y" example="1200">%2$d</xliff:g></string>
+    <!-- Label of the text field of a Tap at position step for the X position: pixels from the left of the screen. [CHAR LIMIT=40] -->
+    <string name="macro_tap_x">X, pixels from the left</string>
+    <!-- Label of the text field of a Tap at position step for the Y position: pixels from the top of the screen. [CHAR LIMIT=40] -->
+    <string name="macro_tap_y">Y, pixels from the top</string>
+    <!-- Error in the dialog of a Tap at position step when X or Y is not a whole number in range. max is the largest number allowed. [CHAR LIMIT=NONE] -->
+    <string name="macro_invalid_position">Enter X and Y from 0 to <xliff:g id="max" example="10000">%1$d</xliff:g></string>
+    <!-- Kind of macro step, and the title of its dialog: finds an item on screen by its text and moves the screen reader's focus to it, which speaks it, without activating it. [CHAR LIMIT=40] -->
+    <string name="macro_step_focus">Focus item</string>
+    <!-- Kind of macro step, and the title of its dialog: finds an item on screen by its text and speaks its name, without moving the screen reader's focus or activating it. [CHAR LIMIT=40] -->
+    <string name="macro_step_speak_item">Speak item</string>
+    <!-- Kind of macro step, and the title of its dialog: speaks a text the user types. [CHAR LIMIT=40] -->
+    <string name="macro_step_speak_text">Speak text</string>
+    <!-- Kind of macro step, and the title of its dialog: types text in the edit field that has focus. [CHAR LIMIT=40] -->
+    <string name="macro_step_type">Type text</string>
+    <!-- A Tap item step in a macro's list of steps. label is the text of the item it activates. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_tap_value">Tap <xliff:g id="label" example="Send">%1$s</xliff:g></string>
+    <!-- A Focus item step in a macro's list of steps. label is the text of the item it moves the screen reader's focus to. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_focus_value">Focus <xliff:g id="label" example="Send">%1$s</xliff:g></string>
+    <!-- A Speak item step in a macro's list of steps. label is the text of the item whose name it speaks. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_speak_item_value">Speak <xliff:g id="label" example="Send">%1$s</xliff:g></string>
+    <!-- A Speak text step in a macro's list of steps. text is the text it speaks. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_speak_text_value">Speak <xliff:g id="text" example="Done">%1$s</xliff:g></string>
+    <!-- A Type text step in a macro's list of steps. text is the text it types. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_type_value">Type <xliff:g id="text" example="On my way">%1$s</xliff:g></string>
+    <!-- A Type text step that replaces the text of the field, in a macro's list of steps. text is the text it types. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_replace_value">Replace text with <xliff:g id="text" example="On my way">%1$s</xliff:g></string>
+    <!-- A Wait step in a macro's list of steps, for a whole number of seconds. [CHAR LIMIT=NONE] -->
+    <plurals name="macro_step_wait_seconds">
+        <item quantity="one">Wait <xliff:g id="count" example="1">%d</xliff:g> second</item>
+        <item quantity="other">Wait <xliff:g id="count" example="2">%d</xliff:g> seconds</item>
+    </plurals>
+    <!-- A Wait step in a macro's list of steps, for a time that is not a whole number of seconds. [CHAR LIMIT=NONE] -->
+    <plurals name="macro_step_wait_milliseconds">
+        <item quantity="one">Wait <xliff:g id="count" example="1">%d</xliff:g> millisecond</item>
+        <item quantity="other">Wait <xliff:g id="count" example="500">%d</xliff:g> milliseconds</item>
+    </plurals>
+    <!-- A macro step whose command or app is not on this phone. [CHAR LIMIT=40] -->
+    <string name="macro_step_unavailable">Not available</string>
+    <!-- Hint of the text field for the number of seconds a Wait step waits. [CHAR LIMIT=40] -->
+    <string name="macro_seconds">Seconds</string>
+    <!-- Error under the seconds field of a Wait step when it is not a number in range. max is the largest number allowed. [CHAR LIMIT=NONE] -->
+    <string name="macro_invalid_seconds">Enter a number of seconds up to <xliff:g id="max" example="600">%1$d</xliff:g></string>
+    <!-- Hint of the text field for the text of the item a Tap item step activates. [CHAR LIMIT=40] -->
+    <string name="macro_tap_label">Item text</string>
+    <!-- Hint of the text field for how long a Tap item step waits for its item to appear. [CHAR LIMIT=60] -->
+    <string name="macro_tap_timeout">Seconds to wait for the item</string>
+    <!-- Hint of the text field for the text a Type text step types. [CHAR LIMIT=40] -->
+    <string name="macro_text">Text</string>
+    <!-- Checkbox of a Type text step: the text replaces what is in the field, instead of going in at the cursor. [CHAR LIMIT=60] -->
+    <string name="macro_replace_text">Replace text in field</string>
+    <!-- Spoken when a macro stops because the item of a Tap item step is not on screen. label is the item's text. [CHAR LIMIT=NONE] -->
+    <string name="macro_item_not_found">Macro stopped. Not found: <xliff:g id="label" example="Send">%1$s</xliff:g></string>
+    <!-- Spoken when a macro stops because a step failed. step is the step, such as Open Gmail. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_failed">Macro stopped. Failed: <xliff:g id="step" example="Open Gmail">%1$s</xliff:g></string>
+    <!-- Kind of macro step, and the title of its screen: waits until a condition is met, up to a number of seconds, and stops the macro after that. [CHAR LIMIT=40] -->
+    <string name="macro_step_wait_until">Wait until</string>
+    <!-- Kind of macro step, and the title of its screen: the steps after it, up to Else if, Else or End if, run only when its condition is met. [CHAR LIMIT=40] -->
+    <string name="macro_step_if">If</string>
+    <!-- Kind of macro step, and the title of its screen: the steps after it run when no branch of the If before it ran and its condition is met. [CHAR LIMIT=40] -->
+    <string name="macro_step_else_if">Else if</string>
+    <!-- Kind of macro step: the steps after it run when no branch of the If before it ran. [CHAR LIMIT=40] -->
+    <string name="macro_step_else">Else</string>
+    <!-- Kind of macro step: ends an If block. [CHAR LIMIT=40] -->
+    <string name="macro_step_end_if">End if</string>
+    <!-- Kind of macro step: runs the steps up to End repeat a number of times. [CHAR LIMIT=40] -->
+    <string name="macro_step_repeat">Repeat</string>
+    <!-- Kind of macro step, and the title of its screen: runs the steps up to End repeat while a condition is met. [CHAR LIMIT=40] -->
+    <string name="macro_step_repeat_while">Repeat while</string>
+    <!-- Kind of macro step: ends a Repeat or Repeat while block. [CHAR LIMIT=40] -->
+    <string name="macro_step_end_repeat">End repeat</string>
+    <!-- Kind of macro step: goes on after the End repeat of the repeat it is in. [CHAR LIMIT=40] -->
+    <string name="macro_step_exit_loop">Exit loop</string>
+    <!-- An If step in a macro's list of steps. condition is its condition, such as "Keyboard shown and Focused item: Editable". [CHAR LIMIT=NONE] -->
+    <string name="macro_step_if_value">If <xliff:g id="condition" example="Keyboard shown">%1$s</xliff:g></string>
+    <!-- An Else if step in a macro's list of steps. condition is its condition. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_else_if_value">Else if <xliff:g id="condition" example="Keyboard shown">%1$s</xliff:g></string>
+    <!-- A Repeat while step in a macro's list of steps. condition is its condition. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_repeat_while_value">Repeat while <xliff:g id="condition" example="Item on screen: Load more">%1$s</xliff:g></string>
+    <!-- A Wait until step in a macro's list of steps. condition is its condition. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_wait_until_value">Wait until <xliff:g id="condition" example="Item on screen: Send">%1$s</xliff:g></string>
+    <!-- A Repeat step in a macro's list of steps. count is how many times it runs the steps in it. [CHAR LIMIT=NONE] -->
+    <plurals name="macro_step_repeat_value">
+        <item quantity="one">Repeat <xliff:g id="count" example="1">%d</xliff:g> time</item>
+        <item quantity="other">Repeat <xliff:g id="count" example="3">%d</xliff:g> times</item>
+    </plurals>
+    <!-- Hint of the text field for how many times a Repeat step runs the steps in it. [CHAR LIMIT=40] -->
+    <string name="macro_times">Times</string>
+    <!-- Error under the times field of a Repeat step when it is not a number in range. max is the largest number allowed. [CHAR LIMIT=NONE] -->
+    <string name="macro_invalid_times">Enter a number from 1 to <xliff:g id="max" example="1000">%1$d</xliff:g></string>
+    <!-- Title of the setting of a macro with the condition that has to be met for the macro to run. [CHAR LIMIT=40] -->
+    <string name="macro_run_only_when">Run only when</string>
+    <!-- The condition of a macro that always runs, under Run only when. [CHAR LIMIT=40] -->
+    <string name="macro_always">Always</string>
+    <!-- A condition with no tests, which is always met. [CHAR LIMIT=40] -->
+    <string name="macro_no_tests">No tests</string>
+    <!-- Button that adds a test to a macro condition. [CHAR LIMIT=40] -->
+    <string name="macro_add_test">Add test</string>
+    <!-- Heading of the list of the tests of a macro condition. [CHAR LIMIT=40] -->
+    <string name="macro_tests">Tests</string>
+    <!-- Title of the dialog that asks for the kind of a test. [CHAR LIMIT=40] -->
+    <string name="macro_choose_test">Test</string>
+    <!-- Kind of test: an item on screen has a text. [CHAR LIMIT=40] -->
+    <string name="macro_test_item">Item on screen</string>
+    <!-- Kind of test: the item with accessibility focus has a text or is of a kind, such as editable. [CHAR LIMIT=40] -->
+    <string name="macro_test_focused">Focused item</string>
+    <!-- Kind of test: an app is in front. [CHAR LIMIT=40] -->
+    <string name="macro_test_app">App in front</string>
+    <!-- Kind of test, and a test in a condition: the on-screen keyboard is shown. [CHAR LIMIT=40] -->
+    <string name="macro_test_keyboard">Keyboard shown</string>
+    <!-- A reversed Keyboard shown test in a condition. [CHAR LIMIT=40] -->
+    <string name="macro_test_keyboard_hidden">Keyboard hidden</string>
+    <!-- Kind of test, and a test in a condition: the lock screen is shown. [CHAR LIMIT=40] -->
+    <string name="macro_test_locked">Screen locked</string>
+    <!-- A reversed Screen locked test in a condition. [CHAR LIMIT=40] -->
+    <string name="macro_test_unlocked">Screen unlocked</string>
+    <!-- An Item on screen test in a condition. item is its text, and can be followed by its kind, such as "Send, Clickable". [CHAR LIMIT=NONE] -->
+    <string name="macro_test_item_value">Item on screen: <xliff:g id="item" example="Send">%1$s</xliff:g></string>
+    <!-- A reversed Item on screen test in a condition. item is its text. [CHAR LIMIT=NONE] -->
+    <string name="macro_test_no_item_value">No item on screen: <xliff:g id="item" example="Send">%1$s</xliff:g></string>
+    <!-- A Focused item test in a condition. item is its text or kind, such as "Editable". [CHAR LIMIT=NONE] -->
+    <string name="macro_test_focused_value">Focused item: <xliff:g id="item" example="Editable">%1$s</xliff:g></string>
+    <!-- A reversed Focused item test in a condition. item is its text or kind. [CHAR LIMIT=NONE] -->
+    <string name="macro_test_not_focused_value">Focused item not: <xliff:g id="item" example="Editable">%1$s</xliff:g></string>
+    <!-- An App in front test in a condition. app is the app's name. [CHAR LIMIT=NONE] -->
+    <string name="macro_test_app_value">App in front: <xliff:g id="app" example="WhatsApp">%1$s</xliff:g></string>
+    <!-- A reversed App in front test in a condition. app is the app's name. [CHAR LIMIT=NONE] -->
+    <string name="macro_test_not_app_value">App not in front: <xliff:g id="app" example="WhatsApp">%1$s</xliff:g></string>
+    <!-- The text and kind of item a test looks for. [CHAR LIMIT=NONE] -->
+    <string name="macro_test_label_kind"><xliff:g id="label" example="Send">%1$s</xliff:g>, <xliff:g id="kind" example="Clickable">%2$s</xliff:g></string>
+    <!-- Two tests of a condition joined with and. [CHAR LIMIT=NONE] -->
+    <string name="macro_join_and"><xliff:g id="first" example="Keyboard shown">%1$s</xliff:g> and <xliff:g id="second" example="Focused item: Editable">%2$s</xliff:g></string>
+    <!-- Tests of a condition joined with or; and goes before or, which the comma shows. [CHAR LIMIT=NONE] -->
+    <string name="macro_join_or"><xliff:g id="first" example="Keyboard shown">%1$s</xliff:g>, or <xliff:g id="second" example="Screen locked">%2$s</xliff:g></string>
+    <!-- Check box in the macro item text dialogs: the text is a regular expression. [CHAR LIMIT=40] -->
+    <string name="macro_regex">Regular expression</string>
+    <!-- Error under the item text when it is not a regular expression macros can use. [CHAR LIMIT=NONE] -->
+    <string name="macro_invalid_regex">Not a usable regular expression. Repeated groups can\'t contain repetition or |.</string>
+    <!-- Label of the list in the macro item text dialogs: which text of an item is looked in. [CHAR LIMIT=40] -->
+    <string name="macro_match_in">Match in</string>
+    <!-- Choice in the Match in list: the item's text, description, hint, state and tooltip. [CHAR LIMIT=40] -->
+    <string name="macro_field_any">Any text</string>
+    <!-- Choice in the Match in list: the item's text. [CHAR LIMIT=40] -->
+    <string name="macro_field_text">Text</string>
+    <!-- Choice in the Match in list: the item's content description. [CHAR LIMIT=40] -->
+    <string name="macro_field_description">Description</string>
+    <!-- Choice in the Match in list: the item's hint text. [CHAR LIMIT=40] -->
+    <string name="macro_field_hint">Hint</string>
+    <!-- Choice in the Match in list: the item's state description. [CHAR LIMIT=40] -->
+    <string name="macro_field_state">State</string>
+    <!-- Choice in the Match in list: the item's tooltip text. [CHAR LIMIT=40] -->
+    <string name="macro_field_tooltip">Tooltip</string>
+    <!-- Choice in the Match in list: the view ID of the item, such as com.example:id/send. [CHAR LIMIT=40] -->
+    <string name="macro_field_id">Resource ID</string>
+    <!-- Item text of a macro step or test looked for in one text of the item. field is that text, such as Description. [CHAR LIMIT=NONE] -->
+    <string name="macro_field_value"><xliff:g id="label" example="send">%1$s</xliff:g> (<xliff:g id="field" example="Resource ID">%2$s</xliff:g>)</string>
+    <!-- Item text of a macro step or test that is a regular expression looked for in one text of the item. [CHAR LIMIT=NONE] -->
+    <string name="macro_field_regex_value"><xliff:g id="pattern" example="^Reply">%1$s</xliff:g> (<xliff:g id="field" example="Description">%2$s</xliff:g>, regular expression)</string>
+    <!-- Item text of a macro step or test that is a regular expression. [CHAR LIMIT=NONE] -->
+    <string name="macro_regex_value"><xliff:g id="pattern" example="Reply.*Anna">%1$s</xliff:g> (regular expression)</string>
+    <!-- Hint of the text field for the text of the item a Focused item test looks for, which can be left empty. [CHAR LIMIT=60] -->
+    <string name="macro_test_label_optional">Item text (optional)</string>
+    <!-- Title of the dialog that asks for the kind of item a test looks for, and label of the list of it in the macro step dialogs that find an item. [CHAR LIMIT=40] -->
+    <string name="macro_item_kind">Item type</string>
+    <!-- Item type: any item. [CHAR LIMIT=40] -->
+    <string name="macro_kind_any">Any type</string>
+    <!-- Item type: can be activated with a double tap. [CHAR LIMIT=40] -->
+    <string name="macro_kind_clickable">Clickable</string>
+    <!-- Item type: can be activated with a double tap and hold. [CHAR LIMIT=40] -->
+    <string name="macro_kind_long_clickable">Long-clickable</string>
+    <!-- Item type: an edit field. [CHAR LIMIT=40] -->
+    <string name="macro_kind_editable">Editable</string>
+    <!-- Item type: a list or page that can scroll. [CHAR LIMIT=40] -->
+    <string name="macro_kind_scrollable">Scrollable</string>
+    <!-- Item type: a slider or seek bar. [CHAR LIMIT=40] -->
+    <string name="macro_kind_adjustable">Adjustable</string>
+    <!-- Item type: a checkbox or switch. [CHAR LIMIT=40] -->
+    <string name="macro_kind_checkable">Checkable</string>
+    <!-- Item type: a checkbox or switch that is on. [CHAR LIMIT=40] -->
+    <string name="macro_kind_checked">Checked</string>
+    <!-- Item type: selected, such as the current tab. [CHAR LIMIT=40] -->
+    <string name="macro_kind_selected">Selected</string>
+    <!-- Item type: a heading. [CHAR LIMIT=40] -->
+    <string name="macro_kind_heading">Heading</string>
+    <!-- Item type: not dimmed. [CHAR LIMIT=40] -->
+    <string name="macro_kind_enabled">Enabled</string>
+    <!-- Action on a test of a condition that reverses it. test is the reversed test, such as Keyboard hidden. [CHAR LIMIT=NONE] -->
+    <string name="macro_change_to">Change to: <xliff:g id="test" example="Keyboard hidden">%1$s</xliff:g></string>
+    <!-- Action on a test of a condition that joins it to the tests before it with and. [CHAR LIMIT=40] -->
+    <string name="macro_join_with_and">Join with and</string>
+    <!-- Action on a test of a condition that joins it to the tests before it with or. [CHAR LIMIT=40] -->
+    <string name="macro_join_with_or">Join with or</string>
+    <!-- A test of a condition after the first, joined to the tests before it with and. test is the test. [CHAR LIMIT=NONE] -->
+    <string name="macro_clause_and">and <xliff:g id="test" example="Keyboard shown">%1$s</xliff:g></string>
+    <!-- A test of a condition after the first, joined to the tests before it with or. test is the test. [CHAR LIMIT=NONE] -->
+    <string name="macro_clause_or">or <xliff:g id="test" example="Screen locked">%1$s</xliff:g></string>
+    <!-- Setting of a Wait until step: how long it waits for its condition. [CHAR LIMIT=40] -->
+    <string name="macro_wait_timeout">Seconds to wait</string>
+    <!-- Action on a macro step that adds a step after it. [CHAR LIMIT=40] -->
+    <string name="macro_add_step_after">Add step after</string>
+    <!-- Shown over a macro's steps when its blocks don't match, and spoken when it is run. step is the step's number, problem one of the macro_problem texts. [CHAR LIMIT=NONE] -->
+    <string name="macro_problem">Step <xliff:g id="step" example="3">%1$d</xliff:g>: <xliff:g id="problem" example="If without End if">%2$s</xliff:g></string>
+    <!-- Problem of a macro: an Else if, Else or End if step is not in an If block. [CHAR LIMIT=NONE] -->
+    <string name="macro_problem_no_if">Else if, Else or End if without If</string>
+    <!-- Problem of a macro: an Else if or Else step follows an Else in the same If block. [CHAR LIMIT=NONE] -->
+    <string name="macro_problem_after_else">Else if or Else after Else</string>
+    <!-- Problem of a macro: an End repeat step is not in a Repeat block. [CHAR LIMIT=NONE] -->
+    <string name="macro_problem_no_repeat">End repeat without Repeat</string>
+    <!-- Problem of a macro: an If step has no End if. [CHAR LIMIT=NONE] -->
+    <string name="macro_problem_no_end_if">If without End if</string>
+    <!-- Problem of a macro: a Repeat step has no End repeat. [CHAR LIMIT=NONE] -->
+    <string name="macro_problem_no_end_repeat">Repeat without End repeat</string>
+    <!-- Problem of a macro: an Exit loop step is not in a Repeat block. [CHAR LIMIT=NONE] -->
+    <string name="macro_problem_exit">Exit loop outside a repeat</string>
+    <!-- Spoken when a macro doesn't run because its blocks don't match. step is the step's number, problem one of the macro_problem texts. [CHAR LIMIT=NONE] -->
+    <string name="macro_stopped_problem">Macro stopped. Step <xliff:g id="step" example="3">%1$d</xliff:g>: <xliff:g id="problem" example="If without End if">%2$s</xliff:g></string>
+    <!-- Spoken when a macro stops because a repeat ran its steps the most times allowed. count is that number, step the repeat step. [CHAR LIMIT=NONE] -->
+    <string name="macro_stopped_repeats">Macro stopped. Repeated <xliff:g id="count" example="1000">%1$d</xliff:g> times: <xliff:g id="step" example="Repeat while Item on screen: Load more">%2$s</xliff:g></string>
+    <!-- Spoken when a macro stops because the condition of a Wait until step was not met in time. step is the step. [CHAR LIMIT=NONE] -->
+    <string name="macro_stopped_timeout">Macro stopped. Timed out: <xliff:g id="step" example="Wait until Item on screen: Send">%1$s</xliff:g></string>
+    <!-- Spoken when Run now is pressed and the macro's Run only when condition is not met. [CHAR LIMIT=NONE] -->
+    <string name="macro_not_met">Macro not run. Run only when: not met</string>
+    <!-- Kind of macro step: touches an item and holds the touch, optionally sliding before it lifts. [CHAR LIMIT=40] -->
+    <string name="macro_step_touch_hold">Touch and hold item</string>
+    <!-- A Touch and hold item step in a macro's list of steps. label is the item's text, seconds how long the touch is held. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_touch_hold_value">Touch and hold <xliff:g id="label" example="Voice message">%1$s</xliff:g> for <xliff:g id="seconds" example="1.5">%2$s</xliff:g> s</string>
+    <!-- A Touch and hold item step that slides before the touch lifts. label is the item's text, seconds how long the touch is held, slide one of the macro_slide texts, distance the distance in dp. [CHAR LIMIT=NONE] -->
+    <string name="macro_step_touch_hold_slide_value">Touch and hold <xliff:g id="label" example="Voice message">%1$s</xliff:g> for <xliff:g id="seconds" example="1">%2$s</xliff:g> s. <xliff:g id="slide" example="Slide up">%3$s</xliff:g> <xliff:g id="distance" example="100">%4$d</xliff:g> dp</string>
+    <!-- Label of the field for how long a Touch and hold item step holds the touch. [CHAR LIMIT=40] -->
+    <string name="macro_hold_seconds">Seconds to hold</string>
+    <!-- Title of the list of what a Touch and hold item step does before the touch lifts. [CHAR LIMIT=40] -->
+    <string name="macro_slide">Before lifting</string>
+    <!-- Choice of a Touch and hold item step: the touch lifts where it is. [CHAR LIMIT=40] -->
+    <string name="macro_slide_none">Lift in place</string>
+    <!-- Choice of a Touch and hold item step: the touch slides up before it lifts. [CHAR LIMIT=40] -->
+    <string name="macro_slide_up">Slide up</string>
+    <!-- Choice of a Touch and hold item step: the touch slides down before it lifts. [CHAR LIMIT=40] -->
+    <string name="macro_slide_down">Slide down</string>
+    <!-- Choice of a Touch and hold item step: the touch slides left before it lifts. [CHAR LIMIT=40] -->
+    <string name="macro_slide_left">Slide left</string>
+    <!-- Choice of a Touch and hold item step: the touch slides right before it lifts. [CHAR LIMIT=40] -->
+    <string name="macro_slide_right">Slide right</string>
+    <!-- Hint of the field for how far a Touch and hold item step slides, in density-independent pixels. [CHAR LIMIT=40] -->
+    <string name="macro_slide_distance">Distance in dp</string>
+    <!-- Kind of macro step: opens the list of steps that act outside the screen, such as Play sound or Open link. [CHAR LIMIT=40] -->
+    <string name="macro_step_more">More steps</string>
+    <!-- Macro step that plays one of CAN Talk's sounds. [CHAR LIMIT=40] -->
+    <string name="macro_do_play_sound">Play sound</string>
+    <!-- Macro step that vibrates for a number of milliseconds. [CHAR LIMIT=40] -->
+    <string name="macro_do_vibrate">Vibrate</string>
+    <!-- Macro step that plays a tone of a frequency in hertz. [CHAR LIMIT=40] -->
+    <string name="macro_do_play_tone">Play tone</string>
+    <!-- Macro step that copies a text to the clipboard. [CHAR LIMIT=40] -->
+    <string name="macro_do_copy_text">Copy text</string>
+    <!-- Macro step that opens a web, email, phone or map address. [CHAR LIMIT=40] -->
+    <string name="macro_do_open_link">Open link</string>
+    <!-- Macro step that opens a page of Android's settings. [CHAR LIMIT=40] -->
+    <string name="macro_do_open_settings">Open settings page</string>
+    <!-- Macro step that opens Android's share sheet with a text. [CHAR LIMIT=40] -->
+    <string name="macro_do_share_text">Share text</string>
+    <!-- Macro step that sets the volume of an audio stream, in percent. [CHAR LIMIT=40] -->
+    <string name="macro_do_set_volume">Set volume</string>
+    <!-- Macro step that sets the ringer mode: normal, vibrate or silent. [CHAR LIMIT=40] -->
+    <string name="macro_do_set_ringer">Set ringer mode</string>
+    <!-- Macro step that presses keys through Shizuku. [CHAR LIMIT=40] -->
+    <string name="macro_do_press_keys">Press keys</string>
+    <!-- Macro step that shows a text in a dialog and waits until it is closed. [CHAR LIMIT=40] -->
+    <string name="macro_do_show_message">Show message</string>
+    <!-- Macro step that keeps a text as a named value, which later steps can use as {name}. [CHAR LIMIT=40] -->
+    <string name="macro_do_set_value">Set value</string>
+    <!-- Macro step that downloads the text at an https address into a value. [CHAR LIMIT=40] -->
+    <string name="macro_do_fetch">Fetch link</string>
+    <!-- Macro step that translates a text into the device's language and keeps it as a value. [CHAR LIMIT=40] -->
+    <string name="macro_do_translate">Translate text</string>
+    <!-- A More steps step in a macro's list of steps. %1$s is the kind of step, %2$s its text. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_value">%1$s: %2$s</string>
+    <!-- A step that keeps a value. %1$s is the kind of step, %2$s its text, %3$s the value's name. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_into_value">%1$s: %2$s, into %3$s</string>
+    <!-- A Vibrate step. %1$d is milliseconds. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_vibrate_value">Vibrate %1$d ms</string>
+    <!-- A Play tone step. %1$d is hertz. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_play_tone_value">Play tone %1$d Hz</string>
+    <!-- A Set volume step. %1$s is the stream, %2$d the percent. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_set_volume_value">Set %1$s volume to %2$d%%</string>
+    <!-- Hint of the field for a link address. [CHAR LIMIT=40] -->
+    <string name="macro_do_link_hint">Address</string>
+    <!-- Hint of the field for the keys a Press keys step presses. [CHAR LIMIT=60] -->
+    <string name="macro_do_keys_hint">Keys, such as tab enter</string>
+    <!-- Error for a number out of range. [CHAR LIMIT=NONE] -->
+    <string name="macro_number_range">Enter %1$d to %2$d</string>
+    <!-- Message of text dialogs of macro steps: how to put values in a text. Keep {name}, {item}, {clipboard}, {time} and {date} as they are. [CHAR LIMIT=NONE] -->
+    <string name="macro_values_help">Values go in as {name}. Also {item}, {clipboard}, {time}, {date}, {battery} and {device.wifi}.</string>
+    <!-- Label of the field for the name of a value. [CHAR LIMIT=40] -->
+    <string name="macro_value_name">Value name</string>
+    <!-- Error for a value name with other characters. [CHAR LIMIT=NONE] -->
+    <string name="macro_value_name_invalid">Use letters, digits, dots, dashes or underscores</string>
+    <!-- Kind of test: a named value contains a text, or is set. [CHAR LIMIT=40] -->
+    <string name="macro_test_value">Value</string>
+    <!-- Label of the field for the text a Value test looks for. [CHAR LIMIT=60] -->
+    <string name="macro_test_value_label">Contains (empty: any value)</string>
+    <!-- A Value test with no text. %1$s is the value's name. [CHAR LIMIT=NONE] -->
+    <string name="macro_test_value_set">Value %1$s is set</string>
+    <!-- A Value test. %1$s is the value's name, %2$s the text. [CHAR LIMIT=NONE] -->
+    <string name="macro_test_value_value">Value %1$s has %2$s</string>
+    <!-- A reversed test. %1$s is the test. [CHAR LIMIT=NONE] -->
+    <string name="macro_test_not">Not: %1$s</string>
+    <!-- Macro step that changes a setting of the quick settings panel, such as Wi-Fi, the flashlight, Do Not Disturb or brightness. [CHAR LIMIT=40] -->
+    <string name="macro_do_device_control">Device setting</string>
+    <!-- A Device setting step. %1$s is the setting, such as wifi, %2$s its new value, such as on. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_device_control_value">%1$s: %2$s</string>
+    <!-- Choice of a Device setting step. [CHAR LIMIT=40] -->
+    <string name="macro_do_turn_on">Turn on</string>
+    <!-- Choice of a Device setting step. [CHAR LIMIT=40] -->
+    <string name="macro_do_turn_off">Turn off</string>
+    <!-- Choice of a Device setting step: on when it is off, off when it is on. [CHAR LIMIT=40] -->
+    <string name="macro_do_toggle">Turn on or off</string>
+    <!-- Message of the dialog for the value of a slider such as Brightness. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_slider_help" formatted="false">A number, a percent such as 50%, or +1 or -1.</string>
+    <!-- Message of the dialog for the value of a choice such as Sound mode. Keep next as it is. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_choice_help">An option, such as Vibrate, or next.</string>
+    <!-- Macro step that presses a media key, such as play or pause, for the app that plays media. [CHAR LIMIT=40] -->
+    <string name="macro_do_media">Media key</string>
+    <!-- Media key. [CHAR LIMIT=40] -->
+    <string name="macro_media_play_pause">Play or pause</string>
+    <!-- Media key. [CHAR LIMIT=40] -->
+    <string name="macro_media_play">Play</string>
+    <!-- Media key. [CHAR LIMIT=40] -->
+    <string name="macro_media_pause">Pause</string>
+    <!-- Media key. [CHAR LIMIT=40] -->
+    <string name="macro_media_next">Next</string>
+    <!-- Media key. [CHAR LIMIT=40] -->
+    <string name="macro_media_previous">Previous</string>
+    <!-- Media key. [CHAR LIMIT=40] -->
+    <string name="macro_media_stop">Stop</string>
+    <!-- Media key. [CHAR LIMIT=40] -->
+    <string name="macro_media_rewind">Rewind</string>
+    <!-- Media key. [CHAR LIMIT=40] -->
+    <string name="macro_media_fast_forward">Fast forward</string>
+    <!-- Macro step that starts a timer in the clock app. [CHAR LIMIT=40] -->
+    <string name="macro_do_set_timer">Set timer</string>
+    <!-- A Set timer step. %1$s is seconds, %2$s its label. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_set_timer_value">Set timer: %1$s s, %2$s</string>
+    <!-- Label of the field for a timer's length. [CHAR LIMIT=40] -->
+    <string name="macro_do_timer_seconds">Seconds</string>
+    <!-- Label of the field for a timer's or alarm's label. [CHAR LIMIT=40] -->
+    <string name="macro_do_label">Label (optional)</string>
+    <!-- Macro step that sets an alarm in the clock app. [CHAR LIMIT=40] -->
+    <string name="macro_do_set_alarm">Set alarm</string>
+    <!-- A Set alarm step. %1$s is the time, %2$s its label. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_set_alarm_value">Set alarm: %1$s, %2$s</string>
+    <!-- Macro step that calls a phone number. [CHAR LIMIT=40] -->
+    <string name="macro_do_call">Call</string>
+    <!-- Label of the field for a phone number. [CHAR LIMIT=40] -->
+    <string name="macro_do_number">Phone number</string>
+    <!-- Macro step that opens the messaging app with a message to a number, to send. [CHAR LIMIT=40] -->
+    <string name="macro_do_send_message">Send message</string>
+    <!-- A Send message step. %1$s is the number, %2$s the message. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_send_message_value">Message to %1$s: %2$s</string>
+    <!-- Macro step that opens the camera app. [CHAR LIMIT=40] -->
+    <string name="macro_do_open_camera">Open camera</string>
+    <!-- Choice of an Open camera step. [CHAR LIMIT=40] -->
+    <string name="macro_do_camera_photo">Photo</string>
+    <!-- Choice of an Open camera step. [CHAR LIMIT=40] -->
+    <string name="macro_do_camera_video">Video</string>
+    <!-- A Set timer step with no label. %1$s is seconds. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_set_timer_short">Set timer: %1$s s</string>
+    <!-- A Set alarm step with no label. %1$s is the time. [CHAR LIMIT=NONE] -->
+    <string name="macro_do_set_alarm_short">Set alarm: %1$s</string>
+    <!-- Macro step that long-presses or scrolls an item. -->
+    <string name="macro_step_act_item">Long-press or scroll an item</string>
+    <!-- What a Long-press or scroll an item step does. -->
+    <string name="macro_act_long_press">Long-press</string>
+    <!-- What a Long-press or scroll an item step does, such as moving a seek bar on. -->
+    <string name="macro_act_scroll_forward">Scroll forward</string>
+    <!-- What a Long-press or scroll an item step does, such as moving a seek bar back. -->
+    <string name="macro_act_scroll_backward">Scroll backward</string>
+    <!-- A Long-press or scroll an item step. %1$s: Long-press, Scroll forward or Scroll backward; %2$s: the item. -->
+    <string name="macro_step_act_value"><xliff:g id="act" example="Long-press">%1$s</xliff:g>: <xliff:g id="label" example="Send">%2$s</xliff:g></string>
+    <!-- A Long-press or scroll an item step done more than once. %3$d: how many times. -->
+    <string name="macro_step_act_times_value"><xliff:g id="act" example="Scroll forward">%1$s</xliff:g>: <xliff:g id="label" example="Seek bar">%2$s</xliff:g>, <xliff:g id="times" example="5">%3$d</xliff:g> times</string>
+    <!-- Kind of condition test: the focused item is inside an item, such as a video player. -->
+    <string name="macro_test_focus_inside">Focus is inside an item</string>
+    <!-- A Focus is inside an item test. %1$s: the item. -->
+    <string name="macro_test_focus_inside_value">Focus inside: <xliff:g id="item" example="watch_player">%1$s</xliff:g></string>
+    <!-- A Focus is inside an item test, reversed. %1$s: the item. -->
+    <string name="macro_test_not_focus_inside_value">Focus not inside: <xliff:g id="item" example="watch_player">%1$s</xliff:g></string>
+    <!-- Title of the setting of a macro with the app it runs in and is listed under. [CHAR LIMIT=40] -->
+    <string name="macro_app">App</string>
+    <!-- The App setting of a macro that runs in every app, and the heading of the macros that do. [CHAR LIMIT=40] -->
+    <string name="macro_all_apps">All apps</string>
+    <!-- Action on the Macros screen that chooses an app and opens the list of its macros. [CHAR LIMIT=40] -->
+    <string name="macro_add_app">Add app</string>
+    <!-- Heading of the apps that have macros, on the Macros screen. [CHAR LIMIT=40] -->
+    <string name="macro_apps">Apps</string>
+    <!-- Setting of a macro that lists it in the Actions menu and the Actions reading control, of its app's items or of every item. [CHAR LIMIT=40] -->
+    <string name="macro_in_actions">Show in Actions</string>
+    <!-- Title of the row on a macro's screen, shown while Show in Actions is on, that opens the condition the focused item must meet for the macro to be listed in its Actions menu. [CHAR LIMIT=NONE] -->
+    <string name="macro_in_actions_only_when">Show in Actions only when</string>
+    <!-- Spoken when a macro limited to an app is run while another app is in front. %1$s: the app. [CHAR LIMIT=NONE] -->
+    <string name="macro_not_in_app">Macro not run. Runs only in <xliff:g id="app" example="WhatsApp">%1$s</xliff:g></string>
+    <!-- Number of macros of an app, under its name on the Macros screen. -->
+    <plurals name="macro_count">
+        <item quantity="one"><xliff:g id="count" example="1">%d</xliff:g> macro</item>
+        <item quantity="other"><xliff:g id="count" example="3">%d</xliff:g> macros</item>
+    </plurals>
+    <!-- Button on a macro's screen that starts recording steps as the user does them in apps. [CHAR LIMIT=40] -->
+    <string name="macro_record">Record steps</string>
+    <!-- Command that makes a new macro and starts recording its steps; while recording, it ends the recording. [CHAR LIMIT=40] -->
+    <string name="macro_record_new">Record a macro</string>
+    <!-- Notification shown while macro steps are recorded; opening it ends the recording. %1$s: the macro's name. -->
+    <string name="macro_recording_notification">Recording macro steps: <xliff:g id="macro" example="Turn on Wi-Fi">%1$s</xliff:g></string>
+    <!-- Shown when macro steps start being recorded. -->
+    <string name="macro_recording_toast">Recording. To stop, run Record a macro or Stop macro, or open the Recording macro steps notification.</string>
+    <!-- Title of the dialog that lists the steps recorded for a macro, with Save, Record again and Cancel. [CHAR LIMIT=40] -->
+    <string name="macro_recorded">Recorded steps</string>
+    <!-- Line under the recorded steps when text was typed in a password field. -->
+    <string name="macro_recorded_no_passwords">Text typed in password fields is not recorded.</string>
+    <!-- Shown when recorded steps would make a macro longer than it can be. %1$d: the most steps. -->
+    <string name="macro_recorded_too_many">Not added. A macro has at most <xliff:g id="count" example="200">%1$d</xliff:g> steps.</string>
+    <!-- Name of a macro made by the Record a macro command. %1$s: the date and time. [CHAR LIMIT=40] -->
+    <string name="macro_recorded_name">Recorded <xliff:g id="time" example="19 Nov 2026, 14:52">%1$s</xliff:g></string>
+    <!-- The item of a scroll step without one: the largest list on screen. [CHAR LIMIT=40] -->
+    <string name="macro_list_on_screen">List on screen</string>
+
+    <!-- Shared macro, command, file and shortcut strings adapted for CAN Talk. -->
+    <string name="app_gestures_choose_command">Choose command</string>
+    <string name="item_file_export">Export to file</string>
+    <string name="item_file_import">Import from file</string>
+    <string name="item_file_exported">Exported</string>
+    <string name="item_file_export_failed">Could not export</string>
+    <string name="item_file_imported">Imported <xliff:g id="items" example="2 macros">%1$s</xliff:g></string>
+    <plurals name="item_file_count_macros">
+        <item quantity="one"><xliff:g id="count" example="1">%d</xliff:g> macro</item>
+        <item quantity="other"><xliff:g id="count" example="2">%d</xliff:g> macros</item>
+    </plurals>
+    <string name="macro_import_none">No macros found in file</string>
+    <string name="macro_import_failed">Could not import</string>
+    <string name="macro_add_to_home_screen">Add to home screen</string>
+    <string name="macro_shortcut_unsupported">The launcher doesn\'t support home screen shortcuts</string>
+    <string name="macro_shortcut_already_added">Already on the home screen</string>
+    <string name="macro_shortcut_failed">Shortcut not added</string>
+    <string name="macro_shortcut_deleted">Macro deleted</string>
+    <string name="macro_shortcut_invalid">Shortcut not valid. Add the macro to the home screen again.</string>
+    <string name="menu_assign">Gestures</string>
+    <string name="menu_delete">Delete</string>
+    <string name="menu_name">Name</string>
+    <string name="menu_rename">Rename</string>
+    <string name="macro_assign_gesture">Assign gesture</string>
+    <string name="macro_gestures_none">Not assigned to any gesture</string>
+    <string name="macro_remove_gesture">Unassign gesture</string>
+    <string name="notification_choose_app">Choose an app</string>
+    <string name="notification_edit">Edit</string>
+    <string name="quick_settings_removed">%1$s removed</string>
+    <string name="script_builder_time">Time</string>
+    <string name="script_builder_time_error">Enter a time such as 08:30</string>
+    <string name="script_builder_recording_notification_text">Open to save the steps.</string>
+    <string name="script_builder_save">Save</string>
+    <string name="script_builder_record_again">Record again</string>
+    <string name="script_builder_nothing_recorded">No steps recorded</string>
+    <string name="shortcut_title_open_app">Open app</string>
+    <string name="shortcut_open_app">Open <xliff:g id="app_name" example="Gmail">%1$s</xliff:g></string>
+
+    <string name="macro_control_flashlight">Flashlight</string>
+    <string name="macro_control_sound_mode">Sound mode</string>
+    <string name="macro_control_media_volume">Media volume</string>
+    <string name="macro_control_call_volume">Call volume</string>
+    <string name="macro_control_ring_volume">Ring volume</string>
+    <string name="macro_control_notification_volume">Notification volume</string>
+    <string name="macro_control_alarm_volume">Alarm volume</string>
+    <string name="macro_control_accessibility_volume">Accessibility volume</string>
+    <string name="macro_control_system_volume">System volume</string>
+    <string name="macro_sound_mode_normal">Normal</string>
+    <string name="macro_sound_mode_vibrate">Vibrate</string>
+    <string name="macro_sound_mode_silent">Silent</string>
+    <string name="summary_context_menu_macros">Record, stop, or run macros for the current app</string>
+</resources>

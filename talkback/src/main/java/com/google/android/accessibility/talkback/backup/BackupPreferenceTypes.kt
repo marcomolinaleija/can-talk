@@ -18,6 +18,8 @@ internal object BackupPreferenceTypes {
         "pref_on_device_ai_timeout_seconds",
         "pref_clipboard_history_max_entries" -> return TalkBackBackup.PrefType.INT
         "pref_chatgpt_token_expires_at" -> return TalkBackBackup.PrefType.LONG
+        "pref_macros",
+        "pref_macro_values",
         "pref_on_device_ai_provider",
         "pref_ai_provider",
         "pref_on_device_ai_model",
@@ -100,6 +102,7 @@ internal object BackupPreferenceTypes {
     "pref_shortcut_single_tap_key" to TalkBackBackup.PrefType.STRING,
     "pref_shortcut_up_and_down_key" to TalkBackBackup.PrefType.STRING,
     "pref_shortcut_up_key" to TalkBackBackup.PrefType.STRING,
+    "pref_show_context_menu_macros_setting_key" to TalkBackBackup.PrefType.BOOLEAN,
     "pref_show_context_menu_typo_suggestions_setting_key" to TalkBackBackup.PrefType.BOOLEAN,
     "pref_show_continuous_reading_mode_dialog" to TalkBackBackup.PrefType.BOOLEAN,
     "pref_show_dim_screen_confirmation_dialog" to TalkBackBackup.PrefType.BOOLEAN,

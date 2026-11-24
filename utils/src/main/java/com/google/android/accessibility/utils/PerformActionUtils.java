@@ -23,10 +23,33 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat;
 import com.google.android.accessibility.utils.Performance.EventId;
 import com.google.android.libraries.accessibility.utils.log.LogUtils;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /** Used to perform an action on a AccessibilityNodeInfoCompat and log relevant information. */
 public class PerformActionUtils {
   private static final String TAG = "PerformActionUtils";
+
+  /** Listener notified before and after an accessibility action is performed on a node. */
+  public interface ActionListener {
+    void onActionPerformed(AccessibilityNodeInfoCompat node, int action);
+
+    default void onActionPerforming(AccessibilityNodeInfoCompat node, int action) {}
+  }
+
+  private static final CopyOnWriteArrayList<ActionListener> actionListeners =
+      new CopyOnWriteArrayList<>();
+
+  public static void addActionListener(ActionListener listener) {
+    if (listener != null) {
+      actionListeners.addIfAbsent(listener);
+    }
+  }
+
+  public static void removeActionListener(ActionListener listener) {
+    if (listener != null) {
+      actionListeners.remove(listener);
+    }
+  }
 
   public static boolean performAction(
       @Nullable AccessibilityNodeInfoCompat node, int action, @Nullable EventId eventId) {
@@ -42,7 +65,15 @@ public class PerformActionUtils {
       return false;
     }
 
+    for (ActionListener listener : actionListeners) {
+      listener.onActionPerforming(node, action);
+    }
     boolean result = node.performAction(action, args);
+    if (result) {
+      for (ActionListener listener : actionListeners) {
+        listener.onActionPerformed(node, action);
+      }
+    }
     LogUtils.d(
         TAG,
         "perform action=%d=%s returns %s with args=%s on node=%s for event=%s",
