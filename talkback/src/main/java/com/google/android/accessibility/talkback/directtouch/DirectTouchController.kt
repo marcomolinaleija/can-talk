@@ -17,6 +17,7 @@
 package com.google.android.accessibility.talkback.directtouch
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -33,8 +34,10 @@ import android.os.Looper
 import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.core.content.ContextCompat
@@ -64,7 +67,9 @@ import com.google.android.accessibility.utils.output.ThemeVibrations
  * Touch goes back to Backtalk as soon as a dialog, another app, the notification shade or a text
  * field needs the screen reader, or the screen turns off. The keyboard stays with Backtalk without
  * ending direct touch, because its window is cut out of the passthrough region unless direct typing
- * is on for the app. Selected external keyboards receive direct touch in every app.
+ * is on for the app. Selected external keyboards receive direct touch in every app. While a
+ * keyboard whose app has an accessibility service of its own is shown, the region that service
+ * sets stays.
  *
  * An app can also choose where it gets direct touch: in its manifest, by activity and by a state
  * it sets, and while it runs through [DirectTouchService]. Areas that follow views are looked up
@@ -291,7 +296,11 @@ constructor(
     val shouldBeActive = region != null
     if (region != null) {
       partRegionSent = false
-      sendRegion(region)
+      // The keyboard's own accessibility service may have set the region for the keyboard, and the
+      // app's would replace it. The region already sent stays until the keyboard closes.
+      if (!keyboardHasOwnService(windows, keyboards)) {
+        sendRegion(region)
+      }
     }
     if (shouldBeActive != active) {
       active = shouldBeActive
@@ -367,12 +376,22 @@ constructor(
     feedback.returnFeedback(Performance.EVENT_ID_UNTRACKED, Feedback.speech(label, options))
   }
 
-  /** Keeps selected keyboard windows and the optional navigation bar direct independently of apps. */
+  /**
+   * Keeps selected keyboard windows and the optional navigation bar direct independently of apps,
+   * except while [keyboardHasOwnService] with navigation bar direct touch on: then nothing is sent,
+   * and the region already sent stays.
+   */
   private fun updatePartRegion(
     windows: List<AccessibilityWindowInfo>,
     navBarDirect: Boolean,
     keyboards: List<AccessibilityWindowInfo>,
   ) {
+    if (navBarDirect && keyboardHasOwnService(windows, keyboards)) {
+      // The system keeps one passthrough region for all services. The keyboard's own accessibility
+      // service may have set one so that the keyboard gets touches directly, as some braille
+      // keyboards do, and the navigation bar's would replace it. The region already sent stays.
+      return
+    }
     val parts =
       (if (navBarDirect) navigationBarBounds(windows) else emptyList()) +
         keyboards.map { window -> Rect().also { window.getBoundsInScreen(it) } }
@@ -383,6 +402,40 @@ constructor(
       clearRegion()
       partRegionSent = false
     }
+  }
+
+  /**
+   * Whether a keyboard is shown that isn't in [keyboards], the direct touch list's, and whose app
+   * has an enabled accessibility service of its own, which may set the passthrough region for it.
+   * The keyboard is the default input method's [AccessibilityWindowInfo.TYPE_INPUT_METHOD] window,
+   * or an [AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY] window of the default input
+   * method's package, as some full-screen braille keyboards draw.
+   */
+  private fun keyboardHasOwnService(
+    windows: List<AccessibilityWindowInfo>,
+    keyboards: List<AccessibilityWindowInfo>,
+  ): Boolean {
+    val inputMethodShown =
+      windows.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD && it !in keyboards }
+    val overlays = windows.filter { it.type == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY }
+    if (!inputMethodShown && overlays.isEmpty()) {
+      return false
+    }
+    val keyboard =
+      Settings.Secure.getString(service.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+        ?.let { ComponentName.unflattenFromString(it)?.packageName }
+        ?: return false
+    if (keyboard == service.packageName) {
+      return false
+    }
+    if (!inputMethodShown && overlays.none { rootPackage(it) == keyboard }) {
+      return false
+    }
+    return service
+      .getSystemService(AccessibilityManager::class.java)
+      ?.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+      .orEmpty()
+      .any { it.resolveInfo?.serviceInfo?.packageName == keyboard }
   }
 
   private fun directKeyboards(windows: List<AccessibilityWindowInfo>): List<AccessibilityWindowInfo> {
