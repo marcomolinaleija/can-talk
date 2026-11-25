@@ -222,11 +222,27 @@ public class TextEventFilter {
               && voiceRecognitionActive) {
             voiceDictationDelegate.onTextEventAndInterpretation(event, textEventInterpreted);
           }
-          if (dropTextChangeEvent(event)) {
-            return;
+          if (isBrailleKeyboardActive()) {
+            // Keep awaiting-selection count in sync for rapid Braille input without dropping
+            // subsequent characters or word-ending spaces.
+            boolean canAccumulate =
+                textEventHistory.getTextChangesAwaitingSelection() > 0
+                    && (event.getEventTime() - textEventHistory.getLastTextChangeTime())
+                        < TEXT_SELECTION_DELAY
+                    && TextUtils.equals(
+                        event.getPackageName(), textEventHistory.getLastTextChangePackageName());
+            if (canAccumulate) {
+              textEventHistory.incrementTextChangesAwaitingSelection(1);
+            } else {
+              textEventHistory.setTextChangesAwaitingSelection(1);
+            }
+          } else {
+            if (dropTextChangeEvent(event)) {
+              return;
+            }
+            // Update text change history.
+            textEventHistory.setTextChangesAwaitingSelection(1);
           }
-          // Update text change history.
-          textEventHistory.setTextChangesAwaitingSelection(1);
           textEventHistory.setLastTextChangeTime(event.getEventTime());
           textEventHistory.setLastTextChangePackageName(event.getPackageName());
           if (voiceRecognitionActive) {
@@ -361,12 +377,17 @@ public class TextEventFilter {
     return false;
   }
 
+  /** Returns whether the Braille keyboard is currently active. */
+  boolean isBrailleKeyboardActive() {
+    return brailleKeyboardEchoReader != null
+        && brailleKeyboardEchoReader.readBrailleKeyboardEcho().isPresent();
+  }
+
   /** Whether a text change at this time was typed on an on-screen keyboard that speaks it. */
   private boolean isTypingSpokenByKeyboard(long textEventTime) {
     return onScreenKeyboardEchoSuppressor != null
         && getKeyboardType(textEventTime) == KeyboardType.ON_SCREEN
-        && (brailleKeyboardEchoReader == null
-            || brailleKeyboardEchoReader.readBrailleKeyboardEcho().isEmpty())
+        && !isBrailleKeyboardActive()
         && onScreenKeyboardEchoSuppressor.getAsBoolean();
   }
 

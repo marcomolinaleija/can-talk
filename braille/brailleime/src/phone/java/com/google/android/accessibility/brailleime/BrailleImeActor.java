@@ -141,7 +141,6 @@ public class BrailleImeActor {
     if (!callback.isConnectionValid()) {
       return null;
     }
-    talkBackForBrailleIme.interruptSpeak();
     if (talkBackForBrailleIme.isCurrentGranularitySuggestions()) {
       talkBackForBrailleIme.resetGranularity();
     }
@@ -197,7 +196,9 @@ public class BrailleImeActor {
         .noneMatch(command -> command.getBrailleImeAction().equals(requestedAction))) {
       return false;
     }
-    talkBackForBrailleIme.interruptSpeak();
+    if (shouldInterruptBeforeAction(action)) {
+      talkBackForBrailleIme.interruptSpeak();
+    }
     if (action != action.getRootAction()) {
       if (!isCorrectionContext()) {
         return false;
@@ -378,6 +379,20 @@ public class BrailleImeActor {
       }
     }
     return result;
+  }
+
+  private static boolean shouldInterruptBeforeAction(BrailleImeAction action) {
+    if (action != action.getRootAction()) {
+      return true;
+    }
+    return switch (action) {
+      case ADD_SPACE_OR_NEXT_ITEM,
+          ADD_NEWLINE,
+          DELETE_CHARACTER_OR_PREVIOUS_ITEM,
+          DELETE_WORD ->
+          false;
+      default -> true;
+    };
   }
 
   private boolean performSpellingAction(BrailleImeAction action) {

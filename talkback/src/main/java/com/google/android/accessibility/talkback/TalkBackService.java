@@ -810,6 +810,7 @@ public class TalkBackService extends AccessibilityServiceCompat
   private ProcessorPhoneticLetters processorPhoneticLetters;
 
   private BrailleDisplay brailleDisplay;
+  private @Nullable TalkBackForBrailleImeImpl talkBackForBrailleIme;
   private BrailleImeForTalkBackProvider brailleImeForTalkBackProvider;
 
   private GestureShortcutMapping gestureShortcutMapping;
@@ -1721,6 +1722,10 @@ public class TalkBackService extends AccessibilityServiceCompat
       // Raw braille touches own this surface. Consume any late framework gesture.
       return true;
     }
+    if (talkBackForBrailleIme != null && talkBackForBrailleIme.isRawTouchActive()) {
+      // Raw braille keyboard or calibration touches own this surface. Consume any late gesture.
+      return true;
+    }
     // A modal history surface owns touches; late framework gestures must not reach the app.
     if (clipboardHistoryController != null && clipboardHistoryController.isGestureOverlayActive()) {
       if (gestureId == AccessibilityService.GESTURE_2_FINGER_SWIPE_LEFT) {
@@ -1780,10 +1785,31 @@ public class TalkBackService extends AccessibilityServiceCompat
   }
 
   /**
+   * Returns whether any Braille raw-touch surface (keyboard, calibration, gesture practice, or
+   * modal Braille overlay) currently owns screen touch input.
+   */
+  public boolean isBrailleRawTouchActive() {
+    return (talkBackForBrailleIme != null && talkBackForBrailleIme.isRawTouchActive())
+        || (brailleWebNavigationController != null && brailleWebNavigationController.isShowing())
+        || (brailleAppSearchController != null && brailleAppSearchController.isShowing());
+  }
+
+  /** Returns whether the screen coordinates lie inside an active passthrough region. */
+  public boolean isTouchInPassthroughRegion(float x, float y) {
+    return passThroughModeActor != null
+        && passThroughModeActor.state.passesThrough((int) x, (int) y);
+  }
+
+  /**
    * Returns whether one-finger single tap and prolonged hold should be detected: either the user
    * explicitly assigned an action to it, or the active training/practice page captures it.
    */
   public boolean shouldDetectOneFingerTapAndHold() {
+    if (isBrailleRawTouchActive()
+        || (clipboardHistoryController != null
+            && clipboardHistoryController.isGestureOverlayActive())) {
+      return false;
+    }
     return isGestureAssignedOrCaptured(
         com.google.android.accessibility.utils.gestures.GestureManifold
             .GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD);
@@ -1794,6 +1820,11 @@ public class TalkBackService extends AccessibilityServiceCompat
    * explicitly assigned an action to it, or the active training/practice page captures it.
    */
   public boolean shouldDetectSwipeAndHold(int gestureId) {
+    if (isBrailleRawTouchActive()
+        || (clipboardHistoryController != null
+            && clipboardHistoryController.isGestureOverlayActive())) {
+      return false;
+    }
     return isGestureAssignedOrCaptured(gestureId);
   }
 
@@ -3032,7 +3063,7 @@ public class TalkBackService extends AccessibilityServiceCompat
                     ? null
                     : getBrailleImeForTalkBack().getBrailleImeForBrailleDisplay());
 
-    TalkBackForBrailleIme talkBackForBrailleIme =
+    talkBackForBrailleIme =
         new TalkBackForBrailleImeImpl(
             this,
             pipeline.getFeedbackReturner(),
@@ -3449,6 +3480,9 @@ public class TalkBackService extends AccessibilityServiceCompat
     interruptAllFeedback(/* stopTtsSpeechCompletely */ false);
 
     // Some apps depend on these being set to false when TalkBack is disabled.
+    if (talkBackForBrailleIme != null) {
+      talkBackForBrailleIme.resetRawTouchActive();
+    }
     if (supportsTouchScreen) {
       requestTouchExploration(false);
     }
@@ -3560,6 +3594,10 @@ public class TalkBackService extends AccessibilityServiceCompat
       analytics.onTalkBackServiceStopped();
     }
     BrailleIme.shutdown();
+    if (talkBackForBrailleIme != null) {
+      talkBackForBrailleIme.resetRawTouchActive();
+      talkBackForBrailleIme = null;
+    }
   }
 
   /** Called on any thread when a two-finger drag is passed to the app. */
@@ -4257,6 +4295,9 @@ public class TalkBackService extends AccessibilityServiceCompat
       screenFocusRestorer.onUserInteraction();
     }
     if (paused) {
+      if (talkBackForBrailleIme != null) {
+        talkBackForBrailleIme.resetRawTouchActive();
+      }
       if (supportsTouchScreen) {
         requestTouchExploration(false);
       }
@@ -4745,6 +4786,9 @@ public class TalkBackService extends AccessibilityServiceCompat
     if (isServiceActive() && shouldUseTalkbackGestureDetection()) {
       unregisterGestureDetection();
       registerGestureDetection();
+      if (talkBackForBrailleIme != null && talkBackForBrailleIme.isRawTouchActive()) {
+        requestTouchExploration(false);
+      }
     }
   }
 

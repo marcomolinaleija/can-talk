@@ -165,6 +165,23 @@ public class BrailleImeSubmitTest {
   }
 
   @Test
+  public void typingAndEditingActionsDoNotInterruptInFlightEcho() {
+    Fixture fixture = new Fixture(false);
+    fixture.actor.performTyping(new BrailleCharacter("1"));
+    fixture.actor.performAction(BrailleImeAction.ADD_SPACE_OR_NEXT_ITEM);
+    fixture.actor.performAction(BrailleImeAction.DELETE_CHARACTER_OR_PREVIOUS_ITEM);
+    fixture.actor.performAction(BrailleImeAction.DELETE_WORD);
+    fixture.actor.performAction(BrailleImeAction.ADD_NEWLINE);
+    assertEquals(0, fixture.interruptSpeakCount);
+
+    fixture.actor.performAction(BrailleImeAction.MOVE_CURSOR_FORWARD);
+    assertEquals(1, fixture.interruptSpeakCount);
+
+    fixture.actor.performAction(BrailleImeAction.HIDE_KEYBOARD);
+    assertEquals(2, fixture.interruptSpeakCount);
+  }
+
+  @Test
   public void enteringControlsClearsComposingWordBeforeExternalMentionInsertion() {
     Fixture fixture = new Fixture(false);
     fixture.editor.setText("@");
@@ -191,6 +208,7 @@ public class BrailleImeSubmitTest {
     int hideCount;
     boolean suggestions;
     int confirmationCount;
+    int interruptSpeakCount;
     final List<Boolean> suggestionMoves = new ArrayList<>();
 
     Fixture(boolean contracted) {
@@ -234,6 +252,7 @@ public class BrailleImeSubmitTest {
                       case "navigateSuggestion": suggestionMoves.add((Boolean) args[0]); return true;
                       case "confirmSuggestion": confirmationCount++; suggestions = false; return true;
                       case "resetGranularity": suggestions = false; return null;
+                      case "interruptSpeak": interruptSpeakCount++; return null;
                       default: return method.getReturnType() == boolean.class ? false : null;
                     }
                   });

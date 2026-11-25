@@ -249,6 +249,7 @@ public class TouchInteractionMonitor
   // 2. The requested state is either on or off: queuedState
   boolean queuedState;
   boolean waitToChange;
+  private boolean touchStartedInPassthroughRegion = false;
 
   /**
    * Interface for {@link TouchInteractionMonitor} to notify a listener when the {@link
@@ -379,14 +380,16 @@ public class TouchInteractionMonitor
               @Override
               public boolean enableOneFingerTapAndHold() {
                 return service.shouldDetectOneFingerTapAndHold()
-                    && (!isLiftToType
+                    && ((!isLiftToType && !touchStartedInPassthroughRegion)
                         || service.isGestureCapturedByTraining(
                             GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD));
               }
 
               @Override
               public boolean enableSwipeAndHold(int gestureId) {
-                return service.shouldDetectSwipeAndHold(gestureId);
+                return service.shouldDetectSwipeAndHold(gestureId)
+                    && (!touchStartedInPassthroughRegion
+                        || service.isGestureCapturedByTraining(gestureId));
               }
             },
             logger,
@@ -454,6 +457,10 @@ public class TouchInteractionMonitor
    * @param enabled the requested state of Touch Explore status.
    */
   public void requestA11yTouchExploreState(boolean enabled) {
+    if (!enabled) {
+      followingHeldTouch = false;
+      clear();
+    }
     if (enabled || state == STATE_CLEAR) {
       waitToChange = false;
       idlePerformer.provisionTouchExploreFeature(enabled);
@@ -535,6 +542,16 @@ public class TouchInteractionMonitor
       LogUtils.e(LOG_TAG, "Event is null.");
       return;
     }
+    if (service.isBrailleRawTouchActive()) {
+      followingHeldTouch = false;
+      clear();
+      if (event.getActionMasked() == ACTION_DOWN
+          && state == STATE_TOUCH_INTERACTING
+          && !stateChangeRequested) {
+        requestDelegating("brailleRawTouch");
+      }
+      return;
+    }
     if (followingHeldTouch) {
       followHeldTouch(event);
       return;
@@ -564,6 +581,10 @@ public class TouchInteractionMonitor
         clearGestureDetectorOnNextDown = false;
         gestureDetector.clear();
         eventId = Performance.getInstance().onGestureEventReceived(displayId, event);
+      }
+      if (event.getActionMasked() == ACTION_DOWN) {
+        touchStartedInPassthroughRegion =
+            service.isTouchInPassthroughRegion(event.getX(), event.getY());
       }
       gestureDetector.onMotionEvent(eventId, event);
     }
@@ -755,6 +776,7 @@ public class TouchInteractionMonitor
   private void clear() {
     gestureStarted = false;
     clearGestureDetectorOnNextDown = false;
+    touchStartedInPassthroughRegion = false;
     rotationTracker.clear();
     stateChangeRequested = false;
     gestureDetector.clear();
@@ -1045,6 +1067,10 @@ public class TouchInteractionMonitor
           TouchInteractionController.stateToString(previousState));
       return;
     }
+    if ((waitToChange && !queuedState) || service.isBrailleRawTouchActive()) {
+      clear();
+      return;
+    }
     int gestureId = gestureEvent.getGestureId();
     if (gestureId == GESTURE_TOUCH_EXPLORE || gestureId == GESTURE_TAP_UP_TOUCH_EXPLORE) {
       requestTouchExplorationDelayed.cancel();
@@ -1086,12 +1112,15 @@ public class TouchInteractionMonitor
       eventId = Performance.getInstance().onGestureEventReceived(displayId, null);
     } else if (gestureId == GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD) {
       if (!service.shouldDetectOneFingerTapAndHold()
-          || (isLiftToType && !service.isGestureCapturedByTraining(gestureId))) {
+          || ((isLiftToType || touchStartedInPassthroughRegion)
+              && !service.isGestureCapturedByTraining(gestureId))) {
         return;
       }
       dispatchGestureToMainThreadAndClear(gestureEvent);
     } else if (isSwipeAndHoldGesture(gestureId)) {
-      if (!service.shouldDetectSwipeAndHold(gestureId)) {
+      if (!service.shouldDetectSwipeAndHold(gestureId)
+          || (touchStartedInPassthroughRegion
+              && !service.isGestureCapturedByTraining(gestureId))) {
         return;
       }
       dispatchGestureToMainThreadAndClear(gestureEvent);
@@ -1388,6 +1417,9 @@ public class TouchInteractionMonitor
   }
 
   private boolean shouldPerformGestureDetection() {
+    if ((waitToChange && !queuedState) || service.isBrailleRawTouchActive()) {
+      return false;
+    }
     if (this.state == STATE_TOUCH_INTERACTING || this.state == STATE_TOUCH_EXPLORING) {
       return true;
     }

@@ -50,6 +50,7 @@ import com.google.android.accessibility.talkback.actor.DirectClick
 import com.google.android.accessibility.talkback.analytics.TalkBackAnalytics
 import com.google.android.accessibility.utils.SharedPreferencesUtils
 import com.google.android.accessibility.utils.gestures.GestureConfiguration
+import com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_1_FINGER_SINGLE_TAP_AND_HOLD
 import com.google.android.accessibility.utils.gestures.GestureManifold.GESTURE_SWIPE_UP_AND_HOLD
 import java.time.Duration
 import org.junit.After
@@ -79,6 +80,9 @@ class TouchInteractionMonitorTest {
     val gestures = mutableListOf<Int>()
     val threads = mutableSetOf<Thread>()
     val enabledSwipeAndHoldGestures = mutableSetOf<Int>()
+    var brailleRawTouchActive = false
+    var passthroughAtTouch = false
+    var oneFingerTapAndHoldEnabled = false
 
     override fun onGesture(accessibilityGestureEvent: AccessibilityGestureEvent): Boolean {
       threads.add(Thread.currentThread())
@@ -90,8 +94,15 @@ class TouchInteractionMonitorTest {
       threads.add(Thread.currentThread())
     }
 
+    override fun isBrailleRawTouchActive(): Boolean = brailleRawTouchActive
+
+    override fun isTouchInPassthroughRegion(x: Float, y: Float): Boolean = passthroughAtTouch
+
+    override fun shouldDetectOneFingerTapAndHold(): Boolean =
+      !brailleRawTouchActive && oneFingerTapAndHoldEnabled
+
     override fun shouldDetectSwipeAndHold(gestureId: Int): Boolean =
-      gestureId in enabledSwipeAndHoldGestures
+      !brailleRawTouchActive && gestureId in enabledSwipeAndHoldGestures
   }
 
   /** Records the threads that ask the controller for touch exploration. */
@@ -603,5 +614,71 @@ class TouchInteractionMonitorTest {
 
     assertEquals(listOf<Int>(), service.gestures)
     assertEquals(listOf(mainThread), reporter.requests)
+  }
+
+  @Test
+  fun swipeAndHoldDoesNotFireWhileBrailleRawTouchIsActive() {
+    service.enabledSwipeAndHoldGestures.add(GESTURE_SWIPE_UP_AND_HOLD)
+    service.brailleRawTouchActive = true
+    val confirmPx = swipeConfirmPx() + 6f
+    val startY = 400f
+
+    stateChangeAt(STATE_TOUCH_INTERACTING, 0)
+    touchAt(ACTION_DOWN, 200f, startY, 0)
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx * 0.5f, 40)
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx, 100)
+    runUntil(100 + GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS + 200L)
+
+    assertEquals(listOf<Int>(), service.gestures)
+    assertEquals(listOf<Thread>(), reporter.requests)
+  }
+
+  @Test
+  fun turningOffTouchExplorationCancelsPendingSwipeAndHoldTimer() {
+    service.enabledSwipeAndHoldGestures.add(GESTURE_SWIPE_UP_AND_HOLD)
+    val confirmPx = swipeConfirmPx() + 6f
+    val startY = 400f
+
+    stateChangeAt(STATE_TOUCH_INTERACTING, 0)
+    touchAt(ACTION_DOWN, 200f, startY, 0)
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx * 0.5f, 40)
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx, 100)
+    runUntil(150)
+
+    monitor.requestA11yTouchExploreState(false)
+    stateChangeAt(STATE_CLEAR, 200)
+    runUntil(100 + GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS + 200L)
+
+    assertEquals(listOf<Int>(), service.gestures)
+    assertEquals(listOf(false), provisioned)
+  }
+
+  @Test
+  fun swipeAndHoldDoesNotFireInsidePassthroughRegion() {
+    service.enabledSwipeAndHoldGestures.add(GESTURE_SWIPE_UP_AND_HOLD)
+    service.passthroughAtTouch = true
+    val confirmPx = swipeConfirmPx() + 6f
+    val startY = 400f
+
+    stateChangeAt(STATE_TOUCH_INTERACTING, 0)
+    touchAt(ACTION_DOWN, 200f, startY, 0)
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx * 0.5f, 40)
+    touchAt(ACTION_MOVE, 200f, startY - confirmPx, 100)
+    runUntil(100 + GestureConfiguration.SWIPE_AND_HOLD_TIMEOUT_MS + 200L)
+
+    assertEquals(listOf<Int>(), service.gestures)
+  }
+
+  @Test
+  fun oneFingerTapAndHoldDoesNotFireWhileBrailleRawTouchIsActive() {
+    service.oneFingerTapAndHoldEnabled = true
+    service.brailleRawTouchActive = true
+
+    stateChangeAt(STATE_TOUCH_INTERACTING, 0)
+    touchAt(ACTION_DOWN, 200f, 400f, 0)
+    runUntil(GestureConfiguration.PROLONGED_HOLD_TIMEOUT_MS + 200L)
+
+    assertEquals(listOf<Int>(), service.gestures)
+    assertEquals(listOf<Thread>(), reporter.requests)
   }
 }

@@ -63,6 +63,9 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
   /** A reference to the active Braille IME if any. */
   private @Nullable BrailleImeForTalkBack brailleImeForTalkBack;
 
+  /** Whether an active Braille surface currently owns raw touch input on the screen. */
+  private boolean rawTouchActive;
+
   @VisibleForTesting
   static final Setting[] VALID_CURSOR_GRANULARITIES =
       new Setting[] {
@@ -168,9 +171,22 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
                 .build()));
   }
 
+  /** Returns whether Braille IME, calibration, or gesture practice currently owns raw touch. */
+  public boolean isRawTouchActive() {
+    return rawTouchActive;
+  }
+
+  /** Clears the active Braille raw-touch flag when TalkBack suspends or pauses. */
+  public void resetRawTouchActive() {
+    rawTouchActive = false;
+  }
+
   @Override
   public void onBrailleImeActivated(
       boolean disableEbt, boolean usePassThrough, Region passThroughRegion) {
+    rawTouchActive =
+        disableEbt
+            || (usePassThrough && passThroughRegion != null && !passThroughRegion.isEmpty());
     if (usePassThrough) {
       feedbackReturner.returnFeedback(
           Performance.EVENT_ID_UNTRACKED,
@@ -183,6 +199,7 @@ public class TalkBackForBrailleImeImpl implements TalkBackForBrailleIme {
 
   @Override
   public void onBrailleImeInactivated(boolean usePassThrough) {
+    rawTouchActive = false;
     cancelSuggestionMode();
     if (getServiceStatus() != ServiceStatus.ON) {
       return;
