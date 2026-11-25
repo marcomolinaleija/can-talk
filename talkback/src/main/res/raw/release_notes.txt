@@ -1,5 +1,6 @@
-CAN Talk 1.0.9
+CAN Talk 1.0.10
 
+- Se corrige un error con el teclado braille que impedía leer caracteres o palabras al escribir y permitía que los gestos de deslizamiento con retención interfirieran mientras se usaba el teclado.
 - Nuevo sistema de macros en Ajustes > Controles y en el menú de CAN Talk: crea, edita, graba pasos (incluido desde Configuración rápida), importa o exporta automatizaciones con condiciones, bucles, controles del dispositivo, acciones por aplicación, accesos directos en la pantalla de inicio y asignación a gestos o al menú de Acciones.
 - Nuevos gestos personalizables en Ajustes > Personalizar gestos: «Mantener pulsado» con 1, 2 y 4 dedos, y «Deslizar hacia arriba, abajo, izquierda o derecha y mantener pulsado», todos disponibles también en la práctica de gestos.
 - Mejor reconocimiento y respuesta del deslizamiento con retención: ahora requiere menos tiempo de espera tras detener el dedo, funciona con recorridos más cortos desde cualquier zona o borde de la pantalla, tolera el arco natural del pulgar y evita interferir con la exploración táctil cuando una dirección no tiene acción asignada.
