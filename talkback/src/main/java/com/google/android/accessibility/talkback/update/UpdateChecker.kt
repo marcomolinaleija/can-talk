@@ -27,7 +27,7 @@ data class UpdateInfo(
 /** Checks the latest stable public GitHub release, without embedding any credentials. */
 object UpdateChecker {
   internal const val VERSION_CODE_BASE = 70000000
-  private const val REPOSITORY = "marcomolinaleija/can-talk"
+  private const val REPOSITORY = "can-apps/can-talk"
   @VisibleForTesting
   internal const val RELEASE_URL = "https://api.github.com/repos/$REPOSITORY/releases/latest"
   @VisibleForTesting const val PHONE_APK_NAME = "cantalk.apk"

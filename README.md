@@ -117,7 +117,7 @@ Earlier CAN Talk builds used `fyi.quin.backtalk` or `fyi.quin.backtalk.cantalkte
 
 ## Updates
 
-CAN Talk 1.0.3+ checks this fork's [latest stable release](https://github.com/marcomolinaleija/can-talk/releases/latest)
+CAN Talk 1.0.3+ checks this fork's [latest stable release](https://github.com/can-apps/can-talk/releases/latest)
 through GitHub's public API. The `update.json` asset contains APK version codes
 and SHA-256 checksums; the release body is used only as editorial notes. Updates
 must have a higher version code. The installed version's notes are also available

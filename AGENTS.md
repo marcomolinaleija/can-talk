@@ -13,7 +13,7 @@
 
 ## Contrato del actualizador desde 1.0.3
 
-- Consultar únicamente `https://api.github.com/repos/marcomolinaleija/can-talk/releases/latest`
+- Consultar únicamente `https://api.github.com/repos/can-apps/can-talk/releases/latest`
   para versiones estables públicas, sin credenciales dentro de la app.
 - GitHub proporciona `tag_name`, `body` y `assets`. `body` es texto editorial:
   NO se obtiene de él el número de versión, compilación ni lista de commits.
@@ -73,7 +73,7 @@ el checksum detecta inconsistencias, no sustituye una firma privada.
 El script genera `build/releases/<versión>/`, valida el APK, crea un tag de versión
 sin sobrescribirlo, sube assets a una release en borrador antes de publicarla y
 sincroniza `dev`. Se detiene ante errores nativos. No sustituye pruebas de dispositivo.
-Usar siempre `--repo marcomolinaleija/can-talk` con `gh`: este checkout también tiene
+Usar siempre `--repo can-apps/can-talk` con `gh`: este checkout también tiene
 un remoto upstream y la selección implícita puede apuntar al repositorio equivocado.
 
 Commit, push, compilación y publicación requieren autorización por separado.

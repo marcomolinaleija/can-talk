@@ -36,7 +36,7 @@ class UpdateConnectionTest {
       urls.add(url)
       if (url == UpdateChecker.RELEASE_URL) api else manifest
     }!!
-    assertEquals(listOf("https://api.github.com/repos/marcomolinaleija/can-talk/releases/latest", UpdateFixtures.url("update.json")), urls)
+    assertEquals(listOf("https://api.github.com/repos/can-apps/can-talk/releases/latest", UpdateFixtures.url("update.json")), urls)
     assertEquals(BuildConfig.COMMIT_COUNT + 1, update.build)
     assertEquals(UpdateFixtures.url("cantalk.apk"), update.downloadUrl)
     assertEquals("application/vnd.github+json", api.getRequestProperty("Accept"))
@@ -88,6 +88,20 @@ class UpdateConnectionTest {
     assertThrows(IOException::class.java) {
       UpdateChecker.check(other) { _, _ -> throw AssertionError("No request expected") }
     }
+  }
+
+  @Test fun legacyRepositoryAssetUrlIsRejectedAndDisconnected() {
+    val legacyRelease = UpdateFixtures.release(repository = "marcomolinaleija/can-talk")
+    val api = FakeConnection(legacyRelease)
+    val urls = mutableListOf<String>()
+    assertThrows(JSONException::class.java) {
+      UpdateChecker.check(context) { _, url ->
+        urls.add(url)
+        api
+      }
+    }
+    assertEquals(listOf("https://api.github.com/repos/can-apps/can-talk/releases/latest"), urls)
+    assertTrue(api.disconnected)
   }
 
   @Test fun realConnectionHasTimeoutsAndUserAgent() {

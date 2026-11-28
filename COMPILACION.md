@@ -19,7 +19,7 @@ Gradle se descarga mediante el wrapper incluido (`gradlew`/`gradlew.bat`); no se
 ## Obtener el código por SSH
 
 ```powershell
-git clone git@github.com:marcomolinaleija/can-talk.git
+git clone git@github.com:can-apps/can-talk.git
 cd can-talk
 git remote add upstream git@github.com:trypsynth/backtalk.git
 git fetch upstream
@@ -273,7 +273,7 @@ El workflow manual `.github/workflows/release-candidate.yml` conserva un procedi
 
 **No existe todavía un workflow que compile y publique automáticamente una release.** Ni un push normal ni los workflows anteriores alimentan por sí solos los canales de actualización. El procedimiento vigente es el publicador local descrito en [LANZAMIENTO.md](LANZAMIENTO.md).
 
-Desde 1.0.3, el actualizador de teléfono consulta `https://api.github.com/repos/marcomolinaleija/can-talk/releases/latest` y busca `cantalk.apk` y `update.json`. El JSON contiene versión, código y SHA-256 del APK. Las notas de GitHub se muestran completas y no determinan si hay actualización. La fuente editorial compartida con la opción Novedades es `talkback/src/main/res/raw/release_notes.txt`. El canal `dev` conserva la cabecera `build:` únicamente por compatibilidad con versiones anteriores. Véase `LANZAMIENTO.md` para publicar ambos canales.
+Desde 1.0.3, el actualizador de teléfono consulta `https://api.github.com/repos/can-apps/can-talk/releases/latest` y busca `cantalk.apk` y `update.json`. El JSON contiene versión, código y SHA-256 del APK. Las notas de GitHub se muestran completas y no determinan si hay actualización. La fuente editorial compartida con la opción Novedades es `talkback/src/main/res/raw/release_notes.txt`. El canal `dev` conserva la cabecera `build:` únicamente por compatibilidad con versiones anteriores. Véase `LANZAMIENTO.md` para publicar ambos canales.
 
 El repositorio es público en la revisión de 1.0.3. La app no incluye credenciales de GitHub: los errores HTTP o de red se notifican como fallos de búsqueda, no como ausencia de actualizaciones. No se consultan las publicaciones de Backtalk. Wear OS sigue sin APK distribuido.
 

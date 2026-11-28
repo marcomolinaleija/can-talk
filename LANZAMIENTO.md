@@ -29,7 +29,7 @@ PowerShell 7 para Windows. Esta guía no autoriza por sí sola un lanzamiento.
 
 - JDK/SDK y licencias preparados según [COMPILACION.md](COMPILACION.md).
 - Git con historial completo; no preparar versiones desde un clon superficial.
-- `origin` debe ser `marcomolinaleija/can-talk`, no el upstream Backtalk.
+- `origin` debe ser `can-apps/can-talk`, no el upstream Backtalk.
 - `gh` autenticado con permisos de escritura para publicar en ese repositorio.
 - Para **el publicador actual**, `entorno.local.json` es obligatorio: lee de ahí
   `JAVA_HOME` y `ANDROID_HOME` y utiliza herramientas `.exe`/`.bat`. Incluir también
@@ -37,7 +37,7 @@ PowerShell 7 para Windows. Esta guía no autoriza por sí sola un lanzamiento.
   configuraciones existentes ni incorporar secretos a Git.
 
 ```powershell
-$Repo = 'marcomolinaleija/can-talk'
+$Repo = 'can-apps/can-talk'
 $Version = '1.0.4' # Solo ejemplo: elegir una 1.0.x nueva, superior a la publicada.
 git status -sb
 git remote -v

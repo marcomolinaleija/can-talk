@@ -39,7 +39,11 @@ class UpdateDownloadTest {
   }
 
   @Test fun foreignUrlAndMissingChecksumNeverStartDownload() {
-    for ((url, checksum) in listOf("https://example.com/cantalk.apk" to hash, UpdateFixtures.url("cantalk.apk") to "")) {
+    for ((url, checksum) in listOf(
+      "https://example.com/cantalk.apk" to hash,
+      "https://github.com/marcomolinaleija/can-talk/releases/download/1.0.10/cantalk.apk" to hash,
+      UpdateFixtures.url("cantalk.apk") to "",
+    )) {
       assertThrows(IOException::class.java) {
         Updater.download(RuntimeEnvironment.getApplication(), url, checksum) { _, _ -> throw AssertionError("No network expected") }
       }

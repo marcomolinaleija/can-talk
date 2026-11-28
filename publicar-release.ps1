@@ -1,16 +1,17 @@
-#Requires -Version 7
+﻿#Requires -Version 7
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidatePattern('^1\.0\.\d+$')]
     [string]$Version,
     [string]$ArchivoNotas = (Join-Path $PSScriptRoot 'talkback/src/main/res/raw/release_notes.txt'),
+    [string]$Repo = 'can-apps/can-talk',
+    [string]$Remote = 'origin',
     [switch]$SkipBuild,
     [switch]$SoloPreparar
 )
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
-$repo = 'marcomolinaleija/can-talk'
 function Invoke-Native([string]$Command, [string[]]$Arguments) {
     $output = & $Command @Arguments
     if ($LASTEXITCODE -ne 0) { throw "$Command falló ($LASTEXITCODE): $($Arguments -join ' ')" }
@@ -42,22 +43,29 @@ if ((Get-Content version.gradle -Raw) -notmatch ('talkbackVersionName = "' + [re
     throw 'La versión solicitada no coincide con version.gradle.'
 }
 Invoke-Native gh @('auth', 'status') | Out-Host
-$latest = (Invoke-Native gh @('api', "repos/$repo/releases/latest")) -join "`n" | ConvertFrom-Json
-if ([version]$Version -le [version]$latest.tag_name.TrimStart('v')) {
-    throw 'La versión debe ser mayor que la última versión estable publicada.'
-}
-$latestManifest = @($latest.assets | Where-Object name -EQ 'update.json')
-if ($latestManifest.Count -eq 1) {
-    $published = Invoke-RestMethod -Uri $latestManifest[0].browser_download_url
-    if ((70000000L + $count) -le [long]$published.apks.'cantalk.apk'.versionCode) {
-        throw 'El código del APK debe ser mayor que el último código publicado.'
+$latestOutput = & gh api "repos/$Repo/releases/latest" 2>&1
+if ($LASTEXITCODE -eq 0) {
+    $latest = ($latestOutput -join "`n") | ConvertFrom-Json
+    if ([version]$Version -le [version]$latest.tag_name.TrimStart('v')) {
+        throw 'La versión debe ser mayor que la última versión estable publicada.'
     }
+    $latestManifest = @($latest.assets | Where-Object name -EQ 'update.json')
+    if ($latestManifest.Count -eq 1) {
+        $published = Invoke-RestMethod -Uri $latestManifest[0].browser_download_url
+        if ((70000000L + $count) -le [long]$published.apks.'cantalk.apk'.versionCode) {
+            throw 'El código del APK debe ser mayor que el último código publicado.'
+        }
+    } else {
+        # Older releases have no JSON. Their immutable tag still identifies the build history.
+        $publishedCount = [int](Invoke-Native git @('rev-list', '--count', $latest.tag_name))
+        if ($count -le $publishedCount) { throw 'El historial no avanza respecto de la versión publicada.' }
+    }
+} elseif (($latestOutput | Out-String) -match 'HTTP 404|Not Found|\b404\b') {
+    Invoke-Native gh @('repo', 'view', $Repo, '--json', 'name') | Out-Null
 } else {
-    # Older releases have no JSON. Their immutable tag still identifies the build history.
-    $publishedCount = [int](Invoke-Native git @('rev-list', '--count', $latest.tag_name))
-    if ($count -le $publishedCount) { throw 'El historial no avanza respecto de la versión publicada.' }
+    throw "gh api falló ($LASTEXITCODE): $($latestOutput | Out-String)"
 }
-$existingTags = Invoke-Native git @('ls-remote', '--tags', 'origin', "refs/tags/$Version")
+$existingTags = Invoke-Native git @('ls-remote', '--tags', $Remote, "refs/tags/$Version")
 if ($existingTags) { throw "La versión $Version ya tiene tag remoto. No se sobrescriben versiones publicadas." }
 
 if (-not $SkipBuild) { & (Join-Path $PSScriptRoot 'compilar.ps1') }
@@ -98,15 +106,23 @@ if ($SoloPreparar) {
 
 # A stable tag is immutable. Never force an existing version or replace its assets.
 Invoke-Native git @('tag', '-a', $Version, '-m', "CAN Talk $Version", $head) | Out-Host
-Invoke-Native git @('push', 'origin', "refs/tags/$Version") | Out-Host
+Invoke-Native git @('push', $Remote, "refs/tags/$Version") | Out-Host
 # Assets are uploaded to a draft before the release becomes visible to the updater.
-Invoke-Native gh @('release', 'create', $Version, $apk, $manifest, $notesFile, '--repo', $repo,
+Invoke-Native gh @('release', 'create', $Version, $apk, $manifest, $notesFile, '--repo', $Repo,
     '--verify-tag', '--draft', '--title', "CAN Talk $Version", '--notes-file', $notesFile) | Out-Host
-Invoke-Native gh @('release', 'edit', $Version, '--repo', $repo, '--draft=false', '--latest') | Out-Host
+Invoke-Native gh @('release', 'edit', $Version, '--repo', $Repo, '--draft=false', '--latest') | Out-Host
 
 # Compatibility channel for already-installed 1.0.0–1.0.2 clients. Only dev is movable.
 Invoke-Native git @('tag', '-f', 'dev', "$Version^{}") | Out-Host
-Invoke-Native git @('push', 'origin', 'refs/tags/dev', '--force') | Out-Host
-Invoke-Native gh @('release', 'upload', 'dev', $apk, $manifest, $notesFile, '--repo', $repo, '--clobber') | Out-Host
-Invoke-Native gh @('release', 'edit', 'dev', '--repo', $repo, '--prerelease', '--title', "CAN Talk $Version", '--notes-file', $legacyFile) | Out-Host
+Invoke-Native git @('push', $Remote, 'refs/tags/dev', '--force') | Out-Host
+$devViewOutput = & gh release view dev --repo $Repo --json tagName 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Invoke-Native gh @('release', 'upload', 'dev', $apk, $manifest, $notesFile, '--repo', $Repo, '--clobber') | Out-Host
+    Invoke-Native gh @('release', 'edit', 'dev', '--repo', $Repo, '--prerelease', '--title', "CAN Talk $Version", '--notes-file', $legacyFile) | Out-Host
+} elseif (($devViewOutput | Out-String) -match 'release not found|HTTP 404|Not Found') {
+    Invoke-Native gh @('release', 'create', 'dev', $apk, $manifest, $notesFile, '--repo', $Repo,
+        '--verify-tag', '--prerelease', '--title', "CAN Talk $Version", '--notes-file', $legacyFile) | Out-Host
+} else {
+    throw "gh release view dev falló ($LASTEXITCODE): $($devViewOutput | Out-String)"
+}
 Write-Host "Publicadas $Version y dev. APK SHA-256: $sha256"
