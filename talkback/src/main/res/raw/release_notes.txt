@@ -1,8 +1,5 @@
-CAN Talk 1.0.10
+CAN Talk 1.0.11
 
-- Se corrige un error con el teclado braille que impedía leer caracteres o palabras al escribir y permitía que los gestos de deslizamiento con retención interfirieran mientras se usaba el teclado.
-- Nuevo sistema de macros en Ajustes > Controles y en el menú de CAN Talk: crea, edita, graba pasos (incluido desde Configuración rápida), importa o exporta automatizaciones con condiciones, bucles, controles del dispositivo, acciones por aplicación, accesos directos en la pantalla de inicio y asignación a gestos o al menú de Acciones.
-- Nuevos gestos personalizables en Ajustes > Personalizar gestos: «Mantener pulsado» con 1, 2 y 4 dedos, y «Deslizar hacia arriba, abajo, izquierda o derecha y mantener pulsado», todos disponibles también en la práctica de gestos.
-- Mejor reconocimiento y respuesta del deslizamiento con retención: ahora requiere menos tiempo de espera tras detener el dedo, funciona con recorridos más cortos desde cualquier zona o borde de la pantalla, tolera el arco natural del pulgar y evita interferir con la exploración táctil cuando una dirección no tiene acción asignada.
-- Nuevas APIs externas con aprobación del usuario: «Permitir que otras aplicaciones hablen» en Configuración de texto a voz (con sonido previo opcional y permiso independiente con la pantalla bloqueada), «Pantallas de otras aplicaciones» en ajustes de pantalla braille y control de zonas de toque directo por aplicación.
-- Se corrige el enlace al servicio externo de control de voz para que las aplicaciones puedan solicitar permiso de habla correctamente.
+- El actualizador de CAN Talk ahora consulta las versiones oficiales desde la organización can-apps en GitHub (can-apps/can-talk) para que recibas las próximas actualizaciones directamente desde ese repositorio.
+- Se corrige Toque directo para respetar la región táctil de los teclados que cuentan con su propio servicio de accesibilidad, evitando que la barra de navegación o las aplicaciones con toque directo la sobrescriban mientras el teclado está visible.
+- Se declara el metadato keeps_keyboard_region en DirectTouchService para indicar a las aplicaciones compatibles que CAN Talk conserva la región del teclado.
